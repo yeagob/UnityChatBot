@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using ChatSystem.Enums;
+using ChatSystem.Models.Tools;
 
 namespace ChatSystem.Models.Context
 {
@@ -11,6 +13,7 @@ namespace ChatSystem.Models.Context
         public MessageType type;
         public string content;
         public string toolCallId;
+        public List<ToolCall> toolCalls;
         public DateTime timestamp;
         public string conversationId;
 
@@ -21,6 +24,7 @@ namespace ChatSystem.Models.Context
             this.type = type;
             this.content = content;
             this.toolCallId = string.Empty;
+            this.toolCalls = null;
             this.timestamp = DateTime.UtcNow;
             this.conversationId = conversationId;
         }
@@ -32,6 +36,19 @@ namespace ChatSystem.Models.Context
             this.type = type;
             this.content = content;
             this.toolCallId = toolCallId;
+            this.toolCalls = null;
+            this.timestamp = DateTime.UtcNow;
+            this.conversationId = conversationId;
+        }
+        
+        public Message(string id, MessageRole role, MessageType type, string content, List<ToolCall> toolCalls, string conversationId)
+        {
+            this.id = id;
+            this.role = role;
+            this.type = type;
+            this.content = content;
+            this.toolCallId = string.Empty;
+            this.toolCalls = toolCalls;
             this.timestamp = DateTime.UtcNow;
             this.conversationId = conversationId;
         }
