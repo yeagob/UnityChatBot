@@ -54,7 +54,6 @@ namespace ChatSystem.Bootstrap
             CreateServices();
             RegisterAgents();
             CreateControllers();
-            ConfigureServices();
             ConnectComponents();
             
             if (createDebugObjects)
@@ -70,12 +69,13 @@ namespace ChatSystem.Bootstrap
             contextManager = new ContextManager();
             persistenceService = new PersistenceService();
             agentExecutor = new AgentExecutor();
-            llmOrchestrator = new LLMOrchestrator(agentExecutor);
-            chatOrchestrator = new ChatOrchestrator(defaultConversationId);
             
             RegisterToolSets();
             
-            LoggingService.LogInfo("Core services created");
+            llmOrchestrator = new LLMOrchestrator(agentExecutor);
+            chatOrchestrator = new ChatOrchestrator(llmOrchestrator, contextManager, persistenceService);
+            
+            LoggingService.LogInfo("Core services created with dependency injection");
         }
         
         private void RegisterAgents()
@@ -108,21 +108,9 @@ namespace ChatSystem.Bootstrap
         private void CreateControllers()
         {
             chatController = new ChatController(defaultConversationId);
-            LoggingService.LogInfo("Controllers created");
-        }
-        
-        private void ConfigureServices()
-        {
             chatController.SetChatOrchestrator(chatOrchestrator);
             
-            if (chatOrchestrator is ChatOrchestrator chatOrchestratorImpl)
-            {
-                chatOrchestratorImpl.SetLLMOrchestrator(llmOrchestrator);
-                chatOrchestratorImpl.SetContextManager(contextManager);
-                chatOrchestratorImpl.SetPersistenceService(persistenceService);
-            }
-            
-            LoggingService.LogInfo("Services configured");
+            LoggingService.LogInfo("Controllers created and configured");
         }
         
         private void ConnectComponents()
