@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
-using ChatSystem.Models;
+using ChatSystem.Models.LLM;
 using ChatSystem.Models.Context;
 using ChatSystem.Models.Agents;
 using ChatSystem.Models.Tools;
@@ -11,7 +11,6 @@ using ChatSystem.Services.Tools.Interfaces;
 using ChatSystem.Services.Agents.Interfaces;
 using ChatSystem.Services.Logging;
 using ChatSystem.Enums;
-using ChatSystem.Models.LLM;
 
 namespace ChatSystem.Services.Agents
 {
@@ -32,7 +31,7 @@ namespace ChatSystem.Services.Agents
             
             if (!agentConfigs.TryGetValue(agentId, out AgentConfig agentConfig))
             {
-                LoggingService.Error($"Agent {agentId} not found");
+                LoggingService.LogError($"Agent {agentId} not found");
                 return CreateErrorResponse(agentId, "Agent configuration not found");
             }
             
@@ -71,7 +70,7 @@ namespace ChatSystem.Services.Agents
             }
             catch (Exception ex)
             {
-                LoggingService.Error($"Agent {agentId} execution failed: {ex.Message}");
+                LoggingService.LogError($"Agent {agentId} execution failed: {ex.Message}");
                 return CreateErrorResponse(agentId, ex.Message);
             }
         }
@@ -80,7 +79,7 @@ namespace ChatSystem.Services.Agents
         {
             if (agentConfig == null || string.IsNullOrEmpty(agentConfig.agentId))
             {
-                LoggingService.Error("Invalid agent configuration");
+                LoggingService.LogError("Invalid agent configuration");
                 return;
             }
             
@@ -92,7 +91,7 @@ namespace ChatSystem.Services.Agents
         {
             if (toolSet == null)
             {
-                LoggingService.Error("Cannot register null ToolSet");
+                LoggingService.LogError("Cannot register null ToolSet");
                 return;
             }
             
@@ -130,13 +129,23 @@ namespace ChatSystem.Services.Agents
             
             messages.AddRange(context.GetAllMessages());
             
+            List<ToolConfiguration> toolConfigs = new List<ToolConfiguration>();
+            foreach (ToolConfig tool in agentConfig.availableTools)
+            {
+                if (tool != null && tool.enabled)
+                {
+                    toolConfigs.Add(new ToolConfiguration(tool));
+                }
+            }
+            
             return new LLMRequest
             {
                 messages = messages,
-                tools = agentConfig.GetToolDefinitions(),
+                tools = toolConfigs,
                 maxTokens = agentConfig.maxResponseTokens,
                 temperature = agentConfig.modelConfig?.temperature ?? 0.7f,
                 model = agentConfig.modelConfig?.modelName ?? "default",
+                provider = agentConfig.modelConfig?.provider ?? ServiceProvider.Custom
             };
         }
         
@@ -151,18 +160,19 @@ namespace ChatSystem.Services.Agents
             
             if (shouldCallTool)
             {
-                string toolToCall = request.tools[UnityEngine.Random.Range(0, request.tools.Count)];
+                ToolConfiguration toolToCall = request.tools[UnityEngine.Random.Range(0, request.tools.Count)];
                 
                 toolCalls = new List<ToolCall>
                 {
                     new ToolCall
                     {
                         id = Guid.NewGuid().ToString(),
-                        name = ExtractToolName(toolToCall)
+                        name = toolToCall.toolName,
+                        arguments = "{}"
                     }
                 };
                 
-                LoggingService.LogToolCall(toolCalls[0].name,null);
+                LoggingService.LogToolCall(toolCalls[0].name, "{}");
             }
             
             return new LLMResponse
@@ -171,17 +181,12 @@ namespace ChatSystem.Services.Agents
                     "I'll help you with that request." : 
                     GenerateSimulatedResponse(request),
                 toolCalls = toolCalls,
+                provider = request.provider,
                 model = request.model,
                 timestamp = DateTime.UtcNow,
+                totalTokens = UnityEngine.Random.Range(100, 500),
+                success = true
             };
-        }
-        
-        private string ExtractToolName(string toolDefinition)
-        {
-            int nameStart = toolDefinition.IndexOf("\"name\": \"") + 10;
-            int nameEnd = toolDefinition.IndexOf("\"", nameStart);
-            return nameEnd > nameStart ? 
-                toolDefinition.Substring(nameStart, nameEnd - nameStart) : "unknown_tool";
         }
         
         private string GenerateSimulatedResponse(LLMRequest request)
@@ -208,14 +213,15 @@ namespace ChatSystem.Services.Agents
                 
                 try
                 {
-                    string result = await ExecuteToolAsync(call.name, call.arguments);
+                    Dictionary<string, object> args = ParseArguments(call.arguments);
+                    string result = await ExecuteToolAsync(call.name, args);
                     
                     responses.Add(new ToolResponse
                     {
                         toolCallId = call.id,
                         content = result,
                         success = true,
-                        responseTimestamp = DateTime.UtcNow
+                        timestamp = DateTime.UtcNow
                     });
                     
                     LoggingService.LogToolResponse(call.name, "Success");
@@ -227,7 +233,7 @@ namespace ChatSystem.Services.Agents
                         toolCallId = call.id,
                         content = ex.Message,
                         success = false,
-                        responseTimestamp = DateTime.UtcNow
+                        timestamp = DateTime.UtcNow
                     });
                     
                     LoggingService.LogToolResponse(call.name, "Error: " + ex.Message);
@@ -237,13 +243,25 @@ namespace ChatSystem.Services.Agents
             return responses;
         }
         
-        private async Task<string> ExecuteToolAsync(string toolName, string arguments)
+        private Dictionary<string, object> ParseArguments(string arguments)
+        {
+            if (string.IsNullOrEmpty(arguments) || arguments == "{}")
+            {
+                return new Dictionary<string, object>();
+            }
+            
+            Dictionary<string, object> result = new Dictionary<string, object>();
+            return result;
+        }
+        
+        private async Task<string> ExecuteToolAsync(string toolName, Dictionary<string, object> arguments)
         {
             foreach (IToolSet toolSet in registeredToolSets.Values)
             {
-                if (toolSet.IsToolSupported(toolName))
+                if (toolSet.HasTool(toolName))
                 {
-                    return await toolSet.ExecuteToolAsync(toolName, arguments);
+                    return await toolSet.ExecuteToolAsync(toolName, 
+                        Newtonsoft.Json.JsonConvert.SerializeObject(arguments));
                 }
             }
             
