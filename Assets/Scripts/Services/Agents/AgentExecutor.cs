@@ -10,6 +10,7 @@ using ChatSystem.Configuration.ScriptableObjects;
 using ChatSystem.Services.Tools.Interfaces;
 using ChatSystem.Services.Agents.Interfaces;
 using ChatSystem.Services.Logging;
+using ChatSystem.Services.LLM;
 using ChatSystem.Enums;
 
 namespace ChatSystem.Services.Agents
@@ -44,7 +45,7 @@ namespace ChatSystem.Services.Agents
             try
             {
                 LLMRequest request = BuildLLMRequest(agentConfig, context);
-                LLMResponse llmResponse = await SimulateLLMCallAsync(request);
+                LLMResponse llmResponse = await ExecuteLLMCallAsync(request, agentConfig);
                 
                 if (llmResponse.toolCalls != null && llmResponse.toolCalls.Count > 0)
                 {
@@ -54,7 +55,7 @@ namespace ChatSystem.Services.Agents
                     context.AddToolMessages(toolResponses);
                     
                     LLMRequest followUpRequest = BuildLLMRequest(agentConfig, context);
-                    llmResponse = await SimulateLLMCallAsync(followUpRequest);
+                    llmResponse = await ExecuteLLMCallAsync(followUpRequest, agentConfig);
                 }
                 
                 LoggingService.LogAgentExecution(agentId, "Completed");
@@ -149,56 +150,41 @@ namespace ChatSystem.Services.Agents
             };
         }
         
+        private async Task<LLMResponse> ExecuteLLMCallAsync(LLMRequest request, AgentConfig agentConfig)
+        {
+            switch (request.provider)
+            {
+                case ServiceProvider.OpenAI:
+                    return await OpenAIService.CompleteChatAsync(
+                        request, 
+                        agentConfig.token, 
+                        agentConfig.serviceUrl);
+                
+                case ServiceProvider.QWEN:
+                    return await QWENService.CompleteChatAsync(
+                        request, 
+                        agentConfig.token, 
+                        agentConfig.serviceUrl);
+                
+                default:
+                    LoggingService.LogWarning($"Unsupported provider: {request.provider}. Using fallback simulation.");
+                    return await SimulateLLMCallAsync(request);
+            }
+        }
+        
         private async Task<LLMResponse> SimulateLLMCallAsync(LLMRequest request)
         {
             await Task.Delay(1000);
             
-            bool shouldCallTool = UnityEngine.Random.Range(0f, 1f) > 0.5f && 
-                                 request.tools != null && request.tools.Count > 0;
-            
-            List<ToolCall> toolCalls = null;
-            
-            if (shouldCallTool)
-            {
-                ToolConfiguration toolToCall = request.tools[UnityEngine.Random.Range(0, request.tools.Count)];
-                
-                toolCalls = new List<ToolCall>
-                {
-                    new ToolCall
-                    {
-                        id = Guid.NewGuid().ToString(),
-                        name = toolToCall.toolName,
-                        arguments = null
-                    }
-                };
-                
-                LoggingService.LogToolCall(toolCalls[0].name, null);
-            }
-            
             return new LLMResponse
             {
-                content = toolCalls != null ? 
-                    "I'll help you with that request." : 
-                    GenerateSimulatedResponse(request),
-                toolCalls = toolCalls,
+                content = "I understand your request and I'm here to help.",
+                toolCalls = null,
                 model = request.model,
                 timestamp = DateTime.UtcNow,
-                outputTokens = UnityEngine.Random.Range(100, 500),
+                outputTokens = UnityEngine.Random.Range(50, 200),
                 success = true
             };
-        }
-        
-        private string GenerateSimulatedResponse(LLMRequest request)
-        {
-            List<string> responses = new List<string>
-            {
-                "I understand your request and I'm here to help.",
-                "Based on the context provided, here's my response.",
-                "Let me assist you with that.",
-                "I've analyzed your request and here's what I found."
-            };
-            
-            return responses[UnityEngine.Random.Range(0, responses.Count)];
         }
         
         private async Task<List<ToolResponse>> ExecuteToolCallsAsync(List<ToolCall> toolCalls, int maxCalls)
@@ -239,17 +225,6 @@ namespace ChatSystem.Services.Agents
             }
             
             return responses;
-        }
-        
-        private Dictionary<string, object> ParseArguments(string arguments)
-        {
-            if (string.IsNullOrEmpty(arguments) || arguments == "{}")
-            {
-                return new Dictionary<string, object>();
-            }
-            
-            Dictionary<string, object> result = new Dictionary<string, object>();
-            return result;
         }
         
         private async Task<ToolResponse> ExecuteToolAsync(string toolName, Dictionary<string, object> arguments)
