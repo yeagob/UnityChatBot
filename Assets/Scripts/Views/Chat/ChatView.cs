@@ -34,6 +34,7 @@ namespace ChatSystem.Views.Chat
         private void Start()
         {
             SetupEventListeners();
+            FocusInputField();
         }
 
         public void SetController(IChatController controller)
@@ -62,6 +63,7 @@ namespace ChatSystem.Views.Chat
             if (messageInputField != null)
             {
                 messageInputField.onSubmit.AddListener(OnMessageSubmitted);
+                messageInputField.onValueChanged.AddListener(OnInputValueChanged);
             }
         }
 
@@ -72,9 +74,14 @@ namespace ChatSystem.Views.Chat
 
         private void OnMessageSubmitted(string message)
         {
-            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+            SendCurrentMessage();
+        }
+
+        private void OnInputValueChanged(string text)
+        {
+            if (sendButton != null)
             {
-                SendCurrentMessage();
+                sendButton.interactable = !string.IsNullOrWhiteSpace(text);
             }
         }
 
@@ -84,12 +91,31 @@ namespace ChatSystem.Views.Chat
                 return;
 
             string messageText = messageInputField.text.Trim();
-            messageInputField.text = string.Empty;
             
+            ClearInputAndMaintainFocus();
             SetInputEnabled(false);
             ShowLoadingIndicator(true);
 
             await chatController.ProcessUserMessageAsync(messageText);
+        }
+
+        private void ClearInputAndMaintainFocus()
+        {
+            if (messageInputField != null)
+            {
+                messageInputField.text = string.Empty;
+                messageInputField.ActivateInputField();
+                messageInputField.Select();
+            }
+        }
+
+        private void FocusInputField()
+        {
+            if (messageInputField != null)
+            {
+                messageInputField.ActivateInputField();
+                messageInputField.Select();
+            }
         }
 
         public void DisplayMessage(Message message)
@@ -128,11 +154,17 @@ namespace ChatSystem.Views.Chat
             if (messageInputField != null)
             {
                 messageInputField.interactable = enabled;
+                
+                if (enabled)
+                {
+                    FocusInputField();
+                }
             }
             
             if (sendButton != null)
             {
-                sendButton.interactable = enabled;
+                bool hasText = !string.IsNullOrWhiteSpace(messageInputField?.text);
+                sendButton.interactable = enabled && hasText;
             }
         }
 
@@ -192,6 +224,7 @@ namespace ChatSystem.Views.Chat
             if (messageInputField != null)
             {
                 messageInputField.onSubmit.RemoveAllListeners();
+                messageInputField.onValueChanged.RemoveAllListeners();
             }
         }
     }
