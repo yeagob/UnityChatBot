@@ -63,6 +63,8 @@ namespace ChatSystem.Services.Orchestrators
                 await persistenceService.SaveConversationAsync(context);
             }
             
+            LoggingService.LogDebug($"[ChatOrchestrator] Completed processing. Response success: {response.success}, Content: {response.content?.Length ?? 0} chars");
+            
             return response;
         }
         
@@ -153,7 +155,7 @@ namespace ChatSystem.Services.Orchestrators
             }
             catch (Exception ex)
             {
-                LoggingService.Error($"LLM processing failed: {ex.Message}");
+                LoggingService.LogError($"LLM processing failed: {ex.Message}");
                 return CreateErrorResponse(ex);
             }
         }
