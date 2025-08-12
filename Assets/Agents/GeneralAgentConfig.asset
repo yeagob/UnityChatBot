@@ -14,8 +14,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   agentId: 0
   agentName: General Answer
-  token: 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
-  model: COMPLETAR!miniO1
-  serviceProvider: OpenAI
+  description: Base Model Responses
+  token: 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
   serviceUrl: https://api.openai.com/v1/chat/completions
-  toolConfigs: []
+  modelConfig: {fileID: 11400000, guid: e32e072598c4e694ea426df2fb2bcb4c, type: 2}
+  systemPrompt: {fileID: 11400000, guid: 88c4ff789ee2a8e4abde51e0753cf1d6, type: 2}
+  contextPrompts: []
+  availableTools:
+  - {fileID: 11400000, guid: bda898df686a38a42a90ce9457cef786, type: 2}
+  canExecuteTools: 1
+  maxToolCalls: 5
+  maxResponseTokens: 2048
+  streamResponses: 0
+  maxRetries: 3
+  timeoutMs: 10000
+  fallbackToSimulation: 0
+  enabled: 1
+  priority: 0
+  requiredCapabilities: []

@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f39ca0673d533645be39d99e7636e96, type: 3}
-  m_Name: gpt5-nanoOpenAIModelConfig
+  m_Name: qwen-flashQWENModelConfig
   m_EditorClassIdentifier: 
-  modelName: gpt-5-nano
-  provider: 0
-  modelVersion: gpt-5-nano
-  temperature: 1
-  maxTokens: 2048
+  modelName: qwen-flash
+  provider: 1
+  modelVersion: qwen-flash-2025-07-28
+  temperature: 0.7
+  maxTokens: 8192
   topP: 0.9
   presencePenalty: 0
   frequencyPenalty: 0
-  costPerInputToken: 0.0001
-  costPerOutputToken: 0.0002
+  costPerInputToken: 0.00003
+  costPerOutputToken: 0.00012

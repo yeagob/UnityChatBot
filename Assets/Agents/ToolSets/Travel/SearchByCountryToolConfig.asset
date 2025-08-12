@@ -12,16 +12,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1689bfe41020f8a45995d425251a2b6f, type: 3}
   m_Name: SearchByCountryToolConfig
   m_EditorClassIdentifier: 
-  toolId: 
-  toolName: 
-  description: 
-  toolType: 0
-  inputSchema:
-    type: 
-    required: []
+  toolId: 0
+  toolName: SearchByCountry
+  toolType: 1
+  function:
+    name: SearchByCountry
+    description: Permite buscar en la basede datos informacion de un viaje en base
+      a un pais dado.
+    parameters:
+      type: object
+      required:
+      - Country
   annotations:
     title: 
     readOnlyHint: 0
     destructiveHint: 0
     idempotentHint: 0
     openWorldHint: 0
+  enabled: 1
+  requiresAuthentication: 0
+  timeoutMs: 5000
+  maxRetries: 3
+  hasRateLimit: 0
+  requestsPerMinute: 60
