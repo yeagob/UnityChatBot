@@ -5,13 +5,12 @@ using UnityEngine;
 using ChatSystem.Models;
 using ChatSystem.Models.Context;
 using ChatSystem.Models.Agents;
+using ChatSystem.Models.LLM;
 using ChatSystem.Configuration.ScriptableObjects;
 using ChatSystem.Services.Orchestrators.Interfaces;
 using ChatSystem.Services.Agents.Interfaces;
-using ChatSystem.Services.Logging.Interfaces;
-using ChatSystem.Enums;
-using ChatSystem.Models.LLM;
 using ChatSystem.Services.Logging;
+using ChatSystem.Enums;
 
 namespace ChatSystem.Services.Orchestrators
 {
@@ -32,7 +31,7 @@ namespace ChatSystem.Services.Orchestrators
         {
             if (config == null || string.IsNullOrEmpty(config.agentId))
             {
-                LoggingService.Error("Invalid agent configuration");
+                LoggingService.LogError("Invalid agent configuration");
                 return;
             }
             
@@ -53,7 +52,7 @@ namespace ChatSystem.Services.Orchestrators
             
             if (activeAgentIds.Count == 0)
             {
-                LoggingService.Warning("No active agents available");
+                LoggingService.LogWarning("No active agents available");
                 return CreateDefaultResponse("No active agents configured");
             }
             
@@ -80,7 +79,7 @@ namespace ChatSystem.Services.Orchestrators
             }
             catch (Exception ex)
             {
-                LoggingService.Error($"LLMOrchestrator error: {ex.Message}");
+                LoggingService.LogError($"LLMOrchestrator error: {ex.Message}");
                 return CreateDefaultResponse($"Error processing message: {ex.Message}");
             }
         }
@@ -139,7 +138,8 @@ namespace ChatSystem.Services.Orchestrators
                     loadedConfigs[primaryResponse.agentId].modelConfig?.modelName ?? "default" : 
                     "default",
                 timestamp = DateTime.UtcNow,
-                totalTokens = responses.Count * 100
+                totalTokens = responses.Count * 100,
+                success = true
             };
         }
         
@@ -151,7 +151,8 @@ namespace ChatSystem.Services.Orchestrators
                 provider = ServiceProvider.Custom,
                 model = "default",
                 timestamp = DateTime.UtcNow,
-                totalTokens = 0
+                totalTokens = 0,
+                success = false
             };
         }
     }

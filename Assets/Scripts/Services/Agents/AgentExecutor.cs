@@ -9,10 +9,8 @@ using ChatSystem.Models.Tools;
 using ChatSystem.Configuration.ScriptableObjects;
 using ChatSystem.Services.Tools.Interfaces;
 using ChatSystem.Services.Agents.Interfaces;
-using ChatSystem.Services.Logging.Interfaces;
-using ChatSystem.Enums;
-using ChatSystem.Models.LLM;
 using ChatSystem.Services.Logging;
+using ChatSystem.Enums;
 
 namespace ChatSystem.Services.Agents
 {
@@ -33,7 +31,7 @@ namespace ChatSystem.Services.Agents
             
             if (!agentConfigs.TryGetValue(agentId, out AgentConfig agentConfig))
             {
-                LoggingService.Error($"Agent {agentId} not found");
+                LoggingService.LogError($"Agent {agentId} not found");
                 return CreateErrorResponse(agentId, "Agent configuration not found");
             }
             
@@ -72,7 +70,7 @@ namespace ChatSystem.Services.Agents
             }
             catch (Exception ex)
             {
-                LoggingService.Error($"Agent {agentId} execution failed: {ex.Message}");
+                LoggingService.LogError($"Agent {agentId} execution failed: {ex.Message}");
                 return CreateErrorResponse(agentId, ex.Message);
             }
         }
@@ -81,7 +79,7 @@ namespace ChatSystem.Services.Agents
         {
             if (agentConfig == null || string.IsNullOrEmpty(agentConfig.agentId))
             {
-                LoggingService.Error("Invalid agent configuration");
+                LoggingService.LogError("Invalid agent configuration");
                 return;
             }
             
@@ -93,7 +91,7 @@ namespace ChatSystem.Services.Agents
         {
             if (toolSet == null)
             {
-                LoggingService.Error("Cannot register null ToolSet");
+                LoggingService.LogError("Cannot register null ToolSet");
                 return;
             }
             
@@ -138,6 +136,7 @@ namespace ChatSystem.Services.Agents
                 maxTokens = agentConfig.maxResponseTokens,
                 temperature = agentConfig.modelConfig?.temperature ?? 0.7f,
                 model = agentConfig.modelConfig?.modelName ?? "default",
+                provider = agentConfig.modelConfig?.provider ?? ServiceProvider.Custom
             };
         }
         
@@ -164,7 +163,7 @@ namespace ChatSystem.Services.Agents
                     }
                 };
                 
-                LoggingService.ToolCall(toolCalls[0].name, "{}");
+                LoggingService.LogToolCall(toolCalls[0].name, "{}");
             }
             
             return new LLMResponse
@@ -222,7 +221,7 @@ namespace ChatSystem.Services.Agents
                         timestamp = DateTime.UtcNow
                     });
                     
-                    LoggingService.ToolResponse(call.name, "Success");
+                    LoggingService.LogToolResponse(call.name, "Success");
                 }
                 catch (Exception ex)
                 {
@@ -234,7 +233,7 @@ namespace ChatSystem.Services.Agents
                         timestamp = DateTime.UtcNow
                     });
                     
-                    LoggingService.ToolResponse(call.name, "Error: " + ex.Message);
+                    LoggingService.LogToolResponse(call.name, "Error: " + ex.Message);
                 }
             }
             
