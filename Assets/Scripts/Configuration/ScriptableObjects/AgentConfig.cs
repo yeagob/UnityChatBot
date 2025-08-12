@@ -11,6 +11,8 @@ namespace ChatSystem.Configuration.ScriptableObjects
         public string agentName;
         [TextArea(3, 5)]
         public string description;
+        public string token;
+        public string serviceUrl;
         
         [Header("Model Configuration")]
         public ModelConfig modelConfig;
