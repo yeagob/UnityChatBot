@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43ed1e55f7515cc4a9e118ddca548f65, type: 3}
-  m_Name: GeneralAgentConfig
+  m_Name: QwenGenerallAgentConfig
   m_EditorClassIdentifier: 
   agentId: 0
   agentName: General Answer
   description: Base Model Responses
-  token: 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
-  serviceUrl: https://api.openai.com/v1/chat/completions
-  modelConfig: {fileID: 11400000, guid: e32e072598c4e694ea426df2fb2bcb4c, type: 2}
+  token: TOKEN
+  serviceUrl: https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions
+  modelConfig: {fileID: 11400000, guid: dcff31798357ed8408886f6726299b61, type: 2}
   systemPrompt: {fileID: 11400000, guid: 88c4ff789ee2a8e4abde51e0753cf1d6, type: 2}
   contextPrompts: []
   availableTools:

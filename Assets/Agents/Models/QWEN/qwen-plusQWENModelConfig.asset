@@ -16,7 +16,7 @@ MonoBehaviour:
   provider: 1
   modelVersion: qwen-plus-latest
   temperature: 0.7
-  maxTokens: 32768
+  maxTokens: 8192
   topP: 0.9
   presencePenalty: 0
   frequencyPenalty: 0
