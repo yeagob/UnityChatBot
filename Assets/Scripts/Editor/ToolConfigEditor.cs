@@ -22,7 +22,7 @@ namespace ChatSystem.Editor
             EditorGUILayout.LabelField("Identification", EditorStyles.boldLabel);
             config.toolId = EditorGUILayout.TextField("Tool ID", config.toolId);
             config.toolName = EditorGUILayout.TextField("Tool Name", config.toolName);
-            config.toolType = (Enums.ToolType)EditorGUILayout.EnumPopup("Tool Type", config.toolType);
+            config.toolType = (ToolType)EditorGUILayout.EnumPopup("Tool Type", config.toolType);
             
             EditorGUILayout.Space();
             showFunctionDetails = EditorGUILayout.Foldout(showFunctionDetails, "MCP Function Definition", true);
