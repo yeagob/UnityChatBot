@@ -23,6 +23,7 @@ namespace ChatSystem.Services.LLM
                 LoggingService.LogInfo($"Making OpenAI API call to model: {request.model}");
                 
                 string jsonPayload = BuildOpenAIPayload(request);
+                LoggingService.LogInfo($"OpenAI Payload: {jsonPayload}");
                 
                 UnityWebRequest webRequest = new UnityWebRequest(baseUrl, "POST");
                 byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonPayload);
@@ -59,10 +60,10 @@ namespace ChatSystem.Services.LLM
             StringBuilder sb = new StringBuilder();
             sb.Append("{");
             sb.Append($"\"model\":\"{request.model}\",");
-            sb.Append($"\"temperature\":{request.temperature},");
-            sb.Append($"\"max_tokens\":{request.maxTokens},");
+            sb.Append($"\"temperature\":{request.temperature.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)},");
+            sb.Append($"\"max_tokens\":{request.maxTokens}");
             
-            sb.Append("\"messages\":[");
+            sb.Append(",\"messages\":[");
             for (int i = 0; i < request.messages.Count; i++)
             {
                 if (i > 0) sb.Append(",");
@@ -205,7 +206,7 @@ namespace ChatSystem.Services.LLM
         {
             List<OpenAIToolCall> toolCalls = new List<OpenAIToolCall>();
             
-            int currentIndex = startIndex + 14; // Skip "tool_calls":[
+            int currentIndex = startIndex + 14;
             int bracketCount = 0;
             bool inToolCall = false;
             int toolCallStart = -1;
