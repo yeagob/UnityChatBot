@@ -19,7 +19,7 @@ using ChatSystem.Debugging;
 
 namespace ChatSystem.Bootstrap
 {
-    public class DependencyBootstrap : MonoBehaviour
+    public class ChatManager : MonoBehaviour
     {
         [Header("View References")]
         [SerializeField] private ChatView chatView;
