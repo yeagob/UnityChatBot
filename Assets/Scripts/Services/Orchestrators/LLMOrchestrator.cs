@@ -31,7 +31,7 @@ namespace ChatSystem.Services.Orchestrators
         {
             if (config == null || string.IsNullOrEmpty(config.agentId))
             {
-                LoggingService.Error("Invalid agent configuration");
+                LoggingService.LogError("Invalid agent configuration");
                 return;
             }
             
@@ -79,7 +79,7 @@ namespace ChatSystem.Services.Orchestrators
             }
             catch (Exception ex)
             {
-                LoggingService.Error($"LLMOrchestrator error: {ex.Message}");
+                LoggingService.LogError($"LLMOrchestrator error: {ex.Message}");
                 return CreateDefaultResponse($"Error processing message: {ex.Message}");
             }
         }
