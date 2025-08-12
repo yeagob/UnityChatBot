@@ -17,12 +17,10 @@ namespace ChatSystem.Services.Persistence
         {
             conversations = new Dictionary<string, ConversationContext>();
             agentResponses = new Dictionary<string, List<AgentResponse>>();
-            LoggingService.LogInfo("PersistenceService initialized (in-memory mode)");
         }
         
         public async Task SaveConversationAsync(ConversationContext conversation)
         {
-            LoggingService.LogDebug($"Saving conversation: {conversation.conversationId}");
             
             conversations[conversation.conversationId] = conversation;
             await Task.CompletedTask;
@@ -30,8 +28,6 @@ namespace ChatSystem.Services.Persistence
         
         public async Task<ConversationContext> LoadConversationAsync(string conversationId)
         {
-            LoggingService.LogDebug($"Loading conversation: {conversationId}");
-            
             await Task.CompletedTask;
             
             if (conversations.TryGetValue(conversationId, out ConversationContext conversation))
@@ -39,22 +35,17 @@ namespace ChatSystem.Services.Persistence
                 return conversation;
             }
             
-            LoggingService.LogWarning($"Conversation not found: {conversationId}");
             return null;
         }
         
         public async Task<List<ConversationContext>> LoadAllConversationsAsync()
         {
-            LoggingService.LogDebug("Loading all conversations");
-            
             await Task.CompletedTask;
             return conversations.Values.ToList();
         }
         
         public async Task DeleteConversationAsync(string conversationId)
         {
-            LoggingService.LogInfo($"Deleting conversation: {conversationId}");
-            
             conversations.Remove(conversationId);
             agentResponses.Remove(conversationId);
             
@@ -69,8 +60,6 @@ namespace ChatSystem.Services.Persistence
         
         public async Task SaveAgentResponseAsync(string conversationId, AgentResponse response)
         {
-            LoggingService.LogDebug($"Saving agent response for conversation: {conversationId}");
-            
             if (!agentResponses.ContainsKey(conversationId))
             {
                 agentResponses[conversationId] = new List<AgentResponse>();
@@ -82,8 +71,6 @@ namespace ChatSystem.Services.Persistence
         
         public async Task<List<AgentResponse>> LoadAgentResponsesAsync(string conversationId)
         {
-            LoggingService.LogDebug($"Loading agent responses for conversation: {conversationId}");
-            
             await Task.CompletedTask;
             
             if (agentResponses.TryGetValue(conversationId, out List<AgentResponse> responses))
@@ -96,7 +83,7 @@ namespace ChatSystem.Services.Persistence
         
         public async Task ClearAllDataAsync()
         {
-            LoggingService.LogWarning("Clearing all persistence data");
+            LoggingService.LogWarning("Clearing allpersistence data");
             
             conversations.Clear();
             agentResponses.Clear();

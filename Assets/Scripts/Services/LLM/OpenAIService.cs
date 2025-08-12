@@ -22,6 +22,9 @@ namespace ChatSystem.Services.LLM
                 LoggingService.LogInfo($"Making OpenAI API call to model: {request.model}");
                 
                 string jsonPayload = BuildOpenAIPayload(request);
+                
+                LoggingService.LogDebug($"Making OpenAI API call with PAYLOAD: {jsonPayload}");
+                
                 UnityWebRequest webRequest = CreateWebRequest(jsonPayload, apiKey, baseUrl);
                 
                 await SendWebRequestAsync(webRequest);
@@ -64,8 +67,7 @@ namespace ChatSystem.Services.LLM
             StringBuilder sb = new StringBuilder();
             sb.Append("{");
             sb.Append($"\"model\":\"{request.model}\",");
-            sb.Append($"\"temperature\":{request.temperature.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)},");
-            sb.Append($"\"max_completion_tokens\":{request.maxTokens}");
+            sb.Append($"\"temperature\":{request.temperature.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}");
             
             AppendMessages(sb, request.messages);
             AppendTools(sb, request.tools);
@@ -108,6 +110,8 @@ namespace ChatSystem.Services.LLM
         {
             try
             {
+                LoggingService.LogDebug($" OpenAI response: {responseText}");
+
                 OpenAIResponse response = JsonUtility.FromJson<OpenAIResponse>(responseText);
                 
                 string content = ExtractContent(response);
@@ -115,11 +119,6 @@ namespace ChatSystem.Services.LLM
                 int outputTokens = ExtractTokenCount(response);
                 
                 bool success = HasValidResponse(content, toolCalls);
-                if (!success)
-                {
-                    content = GetFallbackResponse();
-                    success = true;
-                }
                 
                 return CreateSuccessResponse(content, toolCalls, model, outputTokens, success);
             }

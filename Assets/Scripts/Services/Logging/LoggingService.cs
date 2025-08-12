@@ -15,7 +15,6 @@ namespace ChatSystem.Services.Logging
         {
             currentLogLevel = logLevel;
             isInitialized = true;
-            LogInfo("LoggingService initialized");
         }
         
         public static void LogDebug(string message)
@@ -74,25 +73,14 @@ namespace ChatSystem.Services.Logging
             LogInfo($"[TOOL_RESPONSE:{toolName}] Response: {response}");
         }
         
-        public static void LogMessageReceived(string conversationId, string role)
-        {
-            LogInfo($"[MESSAGE:{conversationId}] Role: {role}");
-        }
-        
-        public static void LogPromptConstruction(string agentId, int tokenCount)
-        {
-            LogInfo($"[PROMPT:{agentId}] Token count: {tokenCount}");
-        }
-        
-        public static void SetLogLevel(LogLevel level)
-        {
-            currentLogLevel = level;
-            LogInfo($"Log level changed to: {level}");
-        }
         
         public static bool IsLogLevelEnabled(LogLevel level)
         {
-            if (!isInitialized) Initialize();
+            if (!isInitialized)
+            {
+                Initialize();
+            }
+            
             return level >= currentLogLevel;
         }
         

@@ -15,42 +15,30 @@ namespace ChatSystem.Services.Orchestrators
         private ILLMOrchestrator llmOrchestrator;
         private IContextManager contextManager;
         private IPersistenceService persistenceService;
-        private string defaultConversationId;
-        
-        public ChatOrchestrator()
-        {
-            defaultConversationId = "default-conversation";
-            LoggingService.LogInfo("ChatOrchestrator initialized");
-        }
         
         public ChatOrchestrator(string conversationId)
         {
-            defaultConversationId = conversationId;
             LoggingService.LogInfo($"ChatOrchestrator initialized with conversation: {conversationId}");
         }
         
         public void SetLLMOrchestrator(ILLMOrchestrator orchestrator)
         {
             llmOrchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
-            LoggingService.LogDebug("LLMOrchestrator set in ChatOrchestrator");
         }
         
         public void SetContextManager(IContextManager manager)
         {
             contextManager = manager ?? throw new ArgumentNullException(nameof(manager));
-            LoggingService.LogDebug("ContextManager set in ChatOrchestrator");
         }
         
         public void SetPersistenceService(IPersistenceService service)
         {
             persistenceService = service ?? throw new ArgumentNullException(nameof(service));
-            LoggingService.LogDebug("PersistenceService set in ChatOrchestrator");
         }
         
         public async Task<LLMResponse> ProcessUserMessageAsync(string conversationId, string userMessage)
         {
             ValidateOrchestrator();
-            LoggingService.LogInfo($"Processing user message for conversation: {conversationId}");
             
             await contextManager.AddUserMessageAsync(conversationId, userMessage);
             ConversationContext context = await contextManager.GetContextAsync(conversationId);
@@ -63,7 +51,7 @@ namespace ChatSystem.Services.Orchestrators
                 await persistenceService.SaveConversationAsync(context);
             }
             
-            LoggingService.LogDebug($"[ChatOrchestrator] Completed processing. Response success: {response.success}, Content: {response.content?.Length ?? 0} chars");
+            LoggingService.LogDebug($"[ChatOrchestrator] Completed processing. Response success: {response.success}, Content: {response.content}");
             
             return response;
         }
@@ -150,7 +138,6 @@ namespace ChatSystem.Services.Orchestrators
         {
             try
             {
-                LoggingService.LogDebug("Executing LLM processing");
                 return await llmOrchestrator.ProcessMessageAsync(context);
             }
             catch (Exception ex)

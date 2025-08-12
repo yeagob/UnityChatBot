@@ -85,7 +85,6 @@ namespace ChatSystem.Services.Agents
             }
             
             agentConfigs[agentConfig.agentId] = agentConfig;
-            LoggingService.LogInfo($"Agent {agentConfig.agentId} registered");
         }
         
         public void RegisterToolSet(IToolSet toolSet)

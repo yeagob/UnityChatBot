@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using UnityEngine;
-using ChatSystem.Models;
 using ChatSystem.Models.Context;
 using ChatSystem.Models.Agents;
 using ChatSystem.Models.LLM;
@@ -10,7 +8,6 @@ using ChatSystem.Configuration.ScriptableObjects;
 using ChatSystem.Services.Orchestrators.Interfaces;
 using ChatSystem.Services.Agents.Interfaces;
 using ChatSystem.Services.Logging;
-using ChatSystem.Enums;
 
 namespace ChatSystem.Services.Orchestrators
 {
@@ -48,8 +45,6 @@ namespace ChatSystem.Services.Orchestrators
         
         public async Task<LLMResponse> ProcessMessageAsync(ConversationContext context)
         {
-            LoggingService.LogInfo("LLMOrchestrator processing message");
-            
             if (activeAgentIds.Count == 0)
             {
                 LoggingService.LogWarning("No active agents available");
@@ -94,7 +89,6 @@ namespace ChatSystem.Services.Orchestrators
             if (loadedConfigs.ContainsKey(agentId) && !activeAgentIds.Contains(agentId))
             {
                 activeAgentIds.Add(agentId);
-                LoggingService.LogInfo($"Agent {agentId} enabled");
             }
         }
         

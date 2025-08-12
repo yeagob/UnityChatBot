@@ -51,8 +51,6 @@ namespace ChatSystem.Bootstrap
         
         private void InitializeSystem()
         {
-            LogDebug("Starting dependency injection initialization");
-            
             InitializeLogging();
             CreateCoreServices();
             CreateToolSets();
@@ -61,20 +59,15 @@ namespace ChatSystem.Bootstrap
             ConfigureServices();
             ConnectComponents();
             CreateDebugObjectsIfEnabled();
-            
-            LogInfo("Dependency injection completed successfully");
         }
         
         private void InitializeLogging()
         {
             LoggingService.Initialize(logLevel);
-            LogDebug("Logging service initialized");
         }
         
         private void CreateCoreServices()
         {
-            LogDebug("Creating core services");
-            
             contextManager = new ContextManager();
             agentExecutor = new AgentExecutor();
             persistenceService = new PersistenceService();
@@ -82,8 +75,6 @@ namespace ChatSystem.Bootstrap
         
         private void CreateToolSets()
         {
-            LogDebug("Creating tool sets");
-            
             userToolSet = new UserToolSet();
             travelToolSet = new TravelToolSet();
             
@@ -93,8 +84,6 @@ namespace ChatSystem.Bootstrap
         
         private void CreateServices()
         {
-            LogDebug("Creating orchestration services");
-            
             llmOrchestrator = new LLMOrchestrator(agentExecutor);
             chatOrchestrator = new ChatOrchestrator(defaultConversationId);
             
@@ -112,21 +101,16 @@ namespace ChatSystem.Bootstrap
                         llmOrchestrator.RegisterAgentConfig(config);
                     }
                 }
-                LogDebug($"Registered {agentConfigurations.Length} agent configurations");
             }
         }
         
         private void CreateControllers()
         {
-            LogDebug("Creating controllers");
-            
             chatController = new ChatController(defaultConversationId);
         }
         
         private void ConfigureServices()
         {
-            LogDebug("Configuring service dependencies");
-            
             if (chatOrchestrator is ChatOrchestrator chatOrchestratorImpl)
             {
                 chatOrchestratorImpl.SetLLMOrchestrator(llmOrchestrator);
@@ -142,8 +126,6 @@ namespace ChatSystem.Bootstrap
         
         private void ConnectComponents()
         {
-            LogDebug("Connecting components");
-            
             ConnectViewToController();
         }
         
@@ -152,19 +134,16 @@ namespace ChatSystem.Bootstrap
             if (chatView != null && chatController != null)
             {
                 chatView.SetController(chatController);
-                LogDebug("ChatView connected to ChatController");
             }
             else
             {
-                LogWarning("ChatView or ChatController is null - view connection skipped");
+                LoggingService.LogWarning("ChatView or ChatController is null - view connection skipped");
             }
         }
         
         private void CreateDebugObjectsIfEnabled()
         {
             if (!createDebugObjects) return;
-            
-            LogDebug("Creating debug objects");
             
             CreateChatOrchestratorDebugObject();
             CreateLLMOrchestratorDebugObject();
@@ -218,69 +197,6 @@ namespace ChatSystem.Bootstrap
             
             ServiceInfoDebug infoComponent = serviceObject.AddComponent<ServiceInfoDebug>();
             infoComponent.Initialize(serviceName, serviceType);
-        }
-        
-        public IChatController GetChatController()
-        {
-            return chatController;
-        }
-        
-        public IChatOrchestrator GetChatOrchestrator()
-        {
-            return chatOrchestrator;
-        }
-        
-        public ILLMOrchestrator GetLLMOrchestrator()
-        {
-            return llmOrchestrator;
-        }
-        
-        public IContextManager GetContextManager()
-        {
-            return contextManager;
-        }
-        
-        public IAgentExecutor GetAgentExecutor()
-        {
-            return agentExecutor;
-        }
-        
-        public IPersistenceService GetPersistenceService()
-        {
-            return persistenceService;
-        }
-        
-        public ChatView GetChatView()
-        {
-            return chatView;
-        }
-        
-        private void LogDebug(string message)
-        {
-            if (enableDebugLogs)
-            {
-                Debug.Log($"[DependencyBootstrap] {message}");
-            }
-        }
-        
-        private void LogInfo(string message)
-        {
-            Debug.Log($"[DependencyBootstrap] {message}");
-        }
-        
-        private void LogWarning(string message)
-        {
-            Debug.LogWarning($"[DependencyBootstrap] WARNING: {message}");
-        }
-        
-        private void LogError(string message)
-        {
-            Debug.LogError($"[DependencyBootstrap] ERROR: {message}");
-        }
-        
-        private void OnDestroy()
-        {
-            LogDebug("DependencyBootstrap cleanup");
         }
     }
 }
