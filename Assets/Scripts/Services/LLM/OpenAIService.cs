@@ -7,6 +7,7 @@ using UnityEngine;
 using ChatSystem.Models.LLM;
 using ChatSystem.Models.Context;
 using ChatSystem.Models.Tools;
+using ChatSystem.Models.LLM.OpenAI;
 using ChatSystem.Services.Logging;
 using ChatSystem.Enums;
 
@@ -21,22 +22,17 @@ namespace ChatSystem.Services.LLM
                 LoggingService.LogInfo($"Making OpenAI API call to model: {request.model}");
                 
                 string jsonPayload = BuildOpenAIPayload(request);
-                LoggingService.LogInfo($"OpenAI Payload: {jsonPayload}");
                 
-                UnityWebRequest webRequest = new UnityWebRequest(baseUrl, "POST");
-                byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonPayload);
-                webRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
-                webRequest.downloadHandler = new DownloadHandlerBuffer();
+                LoggingService.LogDebug($"Making OpenAI API call with PAYLOAD: {jsonPayload}");
                 
-                webRequest.SetRequestHeader("Content-Type", "application/json");
-                webRequest.SetRequestHeader("Authorization", $"Bearer {apiKey}");
+                UnityWebRequest webRequest = CreateWebRequest(jsonPayload, apiKey, baseUrl);
                 
                 await SendWebRequestAsync(webRequest);
                 
                 if (webRequest.result == UnityWebRequest.Result.Success)
                 {
                     string responseText = webRequest.downloadHandler.text;
-                    LoggingService.LogInfo("OpenAI API call successful, response:"+responseText);
+                    LoggingService.LogInfo("OpenAI API call successful");
                     return ParseOpenAIResponse(responseText, request.model);
                 }
                 else
@@ -53,118 +49,78 @@ namespace ChatSystem.Services.LLM
             }
         }
         
+        private static UnityWebRequest CreateWebRequest(string jsonPayload, string apiKey, string baseUrl)
+        {
+            UnityWebRequest webRequest = new UnityWebRequest(baseUrl, "POST");
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonPayload);
+            webRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            webRequest.downloadHandler = new DownloadHandlerBuffer();
+            
+            webRequest.SetRequestHeader("Content-Type", "application/json");
+            webRequest.SetRequestHeader("Authorization", $"Bearer {apiKey}");
+            
+            return webRequest;
+        }
+        
         private static string BuildOpenAIPayload(LLMRequest request)
         {
             StringBuilder sb = new StringBuilder();
             sb.Append("{");
             sb.Append($"\"model\":\"{request.model}\",");
-            sb.Append($"\"temperature\":{request.temperature.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)},");
-            sb.Append($"\"max_completion_tokens\":{request.maxTokens}");
+            sb.Append($"\"temperature\":{request.temperature.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}");
             
+            AppendMessages(sb, request.messages);
+            AppendTools(sb, request.tools);
+            
+            sb.Append("}");
+            return sb.ToString();
+        }
+        
+        private static void AppendMessages(StringBuilder sb, List<Message> messages)
+        {
             sb.Append(",\"messages\":[");
-            for (int i = 0; i < request.messages.Count; i++)
+            for (int i = 0; i < messages.Count; i++)
             {
                 if (i > 0) sb.Append(",");
-                Message msg = request.messages[i];
+                Message msg = messages[i];
                 sb.Append("{");
                 sb.Append($"\"role\":\"{GetOpenAIRole(msg.role)}\",");
                 sb.Append($"\"content\":\"{EscapeJsonString(msg.content)}\"");
                 sb.Append("}");
             }
             sb.Append("]");
-            
-            if (request.tools != null && request.tools.Count > 0)
+        }
+        
+        private static void AppendTools(StringBuilder sb, List<ToolConfiguration> tools)
+        {
+            if (tools != null && tools.Count > 0)
             {
                 sb.Append(",\"tools\":[");
-                for (int i = 0; i < request.tools.Count; i++)
+                for (int i = 0; i < tools.Count; i++)
                 {
                     if (i > 0) sb.Append(",");
-                    sb.Append(request.tools[i].ToOpenAIFormat());
+                    sb.Append(tools[i].ToOpenAIFormat());
                 }
                 sb.Append("]");
                 sb.Append(",\"tool_choice\":\"auto\"");
             }
-            
-            sb.Append("}");
-            return sb.ToString();
         }
         
         private static LLMResponse ParseOpenAIResponse(string responseText, string model)
         {
             try
             {
-                OpenAIResponseData response = ParseOpenAIJson(responseText);
+                LoggingService.LogDebug($" OpenAI response: {responseText}");
+
+                OpenAIResponse response = JsonUtility.FromJson<OpenAIResponse>(responseText);
                 
-                string content = string.Empty;
-                List<ToolCall> toolCalls = null;
-                int outputTokens = 0;
-                bool hasValidContent = false;
+                string content = ExtractContent(response);
+                List<ToolCall> toolCalls = ExtractToolCalls(response);
+                int outputTokens = ExtractTokenCount(response);
                 
-                if (response.choices != null && response.choices.Count > 0)
-                {
-                    OpenAIChoice choice = response.choices[0];
-                    string messageContent = choice.message?.content;
-                    
-                    LoggingService.LogInfo($"Raw message content: '{messageContent}' (length: {messageContent?.Length ?? 0})");
-                    
-                    if (!string.IsNullOrWhiteSpace(messageContent) && messageContent != "null")
-                    {
-                        content = UnescapeJsonString(messageContent.Trim());
-                        hasValidContent = true;
-                        LoggingService.LogInfo($"Valid content found, final length: {content.Length}");
-                    }
-                    else
-                    {
-                        LoggingService.LogWarning($"No valid content found. Raw content: '{messageContent}'");
-                    }
-                    
-                    if (choice.message?.tool_calls != null && choice.message.tool_calls.Count > 0)
-                    {
-                        toolCalls = new List<ToolCall>();
-                        foreach (OpenAIToolCall toolCall in choice.message.tool_calls)
-                        {
-                            try
-                            {
-                                Dictionary<string, object> args = SimpleJsonParser.ParseArguments(toolCall.function.arguments);
-                                toolCalls.Add(new ToolCall(toolCall.function.name, args)
-                                {
-                                    id = toolCall.id
-                                });
-                            }
-                            catch (Exception ex)
-                            {
-                                LoggingService.LogError($"Failed to parse tool call arguments: {ex.Message}");
-                            }
-                        }
-                    }
-                }
+                bool success = HasValidResponse(content, toolCalls);
                 
-                if (response.usage != null)
-                {
-                    outputTokens = response.usage.completion_tokens;
-                }
-                
-                bool success = hasValidContent || (toolCalls != null && toolCalls.Count > 0);
-                
-                if (!success)
-                {
-                    LoggingService.LogWarning("OpenAI response has no valid content or tool calls - applying fallback");
-                    content = "¡Hola Santiago! Me encanta que quieras viajar a China. Es un destino fascinante con una cultura milenaria. ¿Hay alguna región específica de China que te interese más? ¿Prefieres ciudades como Beijing y Shanghai, o te llama más la atención algo como la Gran Muralla o los paisajes de Guilin?";
-                    success = true;
-                    hasValidContent = true;
-                }
-                
-                LoggingService.LogInfo($"Final response - Success: {success}, Content length: {content?.Length ?? 0}, Tool calls: {toolCalls?.Count ?? 0}");
-                
-                return new LLMResponse
-                {
-                    content = content,
-                    toolCalls = toolCalls,
-                    model = model,
-                    outputTokens = outputTokens,
-                    success = success,
-                    timestamp = DateTime.UtcNow
-                };
+                return CreateSuccessResponse(content, toolCalls, model, outputTokens, success);
             }
             catch (Exception ex)
             {
@@ -173,207 +129,72 @@ namespace ChatSystem.Services.LLM
             }
         }
         
-        private static OpenAIResponseData ParseOpenAIJson(string json)
+        private static string ExtractContent(OpenAIResponse response)
         {
-            OpenAIResponseData response = new OpenAIResponseData();
-            
-            int choicesStart = json.IndexOf("\"choices\":[");
-            if (choicesStart != -1)
+            if (response.choices != null && response.choices.Count > 0)
             {
-                response.choices = new List<OpenAIChoice>();
-                int messageStart = json.IndexOf("\"message\":", choicesStart);
-                if (messageStart != -1)
+                string messageContent = response.choices[0].message.content;
+                if (!string.IsNullOrWhiteSpace(messageContent) && messageContent != "null")
                 {
-                    OpenAIChoice choice = new OpenAIChoice();
-                    choice.message = new OpenAIMessage();
-                    
-                    int contentStart = json.IndexOf("\"content\":", messageStart);
-                    if (contentStart != -1)
-                    {
-                        int valueStart = json.IndexOf(":", contentStart) + 1;
-                        
-                        while (valueStart < json.Length && (json[valueStart] == ' ' || json[valueStart] == '\t'))
-                        {
-                            valueStart++;
-                        }
-                        
-                        if (valueStart < json.Length && json[valueStart] == '"')
-                        {
-                            valueStart += 1;
-                            int contentEnd = FindJsonStringEnd(json, valueStart);
-                            if (contentEnd != -1 && contentEnd > valueStart)
-                            {
-                                choice.message.content = json.Substring(valueStart, contentEnd - valueStart);
-                                LoggingService.LogInfo($"Parsed content length: {choice.message.content.Length}");
-                            }
-                            else
-                            {
-                                LoggingService.LogWarning("Failed to find content end");
-                            }
-                        }
-                        else if (valueStart < json.Length)
-                        {
-                            int nullStart = json.IndexOf("null", valueStart);
-                            int commaPos = json.IndexOf(",", valueStart);
-                            int bracePos = json.IndexOf("}", valueStart);
-                            
-                            int nextDelimiter = Math.Min(
-                                commaPos == -1 ? int.MaxValue : commaPos,
-                                bracePos == -1 ? int.MaxValue : bracePos
-                            );
-                            
-                            if (nullStart != -1 && nullStart < nextDelimiter)
-                            {
-                                choice.message.content = null;
-                            }
-                        }
-                    }
-                    
-                    int toolCallsStart = json.IndexOf("\"tool_calls\":", messageStart);
-                    if (toolCallsStart != -1)
-                    {
-                        choice.message.tool_calls = ParseToolCalls(json, toolCallsStart);
-                    }
-                    
-                    response.choices.Add(choice);
+                    return UnescapeJsonString(messageContent.Trim());
                 }
             }
-            
-            int usageStart = json.IndexOf("\"usage\":{");
-            if (usageStart != -1)
-            {
-                response.usage = new OpenAIUsage();
-                int completionTokensStart = json.IndexOf("\"completion_tokens\":", usageStart);
-                if (completionTokensStart != -1)
-                {
-                    completionTokensStart += 20;
-                    int tokenEnd = json.IndexOf(",", completionTokensStart);
-                    if (tokenEnd == -1) tokenEnd = json.IndexOf("}", completionTokensStart);
-                    if (tokenEnd != -1)
-                    {
-                        string tokenStr = json.Substring(completionTokensStart, tokenEnd - completionTokensStart);
-                        if (int.TryParse(tokenStr, out int tokens))
-                        {
-                            response.usage.completion_tokens = tokens;
-                        }
-                    }
-                }
-            }
-            
-            return response;
+            return string.Empty;
         }
         
-        private static int FindJsonStringEnd(string json, int start)
+        private static List<ToolCall> ExtractToolCalls(OpenAIResponse response)
         {
-            bool escaped = false;
-            for (int i = start; i < json.Length; i++)
+            if (response.choices == null || response.choices.Count == 0) return null;
+            
+            List<OpenAIToolCall> apiToolCalls = response.choices[0].message.tool_calls;
+            if (apiToolCalls == null || apiToolCalls.Count == 0) return null;
+            
+            List<ToolCall> toolCalls = new List<ToolCall>();
+            foreach (OpenAIToolCall apiToolCall in apiToolCalls)
             {
-                char c = json[i];
-                if (escaped)
+                try
                 {
-                    escaped = false;
-                    continue;
+                    Dictionary<string, object> args = SimpleJsonParser.ParseArguments(apiToolCall.function.arguments);
+                    toolCalls.Add(new ToolCall(apiToolCall.function.name, args)
+                    {
+                        id = apiToolCall.id
+                    });
                 }
-                
-                if (c == '\\')
+                catch (Exception ex)
                 {
-                    escaped = true;
-                }
-                else if (c == '"')
-                {
-                    return i;
+                    LoggingService.LogError($"Failed to parse tool call arguments: {ex.Message}");
                 }
             }
-            return -1;
-        }
-        
-        private static List<OpenAIToolCall> ParseToolCalls(string json, int startIndex)
-        {
-            List<OpenAIToolCall> toolCalls = new List<OpenAIToolCall>();
-            
-            int arrayStart = json.IndexOf("[", startIndex);
-            if (arrayStart == -1) return toolCalls;
-            
-            int currentIndex = arrayStart + 1;
-            int bracketCount = 0;
-            bool inToolCall = false;
-            int toolCallStart = -1;
-            
-            for (int i = currentIndex; i < json.Length; i++)
-            {
-                char c = json[i];
-                
-                if (c == '{')
-                {
-                    if (!inToolCall)
-                    {
-                        inToolCall = true;
-                        toolCallStart = i;
-                    }
-                    bracketCount++;
-                }
-                else if (c == '}')
-                {
-                    bracketCount--;
-                    if (bracketCount == 0 && inToolCall)
-                    {
-                        string toolCallJson = json.Substring(toolCallStart, i - toolCallStart + 1);
-                        OpenAIToolCall toolCall = ParseSingleToolCall(toolCallJson);
-                        if (toolCall != null)
-                        {
-                            toolCalls.Add(toolCall);
-                        }
-                        inToolCall = false;
-                    }
-                }
-                else if (c == ']' && bracketCount == 0)
-                {
-                    break;
-                }
-            }
-            
             return toolCalls;
         }
         
-        private static OpenAIToolCall ParseSingleToolCall(string json)
+        private static int ExtractTokenCount(OpenAIResponse response)
         {
-            OpenAIToolCall toolCall = new OpenAIToolCall();
-            toolCall.function = new OpenAIFunction();
-            
-            int idStart = json.IndexOf("\"id\":\"");
-            if (idStart != -1)
+            return response.usage.completion_tokens;
+        }
+        
+        private static bool HasValidResponse(string content, List<ToolCall> toolCalls)
+        {
+            return !string.IsNullOrWhiteSpace(content) || (toolCalls != null && toolCalls.Count > 0);
+        }
+        
+        private static string GetFallbackResponse()
+        {
+            LoggingService.LogWarning("OpenAI response has no valid content or tool calls - applying fallback");
+            return "¡Hola Santiago! Me encanta que quieras viajar a China. Es un destino fascinante con una cultura milenaria. ¿Hay alguna región específica de China que te interese más? ¿Prefieres ciudades como Beijing y Shanghai, o te llama más la atención algo como la Gran Muralla o los paisajes de Guilin?";
+        }
+        
+        private static LLMResponse CreateSuccessResponse(string content, List<ToolCall> toolCalls, string model, int outputTokens, bool success)
+        {
+            return new LLMResponse
             {
-                idStart += 6;
-                int idEnd = json.IndexOf("\"", idStart);
-                if (idEnd != -1)
-                {
-                    toolCall.id = json.Substring(idStart, idEnd - idStart);
-                }
-            }
-            
-            int nameStart = json.IndexOf("\"name\":\"");
-            if (nameStart != -1)
-            {
-                nameStart += 8;
-                int nameEnd = json.IndexOf("\"", nameStart);
-                if (nameEnd != -1)
-                {
-                    toolCall.function.name = json.Substring(nameStart, nameEnd - nameStart);
-                }
-            }
-            
-            int argsStart = json.IndexOf("\"arguments\":\"");
-            if (argsStart != -1)
-            {
-                argsStart += 13;
-                int argsEnd = FindJsonStringEnd(json, argsStart);
-                if (argsEnd > argsStart)
-                {
-                    toolCall.function.arguments = json.Substring(argsStart, argsEnd - argsStart);
-                }
-            }
-            
-            return toolCall;
+                content = content,
+                toolCalls = toolCalls,
+                model = model,
+                outputTokens = outputTokens,
+                success = success,
+                timestamp = DateTime.UtcNow
+            };
         }
         
         private static string GetOpenAIRole(MessageRole role)
@@ -432,39 +253,5 @@ namespace ChatSystem.Services.LLM
                 await Task.Yield();
             }
         }
-    }
-    
-    public class OpenAIResponseData
-    {
-        public List<OpenAIChoice> choices;
-        public OpenAIUsage usage;
-    }
-    
-    public class OpenAIChoice
-    {
-        public OpenAIMessage message;
-    }
-    
-    public class OpenAIMessage
-    {
-        public string content;
-        public List<OpenAIToolCall> tool_calls;
-    }
-    
-    public class OpenAIToolCall
-    {
-        public string id;
-        public OpenAIFunction function;
-    }
-    
-    public class OpenAIFunction
-    {
-        public string name;
-        public string arguments;
-    }
-    
-    public class OpenAIUsage
-    {
-        public int completion_tokens;
     }
 }

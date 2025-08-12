@@ -37,7 +37,6 @@ namespace ChatSystem.Controllers
             }
 
             currentContext = new ConversationContext(conversationId);
-            LogConversationInitialized(conversationId);
         }
 
         public void SetResponseTarget(IResponsable target)
@@ -81,17 +80,13 @@ namespace ChatSystem.Controllers
         {
             AddUserMessageToContext(messageText);
             
-            LoggingService.LogDebug($"[ChatController] Checking orchestrator availability. Is null: {chatOrchestrator == null}");
-            
             if (chatOrchestrator != null)
             {
-                LoggingService.LogInfo("[ChatController] Using orchestrator path");
                 await ProcessWithOrchestrator(messageText);
             }
             else
             {
-                LoggingService.LogWarning("[ChatController] ChatOrchestrator is null - falling back to simulation");
-                await ProcessWithSimulation(messageText);
+                LoggingService.LogError($"[ChatController] ChatOrchestrator is null");
             }
         }
 
@@ -99,14 +94,12 @@ namespace ChatSystem.Controllers
         {
             try
             {
-                LoggingService.LogDebug($"[ChatController] Starting orchestrator processing for message: {messageText}");
-                
                 LLMResponse response = await chatOrchestrator.ProcessUserMessageAsync(
                     currentContext.conversationId, 
                     messageText
                 );
 
-                LoggingService.LogDebug($"[ChatController] Orchestrator response received. Success: {response.success}, Content empty: {string.IsNullOrEmpty(response.content)}, Error: {response.errorMessage}");
+                LoggingService.LogDebug($"[ChatController] Orchestrator response received. Success: {response.success}");
 
                 if (response.success && !string.IsNullOrEmpty(response.content))
                 {
@@ -130,13 +123,6 @@ namespace ChatSystem.Controllers
             }
         }
 
-        private async Task ProcessWithSimulation(string messageText)
-        {
-            LoggingService.LogInfo("[ChatController] Starting simulation processing");
-            await SimulateProcessing();
-            await GenerateSimulatedResponse(messageText);
-        }
-
         private void AddUserMessageToContext(string messageText)
         {
             currentContext.AddUserMessage(messageText);
@@ -145,30 +131,6 @@ namespace ChatSystem.Controllers
             NotifyResponseTarget(userMessage);
             
             LogUserMessage(messageText);
-        }
-
-        private async Task SimulateProcessing()
-        {
-            await Task.Delay(1000);
-        }
-
-        private async Task GenerateSimulatedResponse(string userMessage)
-        {
-            string simulatedResponse = CreateSimulatedResponse(userMessage);
-            
-            currentContext.AddAssistantMessage(simulatedResponse);
-            
-            Message assistantMessage = GetLastMessage();
-            NotifyResponseTarget(assistantMessage);
-            
-            LogAssistantResponse(simulatedResponse);
-            
-            await Task.CompletedTask;
-        }
-
-        private string CreateSimulatedResponse(string userMessage)
-        {
-            return $"I received your message: '{userMessage}'. This is a simulated response from the assistant.";
         }
 
         private Message GetLastMessage()
@@ -200,11 +162,6 @@ namespace ChatSystem.Controllers
         {
             InitializeConversation(defaultConversationId);
             LogControllerInitialized();
-        }
-
-        private void LogConversationInitialized(string conversationId)
-        {
-            LoggingService.LogInfo($"[ChatController] Conversation initialized: {conversationId}");
         }
 
         private void LogUserMessage(string message)
