@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43ed1e55f7515cc4a9e118ddca548f65, type: 3}
+  m_Name: GeneralAgentConfig
+  m_EditorClassIdentifier: 
+  agentId: 0
+  agentName: General Answer
+  token: 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
+  model: COMPLETAR!miniO1
+  serviceProvider: OpenAI
+  serviceUrl: https://api.openai.com/v1/chat/completions
+  toolConfigs: []
