@@ -15,14 +15,13 @@ MonoBehaviour:
   agentId: 0
   agentName: General Answer
   description: Base Model Responses
-  token: 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
+  token: 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
   serviceUrl: https://api.openai.com/v1/chat/completions
   modelConfig: {fileID: 11400000, guid: e32e072598c4e694ea426df2fb2bcb4c, type: 2}
   systemPrompt: {fileID: 11400000, guid: 88c4ff789ee2a8e4abde51e0753cf1d6, type: 2}
   contextPrompts: []
-  availableTools:
-  - {fileID: 11400000, guid: bda898df686a38a42a90ce9457cef786, type: 2}
-  canExecuteTools: 1
+  availableTools: []
+  canExecuteTools: 0
   maxToolCalls: 5
   maxResponseTokens: 2048
   streamResponses: 0
