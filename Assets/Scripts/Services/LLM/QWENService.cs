@@ -43,13 +43,13 @@ namespace ChatSystem.Services.LLM
                 else
                 {
                     string error = $"QWEN API Error: {webRequest.error} - {webRequest.downloadHandler.text}";
-                    LoggingService.Error(error);
+                    LoggingService.LogError(error);
                     return CreateErrorResponse(request.model, error);
                 }
             }
             catch (Exception ex)
             {
-                LoggingService.Error($"QWEN API Exception: {ex.Message}");
+                LoggingService.LogError($"QWEN API Exception: {ex.Message}");
                 return CreateErrorResponse(request.model, ex.Message);
             }
         }
@@ -136,7 +136,7 @@ namespace ChatSystem.Services.LLM
             }
             catch (Exception ex)
             {
-                LoggingService.Error($"Failed to parse QWEN response: {ex.Message}");
+                LoggingService.LogError($"Failed to parse QWEN response: {ex.Message}");
                 return CreateErrorResponse(model, "Failed to parse API response");
             }
         }

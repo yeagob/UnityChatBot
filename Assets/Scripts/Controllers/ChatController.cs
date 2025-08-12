@@ -3,8 +3,10 @@ using System.Threading.Tasks;
 using UnityEngine;
 using ChatSystem.Controllers.Interfaces;
 using ChatSystem.Models.Context;
+using ChatSystem.Models.LLM;
 using ChatSystem.Views.Interfaces;
 using ChatSystem.Services.Orchestrators.Interfaces;
+using ChatSystem.Services.Logging;
 
 namespace ChatSystem.Controllers
 {
@@ -24,6 +26,7 @@ namespace ChatSystem.Controllers
         public void SetChatOrchestrator(IChatOrchestrator orchestrator)
         {
             chatOrchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
+            LoggingService.LogInfo($"[ChatController] ChatOrchestrator set successfully: {orchestrator.GetType().Name}");
         }
 
         public void InitializeConversation(string conversationId)
@@ -40,12 +43,16 @@ namespace ChatSystem.Controllers
         public void SetResponseTarget(IResponsable target)
         {
             responseTarget = target;
+            LoggingService.LogDebug($"[ChatController] Response target set: {target?.GetType().Name ?? "null"}");
         }
 
         public async Task ProcessUserMessageAsync(string messageText)
         {
             if (string.IsNullOrWhiteSpace(messageText) || currentContext == null)
+            {
+                LoggingService.LogWarning("[ChatController] Invalid message or context is null");
                 return;
+            }
 
             try
             {
@@ -74,12 +81,16 @@ namespace ChatSystem.Controllers
         {
             AddUserMessageToContext(messageText);
             
+            LoggingService.LogDebug($"[ChatController] Checking orchestrator availability. Is null: {chatOrchestrator == null}");
+            
             if (chatOrchestrator != null)
             {
+                LoggingService.LogInfo("[ChatController] Using orchestrator path");
                 await ProcessWithOrchestrator(messageText);
             }
             else
             {
+                LoggingService.LogWarning("[ChatController] ChatOrchestrator is null - falling back to simulation");
                 await ProcessWithSimulation(messageText);
             }
         }
@@ -88,30 +99,40 @@ namespace ChatSystem.Controllers
         {
             try
             {
-                var response = await chatOrchestrator.ProcessUserMessageAsync(
+                LoggingService.LogDebug($"[ChatController] Starting orchestrator processing for message: {messageText}");
+                
+                LLMResponse response = await chatOrchestrator.ProcessUserMessageAsync(
                     currentContext.conversationId, 
                     messageText
                 );
+
+                LoggingService.LogDebug($"[ChatController] Orchestrator response received. Success: {response.success}, Content empty: {string.IsNullOrEmpty(response.content)}, Error: {response.errorMessage}");
 
                 if (response.success && !string.IsNullOrEmpty(response.content))
                 {
                     currentContext.AddAssistantMessage(response.content);
                     NotifyResponseTarget(GetLastMessage());
                     LogAssistantResponse(response.content);
+                    LoggingService.LogInfo("[ChatController] Successfully processed message with orchestrator");
                 }
                 else
                 {
-                    HandleOrchestratorError(response.errorMessage);
+                    string errorMsg = response.errorMessage ?? "Unknown orchestrator error";
+                    LoggingService.LogError($"[ChatController] Orchestrator failed. Success: {response.success}, Error: {errorMsg}");
+                    HandleOrchestratorError(errorMsg);
                 }
             }
             catch (Exception ex)
             {
+                LoggingService.LogError($"[ChatController] Exception in ProcessWithOrchestrator: {ex.Message}");
+                LoggingService.LogError($"[ChatController] Stack trace: {ex.StackTrace}");
                 HandleProcessingError(ex);
             }
         }
 
         private async Task ProcessWithSimulation(string messageText)
         {
+            LoggingService.LogInfo("[ChatController] Starting simulation processing");
             await SimulateProcessing();
             await GenerateSimulatedResponse(messageText);
         }
@@ -165,14 +186,14 @@ namespace ChatSystem.Controllers
         {
             string fullError = $"Orchestrator error: {errorMessage}";
             responseTarget?.ReceiveError(fullError);
-            LogError(fullError);
+            LoggingService.LogError($"[ChatController] {fullError}");
         }
 
         private void HandleProcessingError(Exception ex)
         {
             string errorMessage = $"Error processing message: {ex.Message}";
             responseTarget?.ReceiveError(errorMessage);
-            LogError(errorMessage);
+            LoggingService.LogError($"[ChatController] {errorMessage}");
         }
 
         private void InitializeController()
@@ -183,27 +204,22 @@ namespace ChatSystem.Controllers
 
         private void LogConversationInitialized(string conversationId)
         {
-            Debug.Log($"[ChatController] Conversation initialized: {conversationId}");
+            LoggingService.LogInfo($"[ChatController] Conversation initialized: {conversationId}");
         }
 
         private void LogUserMessage(string message)
         {
-            Debug.Log($"[ChatController] User message received: {message}");
+            LoggingService.LogInfo($"[ChatController] User message received: {message}");
         }
 
         private void LogAssistantResponse(string response)
         {
-            Debug.Log($"[ChatController] Assistant response generated: {response}");
+            LoggingService.LogInfo($"[ChatController] Assistant response generated: {response}");
         }
 
         private void LogControllerInitialized()
         {
-            Debug.Log("[ChatController] Chat Controller initialized");
-        }
-
-        private void LogError(string errorMessage)
-        {
-            Debug.LogError($"[ChatController] ERROR: {errorMessage}");
+            LoggingService.LogInfo("[ChatController] Chat Controller initialized");
         }
     }
 }

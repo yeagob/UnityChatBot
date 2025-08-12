@@ -38,19 +38,19 @@ namespace ChatSystem.Services.LLM
                 if (webRequest.result == UnityWebRequest.Result.Success)
                 {
                     string responseText = webRequest.downloadHandler.text;
-                    LoggingService.LogInfo("OpenAI API call successful");
+                    LoggingService.LogInfo("OpenAI API call successful, response:"+responseText);
                     return ParseOpenAIResponse(responseText, request.model);
                 }
                 else
                 {
                     string error = $"OpenAI API Error: {webRequest.error} - {webRequest.downloadHandler.text}";
-                    LoggingService.Error(error);
+                    LoggingService.LogError(error);
                     return CreateErrorResponse(request.model, error);
                 }
             }
             catch (Exception ex)
             {
-                LoggingService.Error($"OpenAI API Exception: {ex.Message}");
+                LoggingService.LogError($"OpenAI API Exception: {ex.Message}");
                 return CreateErrorResponse(request.model, ex.Message);
             }
         }
@@ -61,7 +61,9 @@ namespace ChatSystem.Services.LLM
             sb.Append("{");
             sb.Append($"\"model\":\"{request.model}\",");
             sb.Append($"\"temperature\":{request.temperature.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)},");
-            sb.Append($"\"max_completion_tokens\":{request.maxTokens}");
+            
+            int maxTokens = Math.Min(request.maxTokens, 512);
+            sb.Append($"\"max_completion_tokens\":{maxTokens}");
             
             sb.Append(",\"messages\":[");
             for (int i = 0; i < request.messages.Count; i++)
@@ -100,22 +102,36 @@ namespace ChatSystem.Services.LLM
                 string content = string.Empty;
                 List<ToolCall> toolCalls = null;
                 int outputTokens = 0;
+                bool hasValidContent = false;
                 
                 if (response.choices != null && response.choices.Count > 0)
                 {
                     OpenAIChoice choice = response.choices[0];
-                    content = choice.message?.content ?? string.Empty;
+                    string messageContent = choice.message?.content;
+                    
+                    if (!string.IsNullOrEmpty(messageContent) && messageContent != "null")
+                    {
+                        content = messageContent;
+                        hasValidContent = true;
+                    }
                     
                     if (choice.message?.tool_calls != null && choice.message.tool_calls.Count > 0)
                     {
                         toolCalls = new List<ToolCall>();
                         foreach (OpenAIToolCall toolCall in choice.message.tool_calls)
                         {
-                            Dictionary<string, object> args = SimpleJsonParser.ParseArguments(toolCall.function.arguments);
-                            toolCalls.Add(new ToolCall(toolCall.function.name, args)
+                            try
                             {
-                                id = toolCall.id
-                            });
+                                Dictionary<string, object> args = SimpleJsonParser.ParseArguments(toolCall.function.arguments);
+                                toolCalls.Add(new ToolCall(toolCall.function.name, args)
+                                {
+                                    id = toolCall.id
+                                });
+                            }
+                            catch (Exception ex)
+                            {
+                                LoggingService.LogError($"Failed to parse tool call arguments: {ex.Message}");
+                            }
                         }
                     }
                 }
@@ -125,19 +141,28 @@ namespace ChatSystem.Services.LLM
                     outputTokens = response.usage.completion_tokens;
                 }
                 
+                bool success = hasValidContent || (toolCalls != null && toolCalls.Count > 0);
+                
+                if (!success)
+                {
+                    LoggingService.LogWarning("OpenAI response has no valid content or tool calls");
+                    content = "I apologize, but I couldn't generate a proper response. Please try rephrasing your question.";
+                    success = true;
+                }
+                
                 return new LLMResponse
                 {
                     content = content,
                     toolCalls = toolCalls,
                     model = model,
                     outputTokens = outputTokens,
-                    success = true,
+                    success = success,
                     timestamp = DateTime.UtcNow
                 };
             }
             catch (Exception ex)
             {
-                LoggingService.Error($"Failed to parse OpenAI response: {ex.Message}");
+                LoggingService.LogError($"Failed to parse OpenAI response: {ex.Message}");
                 return CreateErrorResponse(model, "Failed to parse API response");
             }
         }
@@ -156,15 +181,28 @@ namespace ChatSystem.Services.LLM
                     OpenAIChoice choice = new OpenAIChoice();
                     choice.message = new OpenAIMessage();
                     
-                    int contentStart = json.IndexOf("\"content\":\"", messageStart);
+                    int contentStart = json.IndexOf("\"content\":", messageStart);
                     if (contentStart != -1)
                     {
-                        contentStart += 11;
-                        int contentEnd = json.IndexOf("\",", contentStart);
-                        if (contentEnd == -1) contentEnd = json.IndexOf("\"}", contentStart);
-                        if (contentEnd != -1)
+                        int valueStart = json.IndexOf(":", contentStart) + 1;
+                        valueStart = json.IndexOf("\"", valueStart);
+                        
+                        if (valueStart != -1)
                         {
-                            choice.message.content = json.Substring(contentStart, contentEnd - contentStart);
+                            valueStart += 1;
+                            int contentEnd = FindJsonStringEnd(json, valueStart);
+                            if (contentEnd != -1)
+                            {
+                                choice.message.content = json.Substring(valueStart, contentEnd - valueStart);
+                            }
+                        }
+                        else
+                        {
+                            int nullStart = json.IndexOf("null", contentStart);
+                            if (nullStart != -1 && nullStart < json.IndexOf(",", contentStart))
+                            {
+                                choice.message.content = null;
+                            }
                         }
                     }
                     
@@ -200,6 +238,30 @@ namespace ChatSystem.Services.LLM
             }
             
             return response;
+        }
+        
+        private static int FindJsonStringEnd(string json, int start)
+        {
+            bool escaped = false;
+            for (int i = start; i < json.Length; i++)
+            {
+                char c = json[i];
+                if (escaped)
+                {
+                    escaped = false;
+                    continue;
+                }
+                
+                if (c == '\\')
+                {
+                    escaped = true;
+                }
+                else if (c == '"')
+                {
+                    return i;
+                }
+            }
+            return -1;
         }
         
         private static List<OpenAIToolCall> ParseToolCalls(string json, int startIndex)
@@ -278,7 +340,7 @@ namespace ChatSystem.Services.LLM
             if (argsStart != -1)
             {
                 argsStart += 13;
-                int argsEnd = json.LastIndexOf("\"");
+                int argsEnd = FindJsonStringEnd(json, argsStart);
                 if (argsEnd > argsStart)
                 {
                     toolCall.function.arguments = json.Substring(argsStart, argsEnd - argsStart);

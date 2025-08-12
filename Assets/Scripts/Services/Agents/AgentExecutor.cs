@@ -32,7 +32,7 @@ namespace ChatSystem.Services.Agents
             
             if (!agentConfigs.TryGetValue(agentId, out AgentConfig agentConfig))
             {
-                LoggingService.Error($"Agent {agentId} not found");
+                LoggingService.LogError($"Agent {agentId} not found");
                 return CreateErrorResponse(agentId, "Agent configuration not found");
             }
             
@@ -71,7 +71,7 @@ namespace ChatSystem.Services.Agents
             }
             catch (Exception ex)
             {
-                LoggingService.Error($"Agent {agentId} execution failed: {ex.Message}");
+                LoggingService.LogError($"Agent {agentId} execution failed: {ex.Message}");
                 return CreateErrorResponse(agentId, ex.Message);
             }
         }
@@ -80,7 +80,7 @@ namespace ChatSystem.Services.Agents
         {
             if (agentConfig == null || string.IsNullOrEmpty(agentConfig.agentId))
             {
-                LoggingService.Error("Invalid agent configuration");
+                LoggingService.LogError("Invalid agent configuration");
                 return;
             }
             
@@ -92,7 +92,7 @@ namespace ChatSystem.Services.Agents
         {
             if (toolSet == null)
             {
-                LoggingService.Error("Cannot register null ToolSet");
+                LoggingService.LogError("Cannot register null ToolSet");
                 return;
             }
             
