@@ -23,7 +23,6 @@ namespace ChatSystem.Models.Agents
         public bool fallbackToSimulation;
         public bool enabled;
         public int priority;
-        public List<string> requiredCapabilities;
         public ServiceProvider provider;
         public string modelName;
         public float temperature;
@@ -31,7 +30,6 @@ namespace ChatSystem.Models.Agents
         public AgentConfiguration()
         {
             toolConfigurations = new List<ToolConfiguration>();
-            requiredCapabilities = new List<string>();
             canExecuteTools = true;
             maxToolCalls = 5;
             maxResponseTokens = 2048;
@@ -60,8 +58,7 @@ namespace ChatSystem.Models.Agents
             fallbackToSimulation = config.fallbackToSimulation;
             enabled = config.enabled;
             priority = config.priority;
-            requiredCapabilities = new List<string>(config.requiredCapabilities);
-            
+
             if (config.modelConfig != null)
             {
                 provider = config.modelConfig.provider;
