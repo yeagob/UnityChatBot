@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ChatSystem.Configuration.ScriptableObjects;
 using ChatSystem.Enums;
 
@@ -47,10 +48,31 @@ namespace ChatSystem.Models.Tools
                 inputSchema = new ToolSchema
                 {
                     type = config.function.parameters.type,
-                    properties = config.function.parameters.properties,
+                    properties = ConvertToParameterSchemas(config.function.parameters.properties),
                     required = config.function.parameters.required
                 };
             }
+        }
+        
+        private Dictionary<string, ParameterSchema> ConvertToParameterSchemas(
+            Dictionary<string, MCP.PropertyDefinition> properties)
+        {
+            if (properties == null) return null;
+            
+            Dictionary<string, ParameterSchema> result = new Dictionary<string, ParameterSchema>();
+            
+            foreach (var kvp in properties)
+            {
+                result[kvp.Key] = new ParameterSchema
+                {
+                    type = kvp.Value.type,
+                    description = kvp.Value.description,
+                    enumValues = kvp.Value.enumValues,
+                    defaultValue = kvp.Value.defaultValue
+                };
+            }
+            
+            return result;
         }
     }
 }

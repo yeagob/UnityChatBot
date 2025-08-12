@@ -15,6 +15,7 @@ using ChatSystem.Controllers.Interfaces;
 using ChatSystem.Views.Chat;
 using ChatSystem.Configuration.ScriptableObjects;
 using ChatSystem.Debugging;
+using ChatSystem.Enums;
 
 namespace ChatSystem.Bootstrap
 {
@@ -47,7 +48,7 @@ namespace ChatSystem.Bootstrap
         
         private void InitializeSystem()
         {
-            LoggingService.Initialize(enableDebugLogs ? Enums.LogLevel.Debug : Enums.LogLevel.Info);
+            LoggingService.Initialize(enableDebugLogs ? LogLevel.Debug : LogLevel.Info);
             LoggingService.LogInfo("Starting Dependency Bootstrap");
             
             CreateServices();
@@ -70,7 +71,7 @@ namespace ChatSystem.Bootstrap
             persistenceService = new PersistenceService();
             agentExecutor = new AgentExecutor();
             llmOrchestrator = new LLMOrchestrator(agentExecutor);
-            chatOrchestrator = new ChatOrchestrator(llmOrchestrator, contextManager, persistenceService);
+            chatOrchestrator = new ChatOrchestrator(defaultConversationId);
             
             RegisterToolSets();
             
@@ -113,6 +114,14 @@ namespace ChatSystem.Bootstrap
         private void ConfigureServices()
         {
             chatController.SetOrchestrator(chatOrchestrator);
+            
+            if (chatOrchestrator is ChatOrchestrator chatOrchestratorImpl)
+            {
+                chatOrchestratorImpl.SetLLMOrchestrator(llmOrchestrator);
+                chatOrchestratorImpl.SetContextManager(contextManager);
+                chatOrchestratorImpl.SetPersistenceService(persistenceService);
+            }
+            
             LoggingService.LogInfo("Services configured");
         }
         
@@ -125,7 +134,7 @@ namespace ChatSystem.Bootstrap
             }
             else
             {
-                LoggingService.Warning("No ChatView reference - running headless");
+                LoggingService.LogWarning("No ChatView reference - running headless");
             }
         }
         
@@ -152,7 +161,7 @@ namespace ChatSystem.Bootstrap
             GameObject serviceInfoDebug = new GameObject("[DEBUG] ServiceInfo");
             serviceInfoDebug.transform.SetParent(debugContainer.transform);
             ServiceInfoDebug serviceDebugComponent = serviceInfoDebug.AddComponent<ServiceInfoDebug>();
-            serviceDebugComponent.SetServices(agentExecutor, contextManager, persistenceService);
+            serviceDebugComponent.Initialize("Services", "Core Services");
             
             LoggingService.LogInfo("Debug objects created");
         }
