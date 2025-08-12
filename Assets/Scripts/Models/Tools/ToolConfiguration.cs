@@ -67,45 +67,45 @@ namespace ChatSystem.Models.Tools
             {
                 sb.Append($"\"description\":\"{EscapeJsonString(annotations.title)}\",");
             }
-            
-            if (inputSchema != null)
+            else
             {
-                sb.Append("\"parameters\":{");
-                sb.Append($"\"type\":\"{inputSchema.type}\",");
-                
-                if (inputSchema.properties != null && inputSchema.properties.Count > 0)
+                sb.Append($"\"description\":\"{toolName} function\",");
+            }
+            
+            sb.Append("\"parameters\":{");
+            sb.Append("\"type\":\"object\"");
+            
+            if (inputSchema != null && inputSchema.properties != null && inputSchema.properties.Count > 0)
+            {
+                sb.Append(",\"properties\":{");
+                bool first = true;
+                foreach (var prop in inputSchema.properties)
                 {
-                    sb.Append("\"properties\":{");
-                    bool first = true;
-                    foreach (var prop in inputSchema.properties)
+                    if (!first) sb.Append(",");
+                    sb.Append($"\"{prop.Key}\":{{");
+                    sb.Append($"\"type\":\"{prop.Value.type}\"");
+                    if (!string.IsNullOrEmpty(prop.Value.description))
                     {
-                        if (!first) sb.Append(",");
-                        sb.Append($"\"{prop.Key}\":{{");
-                        sb.Append($"\"type\":\"{prop.Value.type}\"");
-                        if (!string.IsNullOrEmpty(prop.Value.description))
-                        {
-                            sb.Append($",\"description\":\"{EscapeJsonString(prop.Value.description)}\"");
-                        }
-                        sb.Append("}");
-                        first = false;
+                        sb.Append($",\"description\":\"{EscapeJsonString(prop.Value.description)}\"");
                     }
                     sb.Append("}");
+                    first = false;
                 }
-                
-                if (inputSchema.required != null && inputSchema.required.Count > 0)
-                {
-                    sb.Append(",\"required\":[");
-                    for (int i = 0; i < inputSchema.required.Count; i++)
-                    {
-                        if (i > 0) sb.Append(",");
-                        sb.Append($"\"{inputSchema.required[i]}\"");
-                    }
-                    sb.Append("]");
-                }
-                
                 sb.Append("}");
             }
             
+            if (inputSchema != null && inputSchema.required != null && inputSchema.required.Count > 0)
+            {
+                sb.Append(",\"required\":[");
+                for (int i = 0; i < inputSchema.required.Count; i++)
+                {
+                    if (i > 0) sb.Append(",");
+                    sb.Append($"\"{inputSchema.required[i]}\"");
+                }
+                sb.Append("]");
+            }
+            
+            sb.Append("}");
             sb.Append("}");
             sb.Append("}");
             
