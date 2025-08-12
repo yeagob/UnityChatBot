@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using ChatSystem.Controllers.Interfaces;
 using ChatSystem.Models.Context;
+using ChatSystem.Models.LLM;
 using ChatSystem.Views.Interfaces;
 using ChatSystem.Services.Orchestrators.Interfaces;
 using ChatSystem.Services.Logging;
@@ -100,7 +101,7 @@ namespace ChatSystem.Controllers
             {
                 LoggingService.LogDebug($"[ChatController] Starting orchestrator processing for message: {messageText}");
                 
-                var response = await chatOrchestrator.ProcessUserMessageAsync(
+                LLMResponse response = await chatOrchestrator.ProcessUserMessageAsync(
                     currentContext.conversationId, 
                     messageText
                 );

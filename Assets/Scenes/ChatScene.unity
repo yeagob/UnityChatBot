@@ -395,6 +395,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9087766922154550491, guid: ff7fe91616fd2b94a9878822b62d395e, type: 3}
+      propertyPath: logLevel
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9087766922154550491, guid: ff7fe91616fd2b94a9878822b62d395e, type: 3}
       propertyPath: agentConfigurations.Array.size
       value: 1
       objectReference: {fileID: 0}

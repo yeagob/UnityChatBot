@@ -42,7 +42,7 @@ namespace ChatSystem.Services.Logging
             }
         }
         
-        public static void Error(string message)
+        public static void LogError(string message)
         {
             if (IsLogLevelEnabled(LogLevel.Error))
             {

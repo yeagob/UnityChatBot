@@ -38,19 +38,19 @@ namespace ChatSystem.Services.LLM
                 if (webRequest.result == UnityWebRequest.Result.Success)
                 {
                     string responseText = webRequest.downloadHandler.text;
-                    LoggingService.LogInfo("OpenAI API call successful");
+                    LoggingService.LogInfo("OpenAI API call successful, response:"+responseText);
                     return ParseOpenAIResponse(responseText, request.model);
                 }
                 else
                 {
                     string error = $"OpenAI API Error: {webRequest.error} - {webRequest.downloadHandler.text}";
-                    LoggingService.Error(error);
+                    LoggingService.LogError(error);
                     return CreateErrorResponse(request.model, error);
                 }
             }
             catch (Exception ex)
             {
-                LoggingService.Error($"OpenAI API Exception: {ex.Message}");
+                LoggingService.LogError($"OpenAI API Exception: {ex.Message}");
                 return CreateErrorResponse(request.model, ex.Message);
             }
         }
@@ -137,7 +137,7 @@ namespace ChatSystem.Services.LLM
             }
             catch (Exception ex)
             {
-                LoggingService.Error($"Failed to parse OpenAI response: {ex.Message}");
+                LoggingService.LogError($"Failed to parse OpenAI response: {ex.Message}");
                 return CreateErrorResponse(model, "Failed to parse API response");
             }
         }
