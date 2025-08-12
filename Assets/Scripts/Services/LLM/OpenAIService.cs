@@ -61,7 +61,7 @@ namespace ChatSystem.Services.LLM
             sb.Append("{");
             sb.Append($"\"model\":\"{request.model}\",");
             sb.Append($"\"temperature\":{request.temperature.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)},");
-            sb.Append($"\"max_tokens\":{request.maxTokens}");
+            sb.Append($"\"max_completion_tokens\":{request.maxTokens}");
             
             sb.Append(",\"messages\":[");
             for (int i = 0; i < request.messages.Count; i++)

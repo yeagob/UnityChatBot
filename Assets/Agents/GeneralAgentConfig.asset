@@ -15,8 +15,10 @@ MonoBehaviour:
   agentId: 0
   agentName: General Answer
   description: Base Model Responses
+  token: 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
+  serviceUrl: https://api.openai.com/v1/chat/completions
   modelConfig: {fileID: 11400000, guid: e32e072598c4e694ea426df2fb2bcb4c, type: 2}
-  systemPrompt: {fileID: 11400000, guid: 9f35b5b3a6665c54596f7b9d846d7a02, type: 2}
+  systemPrompt: {fileID: 11400000, guid: 88c4ff789ee2a8e4abde51e0753cf1d6, type: 2}
   contextPrompts: []
   availableTools:
   - {fileID: 11400000, guid: bda898df686a38a42a90ce9457cef786, type: 2}

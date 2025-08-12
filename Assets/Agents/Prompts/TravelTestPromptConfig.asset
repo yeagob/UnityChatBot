@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 964b27801f705bb4bbf8524574b68ddc, type: 3}
-  m_Name: TestPromptConfig
+  m_Name: TravelTestPromptConfig
   m_EditorClassIdentifier: 
   promptId: 0
   promptName: General 0.1
