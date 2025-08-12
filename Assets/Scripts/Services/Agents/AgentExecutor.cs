@@ -49,10 +49,15 @@ namespace ChatSystem.Services.Agents
                 
                 if (llmResponse.toolCalls != null && llmResponse.toolCalls.Count > 0)
                 {
+                    context.AddAssistantMessage(llmResponse.content, llmResponse.toolCalls);
+                    
                     List<ToolResponse> toolResponses = await ExecuteToolCallsAsync(
                         llmResponse.toolCalls, agentConfig.maxToolCalls);
                     
-                    context.AddToolMessages(toolResponses);
+                    foreach (ToolResponse toolResponse in toolResponses)
+                    {
+                        context.AddToolMessage(toolResponse.content, toolResponse.toolCallId);
+                    }
                     
                     LLMRequest followUpRequest = BuildLLMRequest(agentConfig, context);
                     llmResponse = await ExecuteLLMCallAsync(followUpRequest, agentConfig);
