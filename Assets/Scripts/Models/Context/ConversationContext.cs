@@ -31,6 +31,19 @@ namespace ChatSystem.Models.Context
             AddMessage(MessageRole.Assistant, content);
         }
         
+        public void AddAssistantMessage(string content, List<ToolCall> toolCalls)
+        {
+            messages.Add(new Message(
+                Guid.NewGuid().ToString(),
+                MessageRole.Assistant,
+                MessageType.ToolCall,
+                content,
+                toolCalls,
+                conversationId
+            ));
+            lastUpdated = DateTime.UtcNow;
+        }
+        
         public void AddSystemMessage(string content)
         {
             AddMessage(MessageRole.System, content);
