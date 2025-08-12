@@ -113,7 +113,7 @@ namespace ChatSystem.Bootstrap
         
         private void ConfigureServices()
         {
-            chatController.SetOrchestrator(chatOrchestrator);
+            chatController.SetChatOrchestrator(chatOrchestrator);
             
             if (chatOrchestrator is ChatOrchestrator chatOrchestratorImpl)
             {

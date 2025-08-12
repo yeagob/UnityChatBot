@@ -89,7 +89,7 @@ namespace ChatSystem.Controllers
             try
             {
                 var response = await chatOrchestrator.ProcessUserMessageAsync(
-                    currentContext.ConversationId, 
+                    currentContext.conversationId, 
                     messageText
                 );
 
@@ -152,7 +152,7 @@ namespace ChatSystem.Controllers
 
         private Message GetLastMessage()
         {
-            var messages = currentContext.GetMessages();
+            var messages = currentContext.GetAllMessages();
             return messages[messages.Count - 1];
         }
 

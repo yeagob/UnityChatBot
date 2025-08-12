@@ -32,7 +32,7 @@ namespace ChatSystem.Services.Agents
             
             if (!agentConfigs.TryGetValue(agentId, out AgentConfig agentConfig))
             {
-                LoggingService.LogError($"Agent {agentId} not found");
+                LoggingService.Error($"Agent {agentId} not found");
                 return CreateErrorResponse(agentId, "Agent configuration not found");
             }
             
@@ -71,7 +71,7 @@ namespace ChatSystem.Services.Agents
             }
             catch (Exception ex)
             {
-                LoggingService.LogError($"Agent {agentId} execution failed: {ex.Message}");
+                LoggingService.Error($"Agent {agentId} execution failed: {ex.Message}");
                 return CreateErrorResponse(agentId, ex.Message);
             }
         }
@@ -80,7 +80,7 @@ namespace ChatSystem.Services.Agents
         {
             if (agentConfig == null || string.IsNullOrEmpty(agentConfig.agentId))
             {
-                LoggingService.LogError("Invalid agent configuration");
+                LoggingService.Error("Invalid agent configuration");
                 return;
             }
             
@@ -92,7 +92,7 @@ namespace ChatSystem.Services.Agents
         {
             if (toolSet == null)
             {
-                LoggingService.LogError("Cannot register null ToolSet");
+                LoggingService.Error("Cannot register null ToolSet");
                 return;
             }
             
@@ -137,7 +137,6 @@ namespace ChatSystem.Services.Agents
                 maxTokens = agentConfig.maxResponseTokens,
                 temperature = agentConfig.modelConfig?.temperature ?? 0.7f,
                 model = agentConfig.modelConfig?.modelName ?? "default",
-                provider = agentConfig.modelConfig?.provider ?? ServiceProvider.Custom
             };
         }
         
@@ -159,12 +158,11 @@ namespace ChatSystem.Services.Agents
                     new ToolCall
                     {
                         id = Guid.NewGuid().ToString(),
-                        name = ExtractToolName(toolToCall),
-                        arguments = "{}"
+                        name = ExtractToolName(toolToCall)
                     }
                 };
                 
-                LoggingService.LogToolCall(toolCalls[0].name, "{}");
+                LoggingService.LogToolCall(toolCalls[0].name,null);
             }
             
             return new LLMResponse
@@ -173,10 +171,8 @@ namespace ChatSystem.Services.Agents
                     "I'll help you with that request." : 
                     GenerateSimulatedResponse(request),
                 toolCalls = toolCalls,
-                provider = request.provider,
                 model = request.model,
                 timestamp = DateTime.UtcNow,
-                totalTokens = UnityEngine.Random.Range(100, 500)
             };
         }
         
@@ -219,7 +215,7 @@ namespace ChatSystem.Services.Agents
                         toolCallId = call.id,
                         content = result,
                         success = true,
-                        timestamp = DateTime.UtcNow
+                        responseTimestamp = DateTime.UtcNow
                     });
                     
                     LoggingService.LogToolResponse(call.name, "Success");
@@ -231,7 +227,7 @@ namespace ChatSystem.Services.Agents
                         toolCallId = call.id,
                         content = ex.Message,
                         success = false,
-                        timestamp = DateTime.UtcNow
+                        responseTimestamp = DateTime.UtcNow
                     });
                     
                     LoggingService.LogToolResponse(call.name, "Error: " + ex.Message);
@@ -245,7 +241,7 @@ namespace ChatSystem.Services.Agents
         {
             foreach (IToolSet toolSet in registeredToolSets.Values)
             {
-                if (toolSet.HasTool(toolName))
+                if (toolSet.IsToolSupported(toolName))
                 {
                     return await toolSet.ExecuteToolAsync(toolName, arguments);
                 }

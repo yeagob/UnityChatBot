@@ -31,7 +31,7 @@ namespace ChatSystem.Services.Orchestrators
         {
             if (config == null || string.IsNullOrEmpty(config.agentId))
             {
-                LoggingService.LogError("Invalid agent configuration");
+                LoggingService.Error("Invalid agent configuration");
                 return;
             }
             
@@ -79,7 +79,7 @@ namespace ChatSystem.Services.Orchestrators
             }
             catch (Exception ex)
             {
-                LoggingService.LogError($"LLMOrchestrator error: {ex.Message}");
+                LoggingService.Error($"LLMOrchestrator error: {ex.Message}");
                 return CreateDefaultResponse($"Error processing message: {ex.Message}");
             }
         }
@@ -131,14 +131,10 @@ namespace ChatSystem.Services.Orchestrators
             {
                 content = mergedContent,
                 toolCalls = primaryResponse.toolCalls,
-                provider = loadedConfigs.ContainsKey(primaryResponse.agentId) ? 
-                    loadedConfigs[primaryResponse.agentId].modelConfig?.provider ?? ServiceProvider.Custom : 
-                    ServiceProvider.Custom,
                 model = loadedConfigs.ContainsKey(primaryResponse.agentId) ? 
                     loadedConfigs[primaryResponse.agentId].modelConfig?.modelName ?? "default" : 
                     "default",
                 timestamp = DateTime.UtcNow,
-                totalTokens = responses.Count * 100,
                 success = true
             };
         }
@@ -148,10 +144,8 @@ namespace ChatSystem.Services.Orchestrators
             return new LLMResponse
             {
                 content = message,
-                provider = ServiceProvider.Custom,
                 model = "default",
                 timestamp = DateTime.UtcNow,
-                totalTokens = 0,
                 success = false
             };
         }

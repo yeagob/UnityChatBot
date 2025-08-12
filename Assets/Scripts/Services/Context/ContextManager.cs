@@ -76,7 +76,7 @@ namespace ChatSystem.Services.Context
         public async Task<List<Message>> GetMessagesAsync(string conversationId)
         {
             ConversationContext context = await GetContextAsync(conversationId);
-            return context.GetMessages();
+            return context.GetAllMessages();
         }
         
         public async Task<bool> ExistsAsync(string conversationId)
@@ -101,7 +101,7 @@ namespace ChatSystem.Services.Context
             
             if (contexts.ContainsKey(conversationId))
             {
-                contexts[conversationId].ClearMessages();
+                contexts[conversationId].Clear();
             }
             
             await Task.CompletedTask;
@@ -111,7 +111,7 @@ namespace ChatSystem.Services.Context
         {
             ConversationContext context = await GetContextAsync(conversationId);
             await Task.CompletedTask;
-            return context.GetMessages().Count;
+            return context.GetAllMessages().Count;
         }
         
         private Message CreateMessage(string conversationId, MessageRole role, string content, string toolCallId = null)
