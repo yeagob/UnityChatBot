@@ -1,64 +1,97 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ChatSystem.Enums;
+using ChatSystem.Models.Tools;
 
 namespace ChatSystem.Models.Context
 {
-    [Serializable]
     public class ConversationContext
     {
-        public string ConversationId;
-        public List<Message> Messages;
-        public DateTime CreatedAt;
-        public DateTime LastUpdated;
-
+        public string conversationId { get; private set; }
+        public List<Message> messages { get; private set; }
+        public DateTime createdAt { get; private set; }
+        public DateTime lastUpdated { get; private set; }
+        
         public ConversationContext(string conversationId)
         {
-            this.ConversationId = conversationId;
-            this.Messages = new List<Message>();
-            this.CreatedAt = DateTime.UtcNow;
-            this.LastUpdated = DateTime.UtcNow;
+            this.conversationId = conversationId;
+            messages = new List<Message>();
+            createdAt = DateTime.UtcNow;
+            lastUpdated = DateTime.UtcNow;
         }
-
-        public void AddMessage(Message message)
-        {
-            Messages.Add(message);
-            LastUpdated = DateTime.UtcNow;
-        }
-
+        
         public void AddUserMessage(string content)
         {
-            string messageId = Guid.NewGuid().ToString();
-            Message message = new Message(messageId, MessageRole.User, MessageType.Text, content, ConversationId);
-            AddMessage(message);
-            this.LastUpdated = DateTime.UtcNow;
+            AddMessage(MessageRole.User, content);
         }
-
+        
         public void AddAssistantMessage(string content)
         {
-            string messageId = Guid.NewGuid().ToString();
-            Message message = new Message(messageId, MessageRole.Assistant, MessageType.Text, content, ConversationId);
-            AddMessage(message);
-            this.LastUpdated = DateTime.UtcNow;
+            AddMessage(MessageRole.Assistant, content);
         }
-
+        
+        public void AddSystemMessage(string content)
+        {
+            AddMessage(MessageRole.System, content);
+        }
+        
         public void AddToolMessage(string content, string toolCallId)
         {
-            string messageId = Guid.NewGuid().ToString();
-            Message message = new Message(messageId, MessageRole.Tool, MessageType.ToolResponse, content, toolCallId, ConversationId);
-            AddMessage(message);
-            this.LastUpdated = DateTime.UtcNow;
+            messages.Add(new Message
+            {
+                id = Guid.NewGuid().ToString(),
+                role = MessageRole.Tool,
+                type = MessageType.ToolResponse,
+                content = content,
+                toolCallId = toolCallId,
+                timestamp = DateTime.UtcNow,
+                conversationId = conversationId
+            });
+            lastUpdated = DateTime.UtcNow;
         }
-
-        public List<Message> GetMessages()
+        
+        public void AddToolMessages(List<ToolResponse> toolResponses)
         {
-            return new List<Message>(Messages);
+            foreach (ToolResponse response in toolResponses)
+            {
+                AddToolMessage(response.content, response.toolCallId);
+            }
         }
-
-		internal void ClearMessages()
-		{
-            Messages.Clear();
-            this.LastUpdated = DateTime.UtcNow;
+        
+        public List<Message> GetAllMessages()
+        {
+            return new List<Message>(messages);
+        }
+        
+        public List<Message> GetMessagesByRole(MessageRole role)
+        {
+            return messages.Where(m => m.role == role).ToList();
+        }
+        
+        public Message GetLastMessage()
+        {
+            return messages.LastOrDefault();
+        }
+        
+        public void Clear()
+        {
+            messages.Clear();
+            lastUpdated = DateTime.UtcNow;
+        }
+        
+        public void AddMessage(MessageRole role, string content)
+        {
+            messages.Add(new Message
+            {
+                id = Guid.NewGuid().ToString(),
+                role = role,
+                type = role == MessageRole.System ? MessageType.SystemPrompt : MessageType.Text,
+                content = content,
+                timestamp = DateTime.UtcNow,
+                conversationId = conversationId
+            });
+            lastUpdated = DateTime.UtcNow;
         }
     }
 }

@@ -1,19 +1,26 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "PromptConfig", menuName = "LLM/Prompt Configuration")]
-public class PromptConfig : ScriptableObject
+namespace ChatSystem.Configuration.ScriptableObjects
 {
-    [SerializeField] private string promptId;
-    [SerializeField, TextArea(5, 15)] private string promptText;
-    [SerializeField, Range(0f, 2f)] private float temperature;
-    [SerializeField] private int maxTokens;
-    [SerializeField, Range(0f, 1f)] private float topP;
-    [SerializeField, Range(0f, 1f)] private float topK;
-
-    public string PromptId => promptId;
-    public string PromptText => promptText;
-    public float Temperature => temperature;
-    public int MaxTokens => maxTokens;
-    public float TopP => topP;
-    public float TopK => topK;
+    [CreateAssetMenu(fileName = "PromptConfig", menuName = "LLM/Prompt Configuration", order = 2)]
+    public class PromptConfig : ScriptableObject
+    {
+        [Header("Prompt Settings")]
+        public string promptId;
+        public string promptName;
+        
+        [TextArea(10, 30)]
+        public string content;
+        
+        [Header("Configuration")]
+        public bool enabled = true;
+        public int priority = 0;
+        
+        [Header("Metadata")]
+        public string category;
+        public string version = "1.0";
+        
+        [TextArea(2, 5)]
+        public string description;
+    }
 }

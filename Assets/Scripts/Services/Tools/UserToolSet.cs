@@ -136,7 +136,6 @@ namespace ChatSystem.Services.Tools
             {
                 toolId = "update_user_tag",
                 toolName = "update_user_tag",
-                description = "Update user tag identifier",
                 toolType = ToolType.UserManagement,
                 inputSchema = new ToolSchema
                 {
@@ -165,7 +164,6 @@ namespace ChatSystem.Services.Tools
             {
                 toolId = "update_user_name",
                 toolName = "update_user_name",
-                description = "Update user display name",
                 toolType = ToolType.UserManagement,
                 inputSchema = new ToolSchema
                 {
@@ -194,7 +192,6 @@ namespace ChatSystem.Services.Tools
             {
                 toolId = "add_user_comment",
                 toolName = "add_user_comment",
-                description = "Add user comment to travel",
                 toolType = ToolType.UserManagement,
                 inputSchema = new ToolSchema
                 {

@@ -16,19 +16,6 @@ namespace ChatSystem.Debugging
             orchestrator = llmOrchestrator;
         }
         
-        [ContextMenu("Show Active Agents")]
-        public void ShowActiveAgents()
-        {
-            if (orchestrator == null)
-            {
-                Debug.LogError("LLMOrchestrator not set");
-                return;
-            }
-            
-            var agents = orchestrator.GetActiveAgentIds();
-            Debug.Log($"Active Agents ({agents.Length}): {string.Join(", ", agents)}");
-        }
-        
      
         [ContextMenu("Test Process Message")]
         public async void TestProcessMessage()

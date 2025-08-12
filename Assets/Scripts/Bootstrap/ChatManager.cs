@@ -1,8 +1,8 @@
+using ChatSystem.Configuration.ScriptableObjects;
 using UnityEngine;
 using ChatSystem.Controllers;
 using ChatSystem.Controllers.Interfaces;
 using ChatSystem.Views.Chat;
-using ChatSystem.Views.Interfaces;
 using ChatSystem.Services.Orchestrators;
 using ChatSystem.Services.Orchestrators.Interfaces;
 using ChatSystem.Services.Context;
@@ -14,8 +14,8 @@ using ChatSystem.Services.Tools.Interfaces;
 using ChatSystem.Services.Persistence;
 using ChatSystem.Services.Persistence.Interfaces;
 using ChatSystem.Services.Logging;
-using ChatSystem.Enums;
 using ChatSystem.Debugging;
+using ChatSystem.Enums;
 
 namespace ChatSystem.Bootstrap
 {
@@ -95,8 +95,25 @@ namespace ChatSystem.Bootstrap
         {
             LogDebug("Creating orchestration services");
             
-            llmOrchestrator = new LLMOrchestrator();
+            llmOrchestrator = new LLMOrchestrator(agentExecutor);
             chatOrchestrator = new ChatOrchestrator(defaultConversationId);
+            
+            RegisterAgentConfigurations();
+        }
+        
+        private void RegisterAgentConfigurations()
+        {
+            if (agentConfigurations != null && agentConfigurations.Length > 0)
+            {
+                foreach (AgentConfig config in agentConfigurations)
+                {
+                    if (config != null)
+                    {
+                        llmOrchestrator.RegisterAgentConfig(config);
+                    }
+                }
+                LogDebug($"Registered {agentConfigurations.Length} agent configurations");
+            }
         }
         
         private void CreateControllers()
@@ -109,12 +126,6 @@ namespace ChatSystem.Bootstrap
         private void ConfigureServices()
         {
             LogDebug("Configuring service dependencies");
-            
-            if (llmOrchestrator is LLMOrchestrator llmOrchestratorImpl)
-            {
-                llmOrchestratorImpl.SetAgentExecutor(agentExecutor);
-                llmOrchestratorImpl.SetAgentConfigurations(agentConfigurations);
-            }
             
             if (chatOrchestrator is ChatOrchestrator chatOrchestratorImpl)
             {

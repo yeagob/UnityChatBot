@@ -177,7 +177,7 @@ namespace ChatSystem.Services.Tools
             {
                 toolId = "search_travels_by_country",
                 toolName = "search_travels_by_country",
-                description = "Search available travels by destination country",
+                //description = "Search available travels by destination country",
                 toolType = ToolType.TravelSearch,
                 inputSchema = new ToolSchema
                 {
@@ -205,7 +205,7 @@ namespace ChatSystem.Services.Tools
             {
                 toolId = "search_travels_advanced",
                 toolName = "search_travels_advanced",
-                description = "Advanced travel search with optional filters",
+                //description = "Advanced travel search with optional filters",
                 toolType = ToolType.TravelSearch,
                 inputSchema = new ToolSchema
                 {
@@ -235,7 +235,7 @@ namespace ChatSystem.Services.Tools
             {
                 toolId = "get_travel_details",
                 toolName = "get_travel_details",
-                description = "Get detailed information about a specific travel",
+                //description = "Get detailed information about a specific travel",
                 toolType = ToolType.TravelDetails,
                 inputSchema = new ToolSchema
                 {

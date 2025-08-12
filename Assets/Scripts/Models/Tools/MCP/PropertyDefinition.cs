@@ -1,17 +1,19 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
-namespace ChatSystem.Models.Tools
+namespace ChatSystem.Models.Tools.MCP
 {
     [Serializable]
-    public class ParameterSchema
+    public class PropertyDefinition
     {
         public string type;
         public string description;
         public List<string> enumValues;
+        public ItemDefinition items;
         public object defaultValue;
         
-        public ParameterSchema()
+        public PropertyDefinition()
         {
             enumValues = new List<string>();
         }

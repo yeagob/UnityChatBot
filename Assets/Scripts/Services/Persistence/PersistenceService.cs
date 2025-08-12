@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,9 +22,9 @@ namespace ChatSystem.Services.Persistence
         
         public async Task SaveConversationAsync(ConversationContext conversation)
         {
-            LoggingService.LogDebug($"Saving conversation: {conversation.ConversationId}");
+            LoggingService.LogDebug($"Saving conversation: {conversation.conversationId}");
             
-            conversations[conversation.ConversationId] = conversation;
+            conversations[conversation.conversationId] = conversation;
             await Task.CompletedTask;
         }
         
