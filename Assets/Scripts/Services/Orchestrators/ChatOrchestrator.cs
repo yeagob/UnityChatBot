@@ -153,7 +153,7 @@ namespace ChatSystem.Services.Orchestrators
             }
             catch (Exception ex)
             {
-                LoggingService.LogError($"LLM processing failed: {ex.Message}");
+                LoggingService.Error($"LLM processing failed: {ex.Message}");
                 return CreateErrorResponse(ex);
             }
         }

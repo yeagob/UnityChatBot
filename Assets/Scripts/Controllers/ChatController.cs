@@ -66,7 +66,7 @@ namespace ChatSystem.Controllers
         {
             if (currentContext != null)
             {
-                InitializeConversation(currentContext.ConversationId);
+                InitializeConversation(currentContext.conversationId);
             }
         }
 

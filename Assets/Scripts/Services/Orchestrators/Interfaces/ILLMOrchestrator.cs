@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using ChatSystem.Models;
 using ChatSystem.Models.Context;
 using ChatSystem.Configuration.ScriptableObjects;
+using ChatSystem.Models.LLM;
 
 namespace ChatSystem.Services.Orchestrators.Interfaces
 {

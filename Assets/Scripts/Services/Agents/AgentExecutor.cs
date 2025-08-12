@@ -11,6 +11,8 @@ using ChatSystem.Services.Tools.Interfaces;
 using ChatSystem.Services.Agents.Interfaces;
 using ChatSystem.Services.Logging.Interfaces;
 using ChatSystem.Enums;
+using ChatSystem.Models.LLM;
+using ChatSystem.Services.Logging;
 
 namespace ChatSystem.Services.Agents
 {
@@ -27,7 +29,7 @@ namespace ChatSystem.Services.Agents
         
         public async Task<AgentResponse> ExecuteAgentAsync(string agentId, ConversationContext context)
         {
-            LoggingService.AgentExecution(agentId, "Starting");
+            LoggingService.LogAgentExecution(agentId, "Starting");
             
             if (!agentConfigs.TryGetValue(agentId, out AgentConfig agentConfig))
             {
@@ -37,7 +39,7 @@ namespace ChatSystem.Services.Agents
             
             if (!agentConfig.enabled)
             {
-                LoggingService.Warning($"Agent {agentId} is disabled");
+                LoggingService.LogWarning($"Agent {agentId} is disabled");
                 return CreateErrorResponse(agentId, "Agent is disabled");
             }
             
@@ -57,7 +59,7 @@ namespace ChatSystem.Services.Agents
                     llmResponse = await SimulateLLMCallAsync(followUpRequest);
                 }
                 
-                LoggingService.AgentExecution(agentId, "Completed");
+                LoggingService.LogAgentExecution(agentId, "Completed");
                 
                 return new AgentResponse
                 {
@@ -84,7 +86,7 @@ namespace ChatSystem.Services.Agents
             }
             
             agentConfigs[agentConfig.agentId] = agentConfig;
-            LoggingService.Info($"Agent {agentConfig.agentId} registered");
+            LoggingService.LogInfo($"Agent {agentConfig.agentId} registered");
         }
         
         public void RegisterToolSet(IToolSet toolSet)
@@ -97,14 +99,14 @@ namespace ChatSystem.Services.Agents
             
             string toolSetName = toolSet.GetType().Name;
             registeredToolSets[toolSetName] = toolSet;
-            LoggingService.Info($"ToolSet {toolSetName} registered with {toolSet.GetAvailableTools().Count} tools");
+            LoggingService.LogInfo($"ToolSet {toolSetName} registered with {toolSet.GetAvailableTools().Count} tools");
         }
         
         public void UnregisterToolSet(string toolSetName)
         {
             if (registeredToolSets.Remove(toolSetName))
             {
-                LoggingService.Info($"ToolSet {toolSetName} unregistered");
+                LoggingService.LogInfo($"ToolSet {toolSetName} unregistered");
             }
         }
         
@@ -136,7 +138,6 @@ namespace ChatSystem.Services.Agents
                 maxTokens = agentConfig.maxResponseTokens,
                 temperature = agentConfig.modelConfig?.temperature ?? 0.7f,
                 model = agentConfig.modelConfig?.modelName ?? "default",
-                provider = agentConfig.modelConfig?.provider ?? ServiceProvider.Custom
             };
         }
         

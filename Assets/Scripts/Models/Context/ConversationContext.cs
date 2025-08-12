@@ -80,7 +80,7 @@ namespace ChatSystem.Models.Context
             lastUpdated = DateTime.UtcNow;
         }
         
-        private void AddMessage(MessageRole role, string content)
+        public void AddMessage(MessageRole role, string content)
         {
             messages.Add(new Message
             {

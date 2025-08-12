@@ -10,6 +10,8 @@ using ChatSystem.Services.Orchestrators.Interfaces;
 using ChatSystem.Services.Agents.Interfaces;
 using ChatSystem.Services.Logging.Interfaces;
 using ChatSystem.Enums;
+using ChatSystem.Models.LLM;
+using ChatSystem.Services.Logging;
 
 namespace ChatSystem.Services.Orchestrators
 {
@@ -42,12 +44,12 @@ namespace ChatSystem.Services.Orchestrators
                 activeAgentIds.Add(config.agentId);
             }
             
-            LoggingService.Info($"Agent {config.agentId} registered and {(config.enabled ? "activated" : "disabled")}");
+            LoggingService.LogInfo($"Agent {config.agentId} registered and {(config.enabled ? "activated" : "disabled")}");
         }
         
         public async Task<LLMResponse> ProcessMessageAsync(ConversationContext context)
         {
-            LoggingService.Info("LLMOrchestrator processing message");
+            LoggingService.LogInfo("LLMOrchestrator processing message");
             
             if (activeAgentIds.Count == 0)
             {
@@ -93,7 +95,7 @@ namespace ChatSystem.Services.Orchestrators
             if (loadedConfigs.ContainsKey(agentId) && !activeAgentIds.Contains(agentId))
             {
                 activeAgentIds.Add(agentId);
-                LoggingService.Info($"Agent {agentId} enabled");
+                LoggingService.LogInfo($"Agent {agentId} enabled");
             }
         }
         
@@ -101,7 +103,7 @@ namespace ChatSystem.Services.Orchestrators
         {
             if (activeAgentIds.Remove(agentId))
             {
-                LoggingService.Info($"Agent {agentId} disabled");
+                LoggingService.LogInfo($"Agent {agentId} disabled");
             }
         }
         

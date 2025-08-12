@@ -44,7 +44,7 @@ namespace ChatSystem.Services.Context
             LoggingService.LogMessageReceived(conversationId, message.role.ToString());
             
             ConversationContext context = await GetContextAsync(conversationId);
-            context.AddMessage(message);
+            context.AddMessage(message.role, message.content);
             
             await UpdateContextAsync(conversationId, context);
         }

@@ -1,8 +1,8 @@
+using ChatSystem.Configuration.ScriptableObjects;
 using UnityEngine;
 using ChatSystem.Controllers;
 using ChatSystem.Controllers.Interfaces;
 using ChatSystem.Views.Chat;
-using ChatSystem.Views.Interfaces;
 using ChatSystem.Services.Orchestrators;
 using ChatSystem.Services.Orchestrators.Interfaces;
 using ChatSystem.Services.Context;
@@ -14,7 +14,6 @@ using ChatSystem.Services.Tools.Interfaces;
 using ChatSystem.Services.Persistence;
 using ChatSystem.Services.Persistence.Interfaces;
 using ChatSystem.Services.Logging;
-using ChatSystem.Enums;
 using ChatSystem.Debugging;
 
 namespace ChatSystem.Bootstrap
@@ -95,7 +94,7 @@ namespace ChatSystem.Bootstrap
         {
             LogDebug("Creating orchestration services");
             
-            llmOrchestrator = new LLMOrchestrator();
+            llmOrchestrator = new LLMOrchestrator(agentExecutor);
             chatOrchestrator = new ChatOrchestrator(defaultConversationId);
         }
         

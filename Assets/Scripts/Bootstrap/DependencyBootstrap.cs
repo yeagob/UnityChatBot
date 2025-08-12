@@ -14,7 +14,7 @@ using ChatSystem.Controllers;
 using ChatSystem.Controllers.Interfaces;
 using ChatSystem.Views.Chat;
 using ChatSystem.Configuration.ScriptableObjects;
-using ChatSystem.Debug;
+using ChatSystem.Debugging;
 
 namespace ChatSystem.Bootstrap
 {
@@ -48,7 +48,7 @@ namespace ChatSystem.Bootstrap
         private void InitializeSystem()
         {
             LoggingService.Initialize(enableDebugLogs ? Enums.LogLevel.Debug : Enums.LogLevel.Info);
-            LoggingService.Info("Starting Dependency Bootstrap");
+            LoggingService.LogInfo("Starting Dependency Bootstrap");
             
             CreateServices();
             RegisterAgents();
@@ -61,7 +61,7 @@ namespace ChatSystem.Bootstrap
                 CreateDebugObjects();
             }
             
-            LoggingService.Info("System initialization complete");
+            LoggingService.LogInfo("System initialization complete");
         }
         
         private void CreateServices()
@@ -74,14 +74,14 @@ namespace ChatSystem.Bootstrap
             
             RegisterToolSets();
             
-            LoggingService.Info("Core services created");
+            LoggingService.LogInfo("Core services created");
         }
         
         private void RegisterAgents()
         {
             if (agentConfigs == null || agentConfigs.Count == 0)
             {
-                LoggingService.Warning("No agent configurations provided");
+                LoggingService.LogWarning("No agent configurations provided");
                 return;
             }
             
@@ -93,7 +93,7 @@ namespace ChatSystem.Bootstrap
                 }
             }
             
-            LoggingService.Info($"Registered {agentConfigs.Count} agent configurations");
+            LoggingService.LogInfo($"Registered {agentConfigs.Count} agent configurations");
         }
         
         private void RegisterToolSets()
@@ -101,19 +101,19 @@ namespace ChatSystem.Bootstrap
             agentExecutor.RegisterToolSet(new UserToolSet());
             agentExecutor.RegisterToolSet(new TravelToolSet());
             
-            LoggingService.Info("ToolSets registered");
+            LoggingService.LogInfo("ToolSets registered");
         }
         
         private void CreateControllers()
         {
             chatController = new ChatController(defaultConversationId);
-            LoggingService.Info("Controllers created");
+            LoggingService.LogInfo("Controllers created");
         }
         
         private void ConfigureServices()
         {
             chatController.SetOrchestrator(chatOrchestrator);
-            LoggingService.Info("Services configured");
+            LoggingService.LogInfo("Services configured");
         }
         
         private void ConnectComponents()
@@ -121,7 +121,7 @@ namespace ChatSystem.Bootstrap
             if (chatView != null)
             {
                 chatView.SetController(chatController);
-                LoggingService.Info("View connected to controller");
+                LoggingService.LogInfo("View connected to controller");
             }
             else
             {
@@ -154,7 +154,7 @@ namespace ChatSystem.Bootstrap
             ServiceInfoDebug serviceDebugComponent = serviceInfoDebug.AddComponent<ServiceInfoDebug>();
             serviceDebugComponent.SetServices(agentExecutor, contextManager, persistenceService);
             
-            LoggingService.Info("Debug objects created");
+            LoggingService.LogInfo("Debug objects created");
         }
     }
 }
