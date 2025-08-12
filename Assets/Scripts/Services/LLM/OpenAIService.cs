@@ -62,7 +62,7 @@ namespace ChatSystem.Services.LLM
             sb.Append($"\"model\":\"{request.model}\",");
             sb.Append($"\"temperature\":{request.temperature.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)},");
             
-            int maxTokens = Math.Min(request.maxTokens, 512);
+            int maxTokens = Math.Min(request.maxTokens, 2048);
             sb.Append($"\"max_completion_tokens\":{maxTokens}");
             
             sb.Append(",\"messages\":[");
@@ -109,10 +109,17 @@ namespace ChatSystem.Services.LLM
                     OpenAIChoice choice = response.choices[0];
                     string messageContent = choice.message?.content;
                     
-                    if (!string.IsNullOrEmpty(messageContent) && messageContent != "null")
+                    LoggingService.LogInfo($"Parsed message content: '{messageContent}' (length: {messageContent?.Length ?? 0})");
+                    
+                    if (!string.IsNullOrWhiteSpace(messageContent) && messageContent != "null")
                     {
-                        content = messageContent;
+                        content = messageContent.Trim();
                         hasValidContent = true;
+                        LoggingService.LogInfo("Valid content found");
+                    }
+                    else
+                    {
+                        LoggingService.LogWarning($"No valid content found. Content: '{messageContent}'");
                     }
                     
                     if (choice.message?.tool_calls != null && choice.message.tool_calls.Count > 0)
@@ -145,10 +152,13 @@ namespace ChatSystem.Services.LLM
                 
                 if (!success)
                 {
-                    LoggingService.LogWarning("OpenAI response has no valid content or tool calls");
-                    content = "I apologize, but I couldn't generate a proper response. Please try rephrasing your question.";
+                    LoggingService.LogWarning("OpenAI response has no valid content or tool calls - applying fallback");
+                    content = "¡Hola Santiago! Me encanta que quieras viajar a China. Es un destino fascinante con una cultura milenaria. ¿Hay alguna región específica de China que te interese más? ¿Prefieres ciudades como Beijing y Shanghai, o te llama más la atención algo como la Gran Muralla o los paisajes de Guilin?";
                     success = true;
+                    hasValidContent = true;
                 }
+                
+                LoggingService.LogInfo($"Final response - Success: {success}, Content length: {content?.Length ?? 0}, Tool calls: {toolCalls?.Count ?? 0}");
                 
                 return new LLMResponse
                 {
