@@ -1,4 +1,5 @@
 using System;
+using ChatSystem.Configuration.ScriptableObjects;
 using ChatSystem.Enums;
 
 namespace ChatSystem.Models.Tools
@@ -8,34 +9,48 @@ namespace ChatSystem.Models.Tools
     {
         public string toolId;
         public string toolName;
-        public string description;
         public ToolType toolType;
         public ToolSchema inputSchema;
         public ToolAnnotations annotations;
+        public bool enabled;
+        public bool requiresAuthentication;
+        public int timeoutMs;
+        public int maxRetries;
+        public bool hasRateLimit;
+        public int requestsPerMinute;
         
         public ToolConfiguration()
         {
+            enabled = true;
+            timeoutMs = 5000;
+            maxRetries = 3;
+            requestsPerMinute = 60;
         }
         
-        public ToolConfiguration(string id, string name, string desc, ToolType type)
+        public ToolConfiguration(ToolConfig config)
         {
-            toolId = id;
-            toolName = name;
-            description = desc;
-            toolType = type;
-        }
-        
-        public static ToolConfiguration FromScriptableObject(ToolConfig config)
-        {
-            return new ToolConfiguration
+            if (config == null) return;
+            
+            toolId = config.toolId;
+            toolName = config.toolName;
+            toolType = config.toolType;
+            annotations = config.annotations;
+            enabled = config.enabled;
+            requiresAuthentication = config.requiresAuthentication;
+            timeoutMs = config.timeoutMs;
+            maxRetries = config.maxRetries;
+            hasRateLimit = config.hasRateLimit;
+            requestsPerMinute = config.requestsPerMinute;
+            
+            if (config.function != null && config.function.parameters != null)
             {
-                toolId = config.ToolId,
-                toolName = config.ToolName,
-                description = config.Description,
-                toolType = config.ToolType,
-                inputSchema = config.InputSchema,
-                annotations = config.Annotations
-            };
+                inputSchema = new ToolSchema
+                {
+                    type = config.function.parameters.type,
+                    properties = config.function.parameters.properties,
+                    required = config.function.parameters.required
+                };
+            }
         }
     }
 }

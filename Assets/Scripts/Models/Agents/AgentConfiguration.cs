@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
-using ChatSystem.Models.LLM;
+using ChatSystem.Configuration.ScriptableObjects;
+using ChatSystem.Models.Tools;
+using ChatSystem.Enums;
 
 namespace ChatSystem.Models.Agents
 {
@@ -9,57 +11,81 @@ namespace ChatSystem.Models.Agents
     {
         public string agentId;
         public string agentName;
-        public LLMConfiguration llmConfig;
-        public List<string> toolSetIds;
-        public bool executeBeforeUser;
-        public bool executeAfterUser;
-        public int executionOrder;
-        public bool isEnabled;
-        public string promptId;
+        public string description;
+        public string systemPrompt;
+        public List<ToolConfiguration> toolConfigurations;
+        public bool canExecuteTools;
+        public int maxToolCalls;
+        public int maxResponseTokens;
+        public bool streamResponses;
+        public int maxRetries;
+        public int timeoutMs;
+        public bool fallbackToSimulation;
+        public bool enabled;
+        public int priority;
+        public List<string> requiredCapabilities;
+        public ServiceProvider provider;
+        public string modelName;
+        public float temperature;
         
         public AgentConfiguration()
         {
-            toolSetIds = new List<string>();
-            executeAfterUser = true;
-            executionOrder = 0;
-            isEnabled = true;
+            toolConfigurations = new List<ToolConfiguration>();
+            requiredCapabilities = new List<string>();
+            canExecuteTools = true;
+            maxToolCalls = 5;
+            maxResponseTokens = 2048;
+            maxRetries = 3;
+            timeoutMs = 10000;
+            enabled = true;
+            priority = 0;
+            provider = ServiceProvider.Custom;
+            temperature = 0.7f;
         }
         
-        public AgentConfiguration(string id, string name) : this()
+        public AgentConfiguration(AgentConfig config)
         {
-            agentId = id;
-            agentName = name;
-        }
-        
-        public static AgentConfiguration FromScriptableObject(AgentConfig config)
-        {
-            var toolIds = new List<string>();
-            if (config.ToolConfigs != null)
+            if (config == null) return;
+            
+            agentId = config.agentId;
+            agentName = config.agentName;
+            description = config.description;
+            systemPrompt = config.GetFullSystemPrompt();
+            canExecuteTools = config.canExecuteTools;
+            maxToolCalls = config.maxToolCalls;
+            maxResponseTokens = config.maxResponseTokens;
+            streamResponses = config.streamResponses;
+            maxRetries = config.maxRetries;
+            timeoutMs = config.timeoutMs;
+            fallbackToSimulation = config.fallbackToSimulation;
+            enabled = config.enabled;
+            priority = config.priority;
+            requiredCapabilities = new List<string>(config.requiredCapabilities);
+            
+            if (config.modelConfig != null)
             {
-                foreach (var toolConfig in config.ToolConfigs)
+                provider = config.modelConfig.provider;
+                modelName = config.modelConfig.modelName;
+                temperature = config.modelConfig.temperature;
+            }
+            else
+            {
+                provider = ServiceProvider.Custom;
+                modelName = "default";
+                temperature = 0.7f;
+            }
+            
+            toolConfigurations = new List<ToolConfiguration>();
+            if (config.availableTools != null)
+            {
+                foreach (ToolConfig toolConfig in config.availableTools)
                 {
                     if (toolConfig != null)
                     {
-                        toolIds.Add(toolConfig.ToolId);
+                        toolConfigurations.Add(new ToolConfiguration(toolConfig));
                     }
                 }
             }
-            
-            return new AgentConfiguration
-            {
-                agentId = config.AgentId,
-                agentName = config.AgentName,
-                llmConfig = new LLMConfiguration
-                {
-                    token = config.Token,
-                    model = config.Model,
-                    serviceProvider = config.ServiceProvider,
-                    serviceUrl = config.ServiceUrl,
-                    inputTokenCost = config.InputTokenCost,
-                    outputTokenCost = config.OutputTokenCost
-                },
-                toolSetIds = toolIds
-            };
         }
     }
 }
