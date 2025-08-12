@@ -11,6 +11,7 @@ using ChatSystem.Services.Tools.Interfaces;
 using ChatSystem.Services.Agents.Interfaces;
 using ChatSystem.Services.Logging;
 using ChatSystem.Enums;
+using ChatSystem.Models.LLM;
 
 namespace ChatSystem.Services.Agents
 {
