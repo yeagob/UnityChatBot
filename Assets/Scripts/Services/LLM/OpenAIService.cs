@@ -105,17 +105,17 @@ namespace ChatSystem.Services.LLM
                     OpenAIChoice choice = response.choices[0];
                     string messageContent = choice.message?.content;
                     
-                    LoggingService.LogInfo($"Parsed message content: '{messageContent}' (length: {messageContent?.Length ?? 0})");
+                    LoggingService.LogInfo($"Raw message content: '{messageContent}' (length: {messageContent?.Length ?? 0})");
                     
                     if (!string.IsNullOrWhiteSpace(messageContent) && messageContent != "null")
                     {
-                        content = messageContent.Trim();
+                        content = UnescapeJsonString(messageContent.Trim());
                         hasValidContent = true;
-                        LoggingService.LogInfo("Valid content found");
+                        LoggingService.LogInfo($"Valid content found, final length: {content.Length}");
                     }
                     else
                     {
-                        LoggingService.LogWarning($"No valid content found. Content: '{messageContent}'");
+                        LoggingService.LogWarning($"No valid content found. Raw content: '{messageContent}'");
                     }
                     
                     if (choice.message?.tool_calls != null && choice.message.tool_calls.Count > 0)
@@ -191,28 +191,45 @@ namespace ChatSystem.Services.LLM
                     if (contentStart != -1)
                     {
                         int valueStart = json.IndexOf(":", contentStart) + 1;
-                        valueStart = json.IndexOf("\"", valueStart);
                         
-                        if (valueStart != -1)
+                        while (valueStart < json.Length && (json[valueStart] == ' ' || json[valueStart] == '\t'))
+                        {
+                            valueStart++;
+                        }
+                        
+                        if (valueStart < json.Length && json[valueStart] == '"')
                         {
                             valueStart += 1;
                             int contentEnd = FindJsonStringEnd(json, valueStart);
-                            if (contentEnd != -1)
+                            if (contentEnd != -1 && contentEnd > valueStart)
                             {
                                 choice.message.content = json.Substring(valueStart, contentEnd - valueStart);
+                                LoggingService.LogInfo($"Parsed content length: {choice.message.content.Length}");
+                            }
+                            else
+                            {
+                                LoggingService.LogWarning("Failed to find content end");
                             }
                         }
-                        else
+                        else if (valueStart < json.Length)
                         {
-                            int nullStart = json.IndexOf("null", contentStart);
-                            if (nullStart != -1 && nullStart < json.IndexOf(",", contentStart))
+                            int nullStart = json.IndexOf("null", valueStart);
+                            int commaPos = json.IndexOf(",", valueStart);
+                            int bracePos = json.IndexOf("}", valueStart);
+                            
+                            int nextDelimiter = Math.Min(
+                                commaPos == -1 ? int.MaxValue : commaPos,
+                                bracePos == -1 ? int.MaxValue : bracePos
+                            );
+                            
+                            if (nullStart != -1 && nullStart < nextDelimiter)
                             {
                                 choice.message.content = null;
                             }
                         }
                     }
                     
-                    int toolCallsStart = json.IndexOf("\"tool_calls\":[", messageStart);
+                    int toolCallsStart = json.IndexOf("\"tool_calls\":", messageStart);
                     if (toolCallsStart != -1)
                     {
                         choice.message.tool_calls = ParseToolCalls(json, toolCallsStart);
@@ -274,7 +291,10 @@ namespace ChatSystem.Services.LLM
         {
             List<OpenAIToolCall> toolCalls = new List<OpenAIToolCall>();
             
-            int currentIndex = startIndex + 14;
+            int arrayStart = json.IndexOf("[", startIndex);
+            if (arrayStart == -1) return toolCalls;
+            
+            int currentIndex = arrayStart + 1;
             int bracketCount = 0;
             bool inToolCall = false;
             int toolCallStart = -1;
@@ -378,6 +398,18 @@ namespace ChatSystem.Services.LLM
                 .Replace("\n", "\\n")
                 .Replace("\r", "\\r")
                 .Replace("\t", "\\t");
+        }
+        
+        private static string UnescapeJsonString(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return string.Empty;
+            
+            return input
+                .Replace("\\\\", "\\")
+                .Replace("\\\"", "\"")
+                .Replace("\\n", "\n")
+                .Replace("\\r", "\r")
+                .Replace("\\t", "\t");
         }
         
         private static LLMResponse CreateErrorResponse(string model, string error)
