@@ -17,7 +17,7 @@ MonoBehaviour:
   description: Base Model Responses
   token: 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
   serviceUrl: https://api.openai.com/v1/chat/completions
-  modelConfig: {fileID: 11400000, guid: e32e072598c4e694ea426df2fb2bcb4c, type: 2}
+  modelConfig: {fileID: 11400000, guid: 34c62b6841a879d4e90713bc3d876bb2, type: 2}
   systemPrompt: {fileID: 11400000, guid: 88c4ff789ee2a8e4abde51e0753cf1d6, type: 2}
   contextPrompts: []
   availableTools: []

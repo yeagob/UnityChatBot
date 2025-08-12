@@ -59,8 +59,7 @@ namespace ChatSystem.Services.LLM
             StringBuilder sb = new StringBuilder();
             sb.Append("{");
             sb.Append($"\"model\":\"{request.model}\",");
-            sb.Append($"\"temperature\":{request.temperature},");
-            sb.Append($"\"max_completion_tokens\":{request.maxTokens},");
+            sb.Append($"\"temperature\":{request.temperature}");
             
             sb.Append("\"messages\":[");
             for (int i = 0; i < request.messages.Count; i++)
