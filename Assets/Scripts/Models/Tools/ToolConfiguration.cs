@@ -63,19 +63,13 @@ namespace ChatSystem.Models.Tools
             sb.Append("\"function\":{");
             sb.Append($"\"name\":\"{toolName}\",");
             
-            if (annotations != null && !string.IsNullOrEmpty(annotations.title))
-            {
-                sb.Append($"\"description\":\"{EscapeJsonString(annotations.title)}\",");
-            }
-            else
-            {
-                sb.Append($"\"description\":\"{toolName} function\",");
-            }
+            string description = GetToolDescription();
+            sb.Append($"\"description\":\"{EscapeJsonString(description)}\",");
             
             sb.Append("\"parameters\":{");
             sb.Append("\"type\":\"object\"");
             
-            if (inputSchema != null && inputSchema.properties != null && inputSchema.properties.Count > 0)
+            if (inputSchema?.properties != null && inputSchema.properties.Count > 0)
             {
                 sb.Append(",\"properties\":{");
                 bool first = true;
@@ -88,13 +82,27 @@ namespace ChatSystem.Models.Tools
                     {
                         sb.Append($",\"description\":\"{EscapeJsonString(prop.Value.description)}\"");
                     }
+                    if (prop.Value.enumValues != null && prop.Value.enumValues.Count > 0)
+                    {
+                        sb.Append(",\"enum\":[");
+                        for (int i = 0; i < prop.Value.enumValues.Count; i++)
+                        {
+                            if (i > 0) sb.Append(",");
+                            sb.Append($"\"{EscapeJsonString(prop.Value.enumValues[i])}\"");
+                        }
+                        sb.Append("]");
+                    }
                     sb.Append("}");
                     first = false;
                 }
                 sb.Append("}");
             }
+            else
+            {
+                sb.Append(",\"properties\":{}");
+            }
             
-            if (inputSchema != null && inputSchema.required != null && inputSchema.required.Count > 0)
+            if (inputSchema?.required != null && inputSchema.required.Count > 0)
             {
                 sb.Append(",\"required\":[");
                 for (int i = 0; i < inputSchema.required.Count; i++)
@@ -117,10 +125,20 @@ namespace ChatSystem.Models.Tools
             return ToOpenAIFormat();
         }
         
+        private string GetToolDescription()
+        {
+            if (annotations != null && !string.IsNullOrEmpty(annotations.title))
+            {
+                return annotations.title;
+            }
+            
+            return $"{toolName} function";
+        }
+        
         private Dictionary<string, ParameterSchema> ConvertToParameterSchemas(
             Dictionary<string, MCP.PropertyDefinition> properties)
         {
-            if (properties == null) return null;
+            if (properties == null) return new Dictionary<string, ParameterSchema>();
             
             Dictionary<string, ParameterSchema> result = new Dictionary<string, ParameterSchema>();
             
