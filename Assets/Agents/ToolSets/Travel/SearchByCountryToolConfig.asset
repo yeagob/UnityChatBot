@@ -21,6 +21,15 @@ MonoBehaviour:
       a un pais dado.
     parameters:
       type: object
+      properties:
+      - key: Country
+        value:
+          type: string
+          description: Pais del que se quiere obtener informacion de viajes
+          enumValues: []
+          items:
+            type: 
+            description: 
       required:
       - Country
   annotations:

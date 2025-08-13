@@ -15,8 +15,7 @@ MonoBehaviour:
   agentId: 0
   agentName: General Answer
   description: Base Model Responses
-  token: TOKEN
-  serviceUrl: https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions
+  providerConfig: {fileID: 11400000, guid: cc6034dae2ec6044eb7b4b2256c25f27, type: 2}
   modelConfig: {fileID: 11400000, guid: dcff31798357ed8408886f6726299b61, type: 2}
   systemPrompt: {fileID: 11400000, guid: 88c4ff789ee2a8e4abde51e0753cf1d6, type: 2}
   contextPrompts: []

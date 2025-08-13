@@ -67,7 +67,6 @@ namespace ChatSystem.Views.Chat
         {
             SetTextColor(userTextColor);
             SetBackgroundColor(userBackgroundColor);
-            SetAlignment(TextAlignmentOptions.Left);
             SetAnchors(0f, 0f, 0.8f, 1f);
         }
 
@@ -75,7 +74,6 @@ namespace ChatSystem.Views.Chat
         {
             SetTextColor(assistantTextColor);
             SetBackgroundColor(assistantBackgroundColor);
-            SetAlignment(TextAlignmentOptions.Right);
             SetAnchors(0.2f, 0f, 1f, 1f);
         }
 
@@ -83,7 +81,6 @@ namespace ChatSystem.Views.Chat
         {
             SetTextColor(toolTextColor);
             SetBackgroundColor(toolBackgroundColor);
-            SetAlignment(TextAlignmentOptions.Center);
             SetAnchors(0.1f, 0f, 0.9f, 1f);
         }
 
@@ -91,7 +88,6 @@ namespace ChatSystem.Views.Chat
         {
             SetTextColor(systemTextColor);
             SetBackgroundColor(systemBackgroundColor);
-            SetAlignment(TextAlignmentOptions.Center);
             SetAnchors(0f, 0f, 1f, 1f);
         }
 
@@ -108,14 +104,6 @@ namespace ChatSystem.Views.Chat
             if (backgroundImage != null)
             {
                 backgroundImage.color = backgroundColor;
-            }
-        }
-
-        private void SetAlignment(TextAlignmentOptions alignment)
-        {
-            if (messageText != null)
-            {
-                messageText.alignment = alignment;
             }
         }
 
