@@ -108,6 +108,7 @@ namespace ChatSystem.Bootstrap
         private void ConfigureServices()
         {
             chatController.SetChatOrchestrator(chatOrchestrator);
+            chatController.SetContextManager(contextManager);
             
             if (chatOrchestrator is ChatOrchestrator chatOrchestratorImpl)
             {
@@ -115,7 +116,6 @@ namespace ChatSystem.Bootstrap
                 chatOrchestratorImpl.SetContextManager(contextManager);
                 chatOrchestratorImpl.SetPersistenceService(persistenceService);
             }
-            
         }
         
         private void ConnectComponents()
