@@ -32,7 +32,6 @@ namespace ChatSystem.Services.LLM
                 if (webRequest.result == UnityWebRequest.Result.Success)
                 {
                     string responseText = webRequest.downloadHandler.text;
-                    LoggingService.LogInfo("OpenAI API call successful");
                     return ParseOpenAIResponse(responseText, request.model);
                 }
                 else

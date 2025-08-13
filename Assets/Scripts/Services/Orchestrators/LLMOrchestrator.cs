@@ -39,8 +39,6 @@ namespace ChatSystem.Services.Orchestrators
             {
                 activeAgentIds.Add(config.agentId);
             }
-            
-            LoggingService.LogInfo($"Agent {config.agentId} registered and {(config.enabled ? "activated" : "disabled")}");
         }
         
         public async Task<LLMResponse> ProcessMessageAsync(ConversationContext context)

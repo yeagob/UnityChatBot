@@ -24,6 +24,7 @@ namespace ChatSystem.Configuration.ScriptableObjects
         
         [Header("Tool Configuration")]
         public List<ToolConfig> availableTools;
+        public bool debugTools = true;
         public bool canExecuteTools = true;
         public int maxToolCalls = 5;
         

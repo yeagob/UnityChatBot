@@ -32,7 +32,6 @@ namespace ChatSystem.Bootstrap
         [SerializeField] private LogLevel logLevel = LogLevel.Info;
         
         [Header("Debug")]
-        [SerializeField] private bool enableDebugLogs = true;
         [SerializeField] private bool createDebugObjects = true;
         
         private IChatController chatController;
@@ -85,7 +84,7 @@ namespace ChatSystem.Bootstrap
         private void CreateServices()
         {
             llmOrchestrator = new LLMOrchestrator(agentExecutor);
-            chatOrchestrator = new ChatOrchestrator(defaultConversationId);
+            chatOrchestrator = new ChatOrchestrator();
             
             RegisterAgentConfigurations();
         }

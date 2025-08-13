@@ -28,7 +28,7 @@ namespace ChatSystem.Services.Agents
         
         public async Task<AgentResponse> ExecuteAgentAsync(string agentId, ConversationContext context)
         {
-            LoggingService.LogAgentExecution(agentId, "Starting");
+            LoggingService.LogAgentExecution(agentId, "Context: " + context);
             
             if (!agentConfigs.TryGetValue(agentId, out AgentConfig agentConfig))
             {

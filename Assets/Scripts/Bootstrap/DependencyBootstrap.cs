@@ -49,7 +49,6 @@ namespace ChatSystem.Bootstrap
         private void InitializeSystem()
         {
             LoggingService.Initialize(enableDebugLogs ? LogLevel.Debug : LogLevel.Info);
-            LoggingService.LogInfo("Starting Dependency Bootstrap");
             
             CreateServices();
             RegisterAgents();
@@ -61,8 +60,6 @@ namespace ChatSystem.Bootstrap
             {
                 CreateDebugObjects();
             }
-            
-            LoggingService.LogInfo("System initialization complete");
         }
         
         private void CreateServices()
@@ -71,11 +68,9 @@ namespace ChatSystem.Bootstrap
             persistenceService = new PersistenceService();
             agentExecutor = new AgentExecutor();
             llmOrchestrator = new LLMOrchestrator(agentExecutor);
-            chatOrchestrator = new ChatOrchestrator(defaultConversationId);
+            chatOrchestrator = new ChatOrchestrator();
             
             RegisterToolSets();
-            
-            LoggingService.LogInfo("Core services created");
         }
         
         private void RegisterAgents()
@@ -108,7 +103,6 @@ namespace ChatSystem.Bootstrap
         private void CreateControllers()
         {
             chatController = new ChatController(defaultConversationId);
-            LoggingService.LogInfo("Controllers created");
         }
         
         private void ConfigureServices()
@@ -122,7 +116,6 @@ namespace ChatSystem.Bootstrap
                 chatOrchestratorImpl.SetPersistenceService(persistenceService);
             }
             
-            LoggingService.LogInfo("Services configured");
         }
         
         private void ConnectComponents()

@@ -18,7 +18,6 @@ namespace ChatSystem.Services.Tools
         public UserToolSet()
         {
             userData = new Dictionary<string, object>();
-            LoggingService.LogInfo("UserToolSet initialized");
         }
         
         public List<ToolConfiguration> GetAvailableTools()

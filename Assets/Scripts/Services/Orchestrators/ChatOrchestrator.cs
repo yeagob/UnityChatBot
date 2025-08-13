@@ -16,11 +16,6 @@ namespace ChatSystem.Services.Orchestrators
         private IContextManager contextManager;
         private IPersistenceService persistenceService;
         
-        public ChatOrchestrator(string conversationId)
-        {
-            LoggingService.LogInfo($"ChatOrchestrator initialized with conversation: {conversationId}");
-        }
-        
         public void SetLLMOrchestrator(ILLMOrchestrator orchestrator)
         {
             llmOrchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
@@ -51,7 +46,7 @@ namespace ChatSystem.Services.Orchestrators
                 await persistenceService.SaveConversationAsync(context);
             }
             
-            LoggingService.LogDebug($"[ChatOrchestrator] Completed processing. Response success: {response.success}, Content: {response.content}");
+            LoggingService.LogDebug($"[ChatOrchestrator] Response Content: {response.content}");
             
             return response;
         }

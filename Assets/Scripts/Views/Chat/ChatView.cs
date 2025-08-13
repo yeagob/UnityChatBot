@@ -20,9 +20,6 @@ namespace ChatSystem.Views.Chat
         [Header("Message Prefabs")]
         [SerializeField] private GameObject messageViewPrefab;
 
-        [Header("Configuration")]
-        [SerializeField] private float messageSpacing = 10f;
-
         private IChatController chatController;
         private List<MessageView> displayedMessages;
 

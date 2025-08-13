@@ -7,9 +7,6 @@ namespace ChatSystem.Debugging
     {
         private IChatOrchestrator orchestrator;
         
-        [Header("Debug Info")]
-        [SerializeField] private bool showRuntimeInfo = true;
-        
         public void SetOrchestrator(IChatOrchestrator chatOrchestrator)
         {
             orchestrator = chatOrchestrator;

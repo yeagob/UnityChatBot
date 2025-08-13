@@ -8,9 +8,6 @@ namespace ChatSystem.Debugging
     {
         private ILLMOrchestrator orchestrator;
         
-        [Header("Debug Info")]
-        [SerializeField] private bool showAgentInfo = true;
-        
         public void SetOrchestrator(ILLMOrchestrator llmOrchestrator)
         {
             orchestrator = llmOrchestrator;

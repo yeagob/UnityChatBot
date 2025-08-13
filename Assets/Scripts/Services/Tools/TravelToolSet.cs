@@ -19,7 +19,6 @@ namespace ChatSystem.Services.Tools
         {
             travelData = new Dictionary<string, object>();
             InitializeMockTravelData();
-            LoggingService.LogInfo("TravelToolSet initialized");
         }
         
         public List<ToolConfiguration> GetAvailableTools()

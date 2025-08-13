@@ -24,8 +24,6 @@ namespace ChatSystem.Services.Context
                 await CreateConversationAsync(conversationId);
             }
             
-            LoggingService.LogDebug($"Getting context for conversation: {conversationId} - Message Count: {contexts[conversationId].GetAllMessages().Count}");
-            
             return contexts[conversationId];
         }
         

@@ -26,7 +26,6 @@ namespace ChatSystem.Controllers
         public void SetChatOrchestrator(IChatOrchestrator orchestrator)
         {
             chatOrchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
-            LoggingService.LogInfo($"[ChatController] ChatOrchestrator set successfully: {orchestrator.GetType().Name}");
         }
 
         public void InitializeConversation(string conversationId)
@@ -99,8 +98,6 @@ namespace ChatSystem.Controllers
                     messageText
                 );
 
-                LoggingService.LogDebug($"[ChatController] Response received! Success: {response.success}");
-
                 if (response.success && !string.IsNullOrEmpty(response.content))
                 {
                     currentContext.AddAssistantMessage(response.content);
@@ -160,7 +157,6 @@ namespace ChatSystem.Controllers
         private void InitializeController()
         {
             InitializeConversation(defaultConversationId);
-            LogControllerInitialized();
         }
 
         private void LogUserMessage(string message)
@@ -173,9 +169,5 @@ namespace ChatSystem.Controllers
             LoggingService.LogInfo($"[ChatController] Assistant response generated: {response}");
         }
 
-        private void LogControllerInitialized()
-        {
-            LoggingService.LogInfo("[ChatController] Chat Controller initialized");
-        }
     }
 }
