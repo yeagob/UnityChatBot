@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using ChatSystem.Configuration.ScriptableObjects;
 using ChatSystem.Enums;
+using ChatSystem.Models.Tools.MCP;
 
 namespace ChatSystem.Models.Tools
 {
@@ -136,20 +137,22 @@ namespace ChatSystem.Models.Tools
         }
         
         private Dictionary<string, ParameterSchema> ConvertToParameterSchemas(
-            Dictionary<string, MCP.PropertyDefinition> properties)
+            List<SerializableProperty> properties)
         {
             if (properties == null) return new Dictionary<string, ParameterSchema>();
             
             Dictionary<string, ParameterSchema> result = new Dictionary<string, ParameterSchema>();
             
-            foreach (var kvp in properties)
+            foreach (SerializableProperty prop in properties)
             {
-                result[kvp.Key] = new ParameterSchema
+                if (string.IsNullOrEmpty(prop.key)) continue;
+                
+                result[prop.key] = new ParameterSchema
                 {
-                    type = kvp.Value.type,
-                    description = kvp.Value.description,
-                    enumValues = kvp.Value.enumValues,
-                    defaultValue = kvp.Value.defaultValue
+                    type = prop.value.type,
+                    description = prop.value.description,
+                    enumValues = prop.value.enumValues,
+                    defaultValue = prop.value.defaultValue
                 };
             }
             

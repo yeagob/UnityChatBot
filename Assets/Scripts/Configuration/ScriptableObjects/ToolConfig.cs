@@ -68,30 +68,32 @@ namespace ChatSystem.Configuration.ScriptableObjects
             string result = "{";
             bool first = true;
             
-            foreach (var prop in function.parameters.properties)
+            foreach (SerializableProperty prop in function.parameters.properties)
             {
+                if (string.IsNullOrEmpty(prop.key)) continue;
+                
                 if (!first) result += ",";
                 first = false;
                 
-                result += "\"" + prop.Key + "\": {";
-                result += "\"type\": \"" + prop.Value.type + "\"";
+                result += "\"" + prop.key + "\": {";
+                result += "\"type\": \"" + prop.value.type + "\"";
                 
-                if (!string.IsNullOrEmpty(prop.Value.description))
-                    result += ", \"description\": \"" + prop.Value.description + "\"";
+                if (!string.IsNullOrEmpty(prop.value.description))
+                    result += ", \"description\": \"" + prop.value.description + "\"";
                 
-                if (prop.Value.items != null)
+                if (prop.value.items != null)
                 {
                     result += ", \"items\": {";
-                    result += "\"type\": \"" + prop.Value.items.type + "\"";
-                    if (!string.IsNullOrEmpty(prop.Value.items.description))
-                        result += ", \"description\": \"" + prop.Value.items.description + "\"";
+                    result += "\"type\": \"" + prop.value.items.type + "\"";
+                    if (!string.IsNullOrEmpty(prop.value.items.description))
+                        result += ", \"description\": \"" + prop.value.items.description + "\"";
                     result += "}";
                 }
                 
-                if (prop.Value.enumValues != null && prop.Value.enumValues.Count > 0)
+                if (prop.value.enumValues != null && prop.value.enumValues.Count > 0)
                 {
                     result += ", \"enum\": [";
-                    result += string.Join(",", prop.Value.enumValues.ConvertAll(e => "\"" + e + "\""));
+                    result += string.Join(",", prop.value.enumValues.ConvertAll(e => "\"" + e + "\""));
                     result += "]";
                 }
                 
