@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using ChatSystem.Controllers.Interfaces;
@@ -16,6 +17,7 @@ namespace ChatSystem.Controllers
         private ConversationContext currentContext;
         private IResponsable responseTarget;
         private IChatOrchestrator chatOrchestrator;
+        private int lastDisplayedMessageCount;
 
         public ChatController(string conversationId = "default-conversation")
         {
@@ -36,6 +38,7 @@ namespace ChatSystem.Controllers
             }
 
             currentContext = new ConversationContext(conversationId);
+            lastDisplayedMessageCount = 0;
         }
 
         public void SetResponseTarget(IResponsable target)
@@ -98,10 +101,12 @@ namespace ChatSystem.Controllers
                     messageText
                 );
 
+                DisplayNewMessages();
+
                 if (response.success && !string.IsNullOrEmpty(response.content))
                 {
                     currentContext.AddAssistantMessage(response.content);
-                    NotifyResponseTarget(GetLastMessage());
+                    DisplayNewMessages();
                     LogAssistantResponse(response.content);
                 }
                 else
@@ -122,22 +127,27 @@ namespace ChatSystem.Controllers
         private void AddUserMessageToContext(string messageText)
         {
             currentContext.AddUserMessage(messageText);
-            
-            Message userMessage = GetLastMessage();
-            NotifyResponseTarget(userMessage);
-            
+            DisplayNewMessages();
             LogUserMessage(messageText);
         }
 
-        private Message GetLastMessage()
+        private void DisplayNewMessages()
         {
-            var messages = currentContext.GetAllMessages();
-            return messages[messages.Count - 1];
-        }
+            if (responseTarget == null) return;
 
-        private void NotifyResponseTarget(Message message)
-        {
-            responseTarget?.ReceiveResponse(message);
+            List<Message> allMessages = currentContext.GetAllMessages();
+            int currentMessageCount = allMessages.Count;
+
+            if (currentMessageCount > lastDisplayedMessageCount)
+            {
+                for (int i = lastDisplayedMessageCount; i < currentMessageCount; i++)
+                {
+                    Message message = allMessages[i];
+                    responseTarget.ReceiveResponse(message);
+                    LoggingService.LogDebug($"[ChatController] Displayed message: {message.role} - {message.content.Substring(0, Math.Min(50, message.content.Length))}...");
+                }
+                lastDisplayedMessageCount = currentMessageCount;
+            }
         }
 
         private void HandleOrchestratorError(string errorMessage)
@@ -168,6 +178,5 @@ namespace ChatSystem.Controllers
         {
             LoggingService.LogInfo($"[ChatController] Assistant response generated: {response}");
         }
-
     }
 }
