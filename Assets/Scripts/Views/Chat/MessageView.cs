@@ -141,7 +141,7 @@ namespace ChatSystem.Views.Chat
         {
             string prefix = GetRolePrefix();
             string timestamp = currentMessage.timestamp.ToString("HH:mm");
-            return $"<size=80%><color=gray>[{timestamp}]</color></size> {prefix}{currentMessage.content}";
+            return $"<size=80%>[{timestamp}]</size> {prefix}{currentMessage.content}";
         }
 
         private string GetRolePrefix()
@@ -153,9 +153,9 @@ namespace ChatSystem.Views.Chat
                 case MessageRole.Assistant:
                     return "<b>Assistant:</b> ";
                 case MessageRole.Tool:
-                    return "<i><color=orange>[Tool Response]</color></i> ";
+                    return "<i>[Tool Response]</i> ";
                 case MessageRole.System:
-                    return "<i><color=gray>[System]</color></i> ";
+                    return "<i>[System]</i> ";
                 default:
                     return "";
             }
