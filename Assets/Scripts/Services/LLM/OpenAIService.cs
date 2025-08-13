@@ -85,9 +85,73 @@ namespace ChatSystem.Services.LLM
                 sb.Append("{");
                 sb.Append($"\"role\":\"{GetOpenAIRole(msg.role)}\",");
                 sb.Append($"\"content\":\"{EscapeJsonString(msg.content)}\"");
+                
+                if (msg.role == MessageRole.Assistant && msg.toolCalls != null && msg.toolCalls.Count > 0)
+                {
+                    AppendToolCalls(sb, msg.toolCalls);
+                }
+                
+                if (msg.role == MessageRole.Tool)
+                {
+                    sb.Append($",\"tool_call_id\":\"{msg.toolCallId}\"");
+                }
+                
                 sb.Append("}");
             }
             sb.Append("]");
+        }
+        
+        private static void AppendToolCalls(StringBuilder sb, List<ToolCall> toolCalls)
+        {
+            sb.Append(",\"tool_calls\":[");
+            for (int i = 0; i < toolCalls.Count; i++)
+            {
+                if (i > 0) sb.Append(",");
+                ToolCall toolCall = toolCalls[i];
+                sb.Append("{");
+                sb.Append($"\"id\":\"{toolCall.id}\",");
+                sb.Append("\"type\":\"function\",");
+                sb.Append("\"function\":{");
+                sb.Append($"\"name\":\"{toolCall.name}\",");
+                sb.Append($"\"arguments\":\"{EscapeJsonString(SerializeArguments(toolCall.arguments))}\"");
+                sb.Append("}}");
+            }
+            sb.Append("]");
+        }
+        
+        private static string SerializeArguments(Dictionary<string, object> arguments)
+        {
+            if (arguments == null || arguments.Count == 0)
+                return "{}";
+                
+            StringBuilder sb = new StringBuilder();
+            sb.Append("{");
+            bool first = true;
+            foreach (KeyValuePair<string, object> kvp in arguments)
+            {
+                if (!first) sb.Append(",");
+                sb.Append($"\"{kvp.Key}\":");
+                
+                if (kvp.Value is string)
+                {
+                    sb.Append($"\"{EscapeJsonString(kvp.Value.ToString())}\"");
+                }
+                else if (kvp.Value is bool)
+                {
+                    sb.Append(kvp.Value.ToString().ToLower());
+                }
+                else if (kvp.Value is int || kvp.Value is float || kvp.Value is double)
+                {
+                    sb.Append(kvp.Value.ToString());
+                }
+                else
+                {
+                    sb.Append($"\"{EscapeJsonString(kvp.Value?.ToString() ?? "")}\"");
+                }
+                first = false;
+            }
+            sb.Append("}");
+            return sb.ToString();
         }
         
         private static void AppendTools(StringBuilder sb, List<ToolConfiguration> tools)
