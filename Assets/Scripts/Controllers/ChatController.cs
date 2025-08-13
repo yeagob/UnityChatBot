@@ -99,19 +99,18 @@ namespace ChatSystem.Controllers
                     messageText
                 );
 
-                LoggingService.LogDebug($"[ChatController] Orchestrator response received. Success: {response.success}");
+                LoggingService.LogDebug($"[ChatController] Response received! Success: {response.success}");
 
                 if (response.success && !string.IsNullOrEmpty(response.content))
                 {
                     currentContext.AddAssistantMessage(response.content);
                     NotifyResponseTarget(GetLastMessage());
                     LogAssistantResponse(response.content);
-                    LoggingService.LogInfo("[ChatController] Successfully processed message with orchestrator");
                 }
                 else
                 {
                     string errorMsg = response.errorMessage ?? "Unknown orchestrator error";
-                    LoggingService.LogError($"[ChatController] Orchestrator failed. Success: {response.success}, Error: {errorMsg}");
+                    LoggingService.LogError($"[ChatController] Orchestrator failed. Error: {errorMsg}");
                     HandleOrchestratorError(errorMsg);
                 }
             }
