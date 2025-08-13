@@ -11,8 +11,9 @@ namespace ChatSystem.Configuration.ScriptableObjects
         public string agentName;
         [TextArea(3, 5)]
         public string description;
-        public string token;
-        public string serviceUrl;
+        
+        [Header("Provider Configuration")]
+        public ProviderConfiguration providerConfig;
         
         [Header("Model Configuration")]
         public ModelConfig modelConfig;
@@ -43,6 +44,9 @@ namespace ChatSystem.Configuration.ScriptableObjects
         public int priority = 0;
         public List<string> requiredCapabilities;
         
+        public string token => providerConfig?.token ?? string.Empty;
+        public string serviceUrl => providerConfig?.serviceUrl ?? string.Empty;
+        
         public AgentConfig()
         {
             contextPrompts = new List<PromptConfig>();
@@ -70,6 +74,8 @@ namespace ChatSystem.Configuration.ScriptableObjects
         public List<string> GetToolDefinitions()
         {
             List<string> definitions = new List<string>();
+            
+            if (!canExecuteTools) return definitions;
             
             foreach (ToolConfig tool in availableTools)
             {
