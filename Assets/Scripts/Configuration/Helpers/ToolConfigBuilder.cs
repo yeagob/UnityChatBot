@@ -40,15 +40,29 @@ namespace ChatSystem.Configuration.Helpers
         public static FunctionDefinition CreateFunction(string name, string description, 
             Dictionary<string, PropertyDefinition> properties, List<string> required)
         {
+            ParameterDefinition parameters = new ParameterDefinition();
+            parameters.SetPropertiesFromDictionary(properties);
+            parameters.required = required ?? new List<string>();
+            
+            return new FunctionDefinition
+            {
+                name = name,
+                description = description,
+                parameters = parameters
+            };
+        }
+        
+        public static FunctionDefinition CreateFunctionFromList(string name, string description,
+            List<SerializableProperty> properties, List<string> required)
+        {
             return new FunctionDefinition
             {
                 name = name,
                 description = description,
                 parameters = new ParameterDefinition
                 {
-                    type = "object",
-                    properties = properties,
-                    required = required
+                    properties = properties ?? new List<SerializableProperty>(),
+                    required = required ?? new List<string>()
                 }
             };
         }
