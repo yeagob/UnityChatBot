@@ -8,19 +8,8 @@ namespace ChatSystem.Configuration.ScriptableObjects
     {
         [Header("Provider Settings")]
         public ServiceProvider provider;
-        public string providerName;
-        
-        [Header("Authentication")]
         public string token;
         public string serviceUrl;
-        
-        [Header("Rate Limiting")]
-        public int requestsPerMinute = 60;
-        public int maxConcurrentRequests = 5;
-        
-        [Header("Costs")]
-        public float costPer1000InputTokens = 0.0015f;
-        public float costPer1000OutputTokens = 0.002f;
         
         public bool IsValid()
         {
