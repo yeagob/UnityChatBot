@@ -68,11 +68,39 @@ namespace ChatSystem.Services.LLM
             sb.Append($"\"model\":\"{request.model}\",");
             sb.Append($"\"temperature\":{request.temperature.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}");
             
-            AppendMessages(sb, request.messages);
+            List<Message> filteredMessages = FilterMessagesForOpenAI(request.messages);
+            AppendMessages(sb, filteredMessages);
             AppendTools(sb, request.tools);
             
             sb.Append("}");
             return sb.ToString();
+        }
+        
+        private static List<Message> FilterMessagesForOpenAI(List<Message> messages)
+        {
+            List<Message> filtered = new List<Message>();
+            
+            for (int i = 0; i < messages.Count; i++)
+            {
+                Message msg = messages[i];
+                
+                if (msg.role == MessageRole.System && IsToolDebugMessage(msg.content))
+                {
+                    continue;
+                }
+                
+                filtered.Add(msg);
+            }
+            
+            return filtered;
+        }
+        
+        private static bool IsToolDebugMessage(string content)
+        {
+            if (string.IsNullOrEmpty(content))
+                return false;
+                
+            return content.StartsWith("🔧 Tool Executed:") || content.StartsWith("❌ Tool Error:");
         }
         
         private static void AppendMessages(StringBuilder sb, List<Message> messages)
@@ -239,12 +267,6 @@ namespace ChatSystem.Services.LLM
         private static bool HasValidResponse(string content, List<ToolCall> toolCalls)
         {
             return !string.IsNullOrWhiteSpace(content) || (toolCalls != null && toolCalls.Count > 0);
-        }
-        
-        private static string GetFallbackResponse()
-        {
-            LoggingService.LogWarning("OpenAI response has no valid content or tool calls - applying fallback");
-            return "¡Hola Santiago! Me encanta que quieras viajar a China. Es un destino fascinante con una cultura milenaria. ¿Hay alguna región específica de China que te interese más? ¿Prefieres ciudades como Beijing y Shanghai, o te llama más la atención algo como la Gran Muralla o los paisajes de Guilin?";
         }
         
         private static LLMResponse CreateSuccessResponse(string content, List<ToolCall> toolCalls, string model, int outputTokens, bool success)
