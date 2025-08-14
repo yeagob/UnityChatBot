@@ -56,14 +56,18 @@ namespace ChatSystem.Services.Orchestrators
         {
             ValidateOrchestrator();
             ValidateMessage(message);
+            
             LoggingService.LogInfo($"Processing message for conversation: {conversationId}");
             
             await contextManager.AddMessageAsync(conversationId, message);
+            
             ConversationContext context = await contextManager.GetContextAsync(conversationId);
             
             LLMResponse response = await ExecuteLLMProcessing(context);
+            
             await ProcessLLMResponse(conversationId, response);
             
+            //WIP
             if (persistenceService != null)
             {
                 await persistenceService.SaveConversationAsync(context);

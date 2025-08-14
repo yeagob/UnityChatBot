@@ -15,6 +15,7 @@ namespace ChatSystem.Models.LLM
         public float temperature;
         public string model;
         public ServiceProvider provider;
+        //TODO: Add More request control
         
         public LLMRequest()
         {

@@ -19,11 +19,9 @@ namespace ChatSystem.Services.LLM
         {
             try
             {
-                LoggingService.LogInfo($"Making OpenAI API call to model: {request.model}");
-                
                 string jsonPayload = BuildOpenAIPayload(request);
                 
-                LoggingService.LogDebug($"Making OpenAI API call with PAYLOAD: {jsonPayload}");
+                LoggingService.LogDebug($"[OpenAIService] Making OpenAI API call to model- {request.model} with PAYLOAD: {jsonPayload}");
                 
                 UnityWebRequest webRequest = CreateWebRequest(jsonPayload, apiKey, baseUrl);
                 
@@ -34,16 +32,16 @@ namespace ChatSystem.Services.LLM
                     string responseText = webRequest.downloadHandler.text;
                     return ParseOpenAIResponse(responseText, request.model);
                 }
-                else
-                {
-                    string error = $"OpenAI API Error: {webRequest.error} - {webRequest.downloadHandler.text}";
-                    LoggingService.LogError(error);
-                    return CreateErrorResponse(request.model, error);
-                }
+                
+                string error = $"[OpenAIService] OpenAI API Error: {webRequest.error} - {webRequest.downloadHandler.text}";
+                
+                LoggingService.LogError(error);
+                
+                return CreateErrorResponse(request.model, error);
             }
             catch (Exception ex)
             {
-                LoggingService.LogError($"OpenAI API Exception: {ex.Message}");
+                LoggingService.LogError($"[OpenAIService] OpenAI API Exception: {ex.Message}");
                 return CreateErrorResponse(request.model, ex.Message);
             }
         }
@@ -52,6 +50,7 @@ namespace ChatSystem.Services.LLM
         {
             UnityWebRequest webRequest = new UnityWebRequest(baseUrl, "POST");
             byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonPayload);
+            
             webRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
             webRequest.downloadHandler = new DownloadHandlerBuffer();
             
@@ -63,17 +62,17 @@ namespace ChatSystem.Services.LLM
         
         private static string BuildOpenAIPayload(LLMRequest request)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("{");
-            sb.Append($"\"model\":\"{request.model}\",");
-            sb.Append($"\"temperature\":{request.temperature.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}");
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.Append("{");
+            stringBuilder.Append($"\"model\":\"{request.model}\",");
+            stringBuilder.Append($"\"temperature\":{request.temperature.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}");
             
             List<Message> filteredMessages = FilterMessagesForOpenAI(request.messages);
-            AppendMessages(sb, filteredMessages);
-            AppendTools(sb, request.tools);
+            AppendMessages(stringBuilder, filteredMessages);
+            AppendTools(stringBuilder, request.tools);
+            stringBuilder.Append("}");
             
-            sb.Append("}");
-            return sb.ToString();
+            return stringBuilder.ToString();
         }
         
         private static List<Message> FilterMessagesForOpenAI(List<Message> messages)
@@ -98,7 +97,9 @@ namespace ChatSystem.Services.LLM
         private static bool IsToolDebugMessage(string content)
         {
             if (string.IsNullOrEmpty(content))
+            {
                 return false;
+            }
                 
             return content.StartsWith("🔧 Tool Executed:") || content.StartsWith("❌ Tool Error:");
         }
@@ -106,6 +107,7 @@ namespace ChatSystem.Services.LLM
         private static void AppendMessages(StringBuilder sb, List<Message> messages)
         {
             sb.Append(",\"messages\":[");
+            
             for (int i = 0; i < messages.Count; i++)
             {
                 if (i > 0) sb.Append(",");
@@ -116,12 +118,12 @@ namespace ChatSystem.Services.LLM
                 
                 if (msg.role == MessageRole.Assistant && msg.toolCalls != null && msg.toolCalls.Count > 0)
                 {
-                    AppendToolCalls(sb, msg.toolCalls);
+                    AppendFunctionToolCalls(sb, msg.toolCalls);
                 }
                 
                 if (msg.role == MessageRole.Tool)
                 {
-                    sb.Append($",\"tool_call_id\":\"{msg.toolCallId}\"");
+                    //Extra tool info?
                 }
                 
                 sb.Append("}");
@@ -129,9 +131,10 @@ namespace ChatSystem.Services.LLM
             sb.Append("]");
         }
         
-        private static void AppendToolCalls(StringBuilder sb, List<ToolCall> toolCalls)
+        private static void AppendFunctionToolCalls(StringBuilder sb, List<ToolCall> toolCalls)
         {
             sb.Append(",\"tool_calls\":[");
+            
             for (int i = 0; i < toolCalls.Count; i++)
             {
                 if (i > 0) sb.Append(",");
@@ -144,20 +147,30 @@ namespace ChatSystem.Services.LLM
                 sb.Append($"\"arguments\":\"{EscapeJsonString(SerializeArguments(toolCall.arguments))}\"");
                 sb.Append("}}");
             }
+            
             sb.Append("]");
         }
         
         private static string SerializeArguments(Dictionary<string, object> arguments)
         {
             if (arguments == null || arguments.Count == 0)
+            {
                 return "{}";
+            }
                 
             StringBuilder sb = new StringBuilder();
+            
             sb.Append("{");
+            
             bool first = true;
+            
             foreach (KeyValuePair<string, object> kvp in arguments)
             {
-                if (!first) sb.Append(",");
+                if (!first)
+                {
+                    sb.Append(",");
+                }
+                
                 sb.Append($"\"{kvp.Key}\":");
                 
                 if (kvp.Value is string)
@@ -170,15 +183,18 @@ namespace ChatSystem.Services.LLM
                 }
                 else if (kvp.Value is int || kvp.Value is float || kvp.Value is double)
                 {
-                    sb.Append(kvp.Value.ToString());
+                    sb.Append(kvp.Value);
                 }
                 else
                 {
                     sb.Append($"\"{EscapeJsonString(kvp.Value?.ToString() ?? "")}\"");
                 }
+                
                 first = false;
             }
+            
             sb.Append("}");
+            
             return sb.ToString();
         }
         
@@ -187,11 +203,13 @@ namespace ChatSystem.Services.LLM
             if (tools != null && tools.Count > 0)
             {
                 sb.Append(",\"tools\":[");
+                
                 for (int i = 0; i < tools.Count; i++)
                 {
                     if (i > 0) sb.Append(",");
                     sb.Append(tools[i].ToOpenAIFormat());
                 }
+                
                 sb.Append("]");
                 sb.Append(",\"tool_choice\":\"auto\"");
             }
@@ -201,7 +219,7 @@ namespace ChatSystem.Services.LLM
         {
             try
             {
-                LoggingService.LogDebug($" OpenAI response: {responseText}");
+                LoggingService.LogDebug($"OpenAI response: {responseText}");
 
                 OpenAIResponse response = JsonUtility.FromJson<OpenAIResponse>(responseText);
                 
@@ -235,17 +253,25 @@ namespace ChatSystem.Services.LLM
         
         private static List<ToolCall> ExtractToolCalls(OpenAIResponse response)
         {
-            if (response.choices == null || response.choices.Count == 0) return null;
+            if (response.choices == null || response.choices.Count == 0)
+            {
+                return null;
+            }
             
             List<OpenAIToolCall> apiToolCalls = response.choices[0].message.tool_calls;
-            if (apiToolCalls == null || apiToolCalls.Count == 0) return null;
+            if (apiToolCalls == null || apiToolCalls.Count == 0)
+            {
+                return null;
+            }
             
             List<ToolCall> toolCalls = new List<ToolCall>();
+            
             foreach (OpenAIToolCall apiToolCall in apiToolCalls)
             {
                 try
                 {
                     Dictionary<string, object> args = SimpleJsonParser.ParseArguments(apiToolCall.function.arguments);
+                    
                     toolCalls.Add(new ToolCall(apiToolCall.function.name, args)
                     {
                         id = apiToolCall.id
@@ -290,13 +316,17 @@ namespace ChatSystem.Services.LLM
                 case MessageRole.Assistant: return "assistant";
                 case MessageRole.System: return "system";
                 case MessageRole.Tool: return "tool";
+                
                 default: return "user";
             }
         }
         
         private static string EscapeJsonString(string input)
         {
-            if (string.IsNullOrEmpty(input)) return string.Empty;
+            if (string.IsNullOrEmpty(input))
+            {
+                return string.Empty;
+            }
             
             return input
                 .Replace("\\", "\\\\")
@@ -308,7 +338,10 @@ namespace ChatSystem.Services.LLM
         
         private static string UnescapeJsonString(string input)
         {
-            if (string.IsNullOrEmpty(input)) return string.Empty;
+            if (string.IsNullOrEmpty(input))
+            {
+                return string.Empty;
+            }
             
             return input
                 .Replace("\\\\", "\\")
