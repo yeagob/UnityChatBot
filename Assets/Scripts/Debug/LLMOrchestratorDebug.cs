@@ -8,25 +8,9 @@ namespace ChatSystem.Debugging
     {
         private ILLMOrchestrator orchestrator;
         
-        [Header("Debug Info")]
-        [SerializeField] private bool showAgentInfo = true;
-        
         public void SetOrchestrator(ILLMOrchestrator llmOrchestrator)
         {
             orchestrator = llmOrchestrator;
-        }
-        
-        [ContextMenu("Show Active Agents")]
-        public void ShowActiveAgents()
-        {
-            if (orchestrator == null)
-            {
-                Debug.LogError("LLMOrchestrator not set");
-                return;
-            }
-            
-            var agents = orchestrator.GetActiveAgentIds();
-            Debug.Log($"Active Agents ({agents.Length}): {string.Join(", ", agents)}");
         }
         
      

@@ -7,9 +7,6 @@ namespace ChatSystem.Debugging
     {
         private IChatController controller;
         
-        [Header("Debug Info")]
-        [SerializeField] private bool showControllerInfo = true;
-        
         public void SetController(IChatController chatController)
         {
             controller = chatController;

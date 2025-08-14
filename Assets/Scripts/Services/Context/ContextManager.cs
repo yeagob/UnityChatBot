@@ -15,13 +15,10 @@ namespace ChatSystem.Services.Context
         public ContextManager()
         {
             contexts = new Dictionary<string, ConversationContext>();
-            LoggingService.LogInfo("ContextManager initialized");
         }
         
         public async Task<ConversationContext> GetContextAsync(string conversationId)
         {
-            LoggingService.LogDebug($"Getting context for conversation: {conversationId}");
-            
             if (!contexts.ContainsKey(conversationId))
             {
                 await CreateConversationAsync(conversationId);
@@ -32,8 +29,6 @@ namespace ChatSystem.Services.Context
         
         public async Task UpdateContextAsync(string conversationId, ConversationContext context)
         {
-            LoggingService.LogDebug($"Updating context for conversation: {conversationId}");
-            
             contexts[conversationId] = context;
             
             await Task.CompletedTask;
@@ -41,10 +36,8 @@ namespace ChatSystem.Services.Context
         
         public async Task AddMessageAsync(string conversationId, Message message)
         {
-            LoggingService.LogMessageReceived(conversationId, message.role.ToString());
-            
             ConversationContext context = await GetContextAsync(conversationId);
-            context.AddMessage(message);
+            context.AddMessage(message.role, message.content);
             
             await UpdateContextAsync(conversationId, context);
         }
@@ -76,7 +69,7 @@ namespace ChatSystem.Services.Context
         public async Task<List<Message>> GetMessagesAsync(string conversationId)
         {
             ConversationContext context = await GetContextAsync(conversationId);
-            return context.GetMessages();
+            return context.GetAllMessages();
         }
         
         public async Task<bool> ExistsAsync(string conversationId)
@@ -87,8 +80,6 @@ namespace ChatSystem.Services.Context
         
         public async Task CreateConversationAsync(string conversationId)
         {
-            LoggingService.LogInfo($"Creating new conversation: {conversationId}");
-            
             ConversationContext newContext = new ConversationContext(conversationId);
             contexts[conversationId] = newContext;
             
@@ -101,7 +92,7 @@ namespace ChatSystem.Services.Context
             
             if (contexts.ContainsKey(conversationId))
             {
-                contexts[conversationId].ClearMessages();
+                contexts[conversationId].Clear();
             }
             
             await Task.CompletedTask;
@@ -111,7 +102,7 @@ namespace ChatSystem.Services.Context
         {
             ConversationContext context = await GetContextAsync(conversationId);
             await Task.CompletedTask;
-            return context.GetMessages().Count;
+            return context.GetAllMessages().Count;
         }
         
         private Message CreateMessage(string conversationId, MessageRole role, string content, string toolCallId = null)

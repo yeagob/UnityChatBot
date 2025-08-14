@@ -6,7 +6,6 @@ using ChatSystem.Services.Orchestrators.Interfaces;
 using ChatSystem.Services.Context.Interfaces;
 using ChatSystem.Services.Persistence.Interfaces;
 using ChatSystem.Services.Logging;
-using ChatSystem.Enums;
 
 namespace ChatSystem.Services.Orchestrators
 {
@@ -15,42 +14,30 @@ namespace ChatSystem.Services.Orchestrators
         private ILLMOrchestrator llmOrchestrator;
         private IContextManager contextManager;
         private IPersistenceService persistenceService;
-        private string defaultConversationId;
-        
-        public ChatOrchestrator()
-        {
-            defaultConversationId = "default-conversation";
-            LoggingService.LogInfo("ChatOrchestrator initialized");
-        }
-        
-        public ChatOrchestrator(string conversationId)
-        {
-            defaultConversationId = conversationId;
-            LoggingService.LogInfo($"ChatOrchestrator initialized with conversation: {conversationId}");
-        }
         
         public void SetLLMOrchestrator(ILLMOrchestrator orchestrator)
         {
             llmOrchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
-            LoggingService.LogDebug("LLMOrchestrator set in ChatOrchestrator");
         }
-        
+
+        public Task<LLMResponse> ProcessMessageAsync(string conversationId, Message message)
+        {
+            throw new NotImplementedException();
+        }
+
         public void SetContextManager(IContextManager manager)
         {
             contextManager = manager ?? throw new ArgumentNullException(nameof(manager));
-            LoggingService.LogDebug("ContextManager set in ChatOrchestrator");
         }
         
         public void SetPersistenceService(IPersistenceService service)
         {
             persistenceService = service ?? throw new ArgumentNullException(nameof(service));
-            LoggingService.LogDebug("PersistenceService set in ChatOrchestrator");
         }
         
         public async Task<LLMResponse> ProcessUserMessageAsync(string conversationId, string userMessage)
         {
             ValidateOrchestrator();
-            LoggingService.LogInfo($"Processing user message for conversation: {conversationId}");
             
             await contextManager.AddUserMessageAsync(conversationId, userMessage);
             ConversationContext context = await contextManager.GetContextAsync(conversationId);
@@ -58,30 +45,15 @@ namespace ChatSystem.Services.Orchestrators
             LLMResponse response = await ExecuteLLMProcessing(context);
             await ProcessLLMResponse(conversationId, response);
             
+            //WIP
             if (persistenceService != null)
             {
                 await persistenceService.SaveConversationAsync(context);
             }
             
-            return response;
-        }
-        
-        public async Task<LLMResponse> ProcessMessageAsync(string conversationId, Message message)
-        {
-            ValidateOrchestrator();
-            ValidateMessage(message);
-            LoggingService.LogInfo($"Processing message for conversation: {conversationId}");
+            response.context = context;
             
-            await contextManager.AddMessageAsync(conversationId, message);
-            ConversationContext context = await contextManager.GetContextAsync(conversationId);
-            
-            LLMResponse response = await ExecuteLLMProcessing(context);
-            await ProcessLLMResponse(conversationId, response);
-            
-            if (persistenceService != null)
-            {
-                await persistenceService.SaveConversationAsync(context);
-            }
+            LoggingService.LogDebug($"[ChatOrchestrator] Response Content: {response.content}");
             
             return response;
         }
@@ -127,11 +99,13 @@ namespace ChatSystem.Services.Orchestrators
         {
             if (llmOrchestrator == null)
             {
+                LoggingService.LogCritical("[ChatOrchestrator] No LLM orchestrator configured");
                 throw new InvalidOperationException("LLMOrchestrator not set. Call SetLLMOrchestrator first.");
             }
             
             if (contextManager == null)
             {
+                LoggingService.LogCritical("[ChatOrchestrator] No context manager configured");
                 throw new InvalidOperationException("ContextManager not set. Call SetContextManager first.");
             }
         }
@@ -140,6 +114,7 @@ namespace ChatSystem.Services.Orchestrators
         {
             if (string.IsNullOrWhiteSpace(message.content))
             {
+                LoggingService.LogError($"[ChatOrchestrator] Message content is empty");
                 throw new ArgumentException("Message content cannot be empty", nameof(message));
             }
         }
@@ -148,7 +123,6 @@ namespace ChatSystem.Services.Orchestrators
         {
             try
             {
-                LoggingService.LogDebug("Executing LLM processing");
                 return await llmOrchestrator.ProcessMessageAsync(context);
             }
             catch (Exception ex)

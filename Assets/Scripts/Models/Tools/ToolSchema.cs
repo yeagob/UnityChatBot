@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ChatSystem.Models.Tools;
 
 [Serializable]
 public class ToolSchema

@@ -43,7 +43,7 @@ namespace ChatSystem.Configuration
         public static class LLM
         {
             public const float DEFAULT_TEMPERATURE = 0.7f;
-            public const int DEFAULT_MAX_TOKENS = 2000;
+            public const int DEFAULT_MAX_TOKENS = 300;
             public const int MOCK_DELAY_MS = 1000;
             public const int MOCK_PROMPT_TOKENS = 150;
             public const int MOCK_COMPLETION_TOKENS = 80;

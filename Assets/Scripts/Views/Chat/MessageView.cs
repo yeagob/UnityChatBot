@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 using ChatSystem.Models.Context;
 using ChatSystem.Enums;
@@ -7,11 +8,26 @@ namespace ChatSystem.Views.Chat
 {
     public class MessageView : MonoBehaviour
     {
+        [Header("Components")]
         [SerializeField] private TextMeshProUGUI messageText;
         [SerializeField] private RectTransform messageContainer;
-        [SerializeField] private GameObject userMessagePrefab;
-        [SerializeField] private GameObject assistantMessagePrefab;
-        [SerializeField] private GameObject toolMessagePrefab;
+        [SerializeField] private Image backgroundImage;
+        
+        [Header("User Message Colors")]
+        [SerializeField] private Color userTextColor = Color.white;
+        [SerializeField] private Color userBackgroundColor = new Color(0.2f, 0.4f, 0.8f, 0.8f);
+        
+        [Header("Assistant Message Colors")]
+        [SerializeField] private Color assistantTextColor = Color.cyan;
+        [SerializeField] private Color assistantBackgroundColor = new Color(0.3f, 0.6f, 0.3f, 0.8f);
+        
+        [Header("Tool Message Colors")]
+        [SerializeField] private Color toolTextColor = Color.yellow;
+        [SerializeField] private Color toolBackgroundColor = new Color(0.8f, 0.6f, 0.2f, 0.8f);
+        
+        [Header("System Message Colors")]
+        [SerializeField] private Color systemTextColor = Color.gray;
+        [SerializeField] private Color systemBackgroundColor = new Color(0.4f, 0.4f, 0.4f, 0.6f);
 
         private Message currentMessage;
 
@@ -49,47 +65,71 @@ namespace ChatSystem.Views.Chat
 
         private void ConfigureUserMessage()
         {
-            messageText.color = Color.white;
-            messageText.alignment = TextAlignmentOptions.Left;
-            messageContainer.anchorMin = new Vector2(0f, 0f);
-            messageContainer.anchorMax = new Vector2(0.8f, 1f);
+            SetTextColor(userTextColor);
+            SetBackgroundColor(userBackgroundColor);
+            SetAnchors(0f, 0f, 0.8f, 1f);
         }
 
         private void ConfigureAssistantMessage()
         {
-            messageText.color = Color.cyan;
-            messageText.alignment = TextAlignmentOptions.Right;
-            messageContainer.anchorMin = new Vector2(0.2f, 0f);
-            messageContainer.anchorMax = new Vector2(1f, 1f);
+            SetTextColor(assistantTextColor);
+            SetBackgroundColor(assistantBackgroundColor);
+            SetAnchors(0.2f, 0f, 1f, 1f);
         }
 
         private void ConfigureToolMessage()
         {
-            messageText.color = Color.yellow;
-            messageText.alignment = TextAlignmentOptions.Center;
-            messageContainer.anchorMin = new Vector2(0.1f, 0f);
-            messageContainer.anchorMax = new Vector2(0.9f, 1f);
+            SetTextColor(toolTextColor);
+            SetBackgroundColor(toolBackgroundColor);
+            SetAnchors(0.1f, 0f, 0.9f, 1f);
         }
 
         private void ConfigureSystemMessage()
         {
-            messageText.color = Color.gray;
-            messageText.alignment = TextAlignmentOptions.Center;
-            messageContainer.anchorMin = new Vector2(0f, 0f);
-            messageContainer.anchorMax = new Vector2(1f, 1f);
+            SetTextColor(systemTextColor);
+            SetBackgroundColor(systemBackgroundColor);
+            SetAnchors(0f, 0f, 1f, 1f);
+        }
+
+        private void SetTextColor(Color textColor)
+        {
+            if (messageText != null)
+            {
+                messageText.color = textColor;
+            }
+        }
+
+        private void SetBackgroundColor(Color backgroundColor)
+        {
+            if (backgroundImage != null)
+            {
+                backgroundImage.color = backgroundColor;
+            }
+        }
+
+        private void SetAnchors(float minX, float minY, float maxX, float maxY)
+        {
+            if (messageContainer != null)
+            {
+                messageContainer.anchorMin = new Vector2(minX, minY);
+                messageContainer.anchorMax = new Vector2(maxX, maxY);
+            }
         }
 
         private void SetMessageContent()
         {
             string formattedContent = FormatMessageContent();
-            messageText.text = formattedContent;
+            if (messageText != null)
+            {
+                messageText.text = formattedContent;
+            }
         }
 
         private string FormatMessageContent()
         {
             string prefix = GetRolePrefix();
             string timestamp = currentMessage.timestamp.ToString("HH:mm");
-            return $"<size=80%><color=gray>[{timestamp}]</color></size> {prefix}{currentMessage.content}";
+            return $"<size=80%>[{timestamp}]</size> {prefix}{currentMessage.content}";
         }
 
         private string GetRolePrefix()
@@ -101,9 +141,9 @@ namespace ChatSystem.Views.Chat
                 case MessageRole.Assistant:
                     return "<b>Assistant:</b> ";
                 case MessageRole.Tool:
-                    return "<i><color=orange>[Tool Response]</color></i> ";
+                    return "<i>[Tool Response]</i> ";
                 case MessageRole.System:
-                    return "<i><color=gray>[System]</color></i> ";
+                    return "<i>[System]</i> ";
                 default:
                     return "";
             }
@@ -113,7 +153,8 @@ namespace ChatSystem.Views.Chat
         {
             if (messageContainer != null)
             {
-                messageContainer.sizeDelta = new Vector2(messageContainer.sizeDelta.x, GetPreferredHeight());
+                float preferredHeight = GetPreferredHeight();
+                messageContainer.sizeDelta = new Vector2(messageContainer.sizeDelta.x, preferredHeight);
             }
         }
 

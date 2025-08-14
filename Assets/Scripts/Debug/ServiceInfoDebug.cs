@@ -13,8 +13,6 @@ namespace ChatSystem.Debugging
             serviceName = name;
             serviceType = type;
             isInitialized = true;
-            
-            Debug.Log($"[ServiceInfo] {serviceName} ({serviceType}) initialized");
         }
         
         [ContextMenu("Show Service Info")]

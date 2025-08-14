@@ -1,300 +1,268 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using ChatSystem.Models.Agents;
-using ChatSystem.Models.Context;
+using UnityEngine;
 using ChatSystem.Models.LLM;
+using ChatSystem.Models.Context;
+using ChatSystem.Models.Agents;
 using ChatSystem.Models.Tools;
-using ChatSystem.Enums;
-using ChatSystem.Services.Agents.Interfaces;
+using ChatSystem.Configuration.ScriptableObjects;
 using ChatSystem.Services.Tools.Interfaces;
+using ChatSystem.Services.Agents.Interfaces;
 using ChatSystem.Services.Logging;
+using ChatSystem.Services.LLM;
+using ChatSystem.Services.Tools;
+using ChatSystem.Enums;
 
 namespace ChatSystem.Services.Agents
 {
     public class AgentExecutor : IAgentExecutor
     {
-        private readonly Dictionary<string, IToolSet> toolSets;
+        private readonly Dictionary<string, IToolSet> registeredToolSets;
+        private readonly Dictionary<string, AgentConfig> agentConfigs;
         
         public AgentExecutor()
         {
-            toolSets = new Dictionary<string, IToolSet>();
-            LoggingService.LogInfo("AgentExecutor initialized");
+            registeredToolSets = new Dictionary<string, IToolSet>();
+            agentConfigs = new Dictionary<string, AgentConfig>();
         }
         
-        public async Task<AgentResponse> ExecuteAgentAsync(Agent agent, ConversationContext context)
+        public async Task<AgentResponse> ExecuteAgentAsync(string agentId, ConversationContext context)
         {
-            LoggingService.LogAgentExecution(agent.agentId, "Starting agent execution");
+            LoggingService.LogAgentExecution(agentId, "Context: " + context);
+            
+            if (!agentConfigs.TryGetValue(agentId, out AgentConfig agentConfig))
+            {
+                LoggingService.LogError($"Agent {agentId} not found");
+                return CreateErrorResponse(agentId, "Agent configuration not found");
+            }
+            
+            if (!agentConfig.enabled)
+            {
+                LoggingService.LogWarning($"Agent {agentId} is disabled");
+                return CreateErrorResponse(agentId, "Agent is disabled");
+            }
             
             try
             {
-                LLMRequest llmRequest = BuildLLMRequest(agent, context);
-                LLMResponse llmResponse = await CallLLMAsync(llmRequest);
+                LLMRequest request = BuildLLMRequest(agentConfig, context);
+                LLMResponse llmResponse = await ExecuteLLMCallAsync(request, agentConfig);
                 
-                AgentResponse agentResponse = await ProcessLLMResponse(agent, llmResponse, context);
+                if (llmResponse.toolCalls != null && llmResponse.toolCalls.Count > 0)
+                {
+                    context.AddAssistantMessage(llmResponse.content, llmResponse.toolCalls);
+                    
+                    ToolDebugContext debugContext = CreateDebugContext(agentConfig, context);
+                    
+                    List<ToolResponse> toolResponses = await ExecuteToolCallsAsync(
+                        llmResponse.toolCalls, agentConfig.maxToolCalls, debugContext);
+                    
+                    foreach (ToolResponse toolResponse in toolResponses)
+                    {
+                        context.AddToolMessage(toolResponse.content, toolResponse.toolCallId);
+                    }
+                    
+                    LLMRequest followUpRequest = BuildLLMRequest(agentConfig, context);
+                    llmResponse = await ExecuteLLMCallAsync(followUpRequest, agentConfig);
+                }
                 
-                LoggingService.LogAgentExecution(agent.agentId, "Agent execution completed successfully");
-                return agentResponse;
+                LoggingService.LogAgentExecution(agentId, "Completed");
+                
+                return new AgentResponse
+                {
+                    agentId = agentId,
+                    content = llmResponse.content,
+                    toolCalls = llmResponse.toolCalls,
+                    success = true,
+                    timestamp = DateTime.UtcNow
+                };
             }
             catch (Exception ex)
             {
-                LoggingService.LogError($"Agent execution failed for {agent.agentId}: {ex.Message}");
-                return CreateErrorResponse(agent, ex.Message);
+                LoggingService.LogError($"Agent {agentId} execution failed: {ex.Message}");
+                return CreateErrorResponse(agentId, ex.Message);
             }
         }
         
-        public async Task<LLMResponse> CallLLMAsync(LLMRequest request)
+        public void RegisterAgent(AgentConfig agentConfig)
         {
-            LoggingService.LogInfo($"Calling LLM service: {request.model}");
-            
-            await Task.Delay(1000);
-            
-            string mockResponse = GenerateMockLLMResponse(request);
-            List<ToolCall> mockToolCalls = GenerateMockToolCalls(request);
-            
-            return new LLMResponse
+            if (agentConfig == null || string.IsNullOrEmpty(agentConfig.agentId))
             {
-                content = mockResponse,
-                toolCalls = mockToolCalls,
-                model = request.model,
-                usage = new Dictionary<string, object>
-                {
-                    ["prompt_tokens"] = 150,
-                    ["completion_tokens"] = 80,
-                    ["total_tokens"] = 230
-                },
-                timestamp = DateTime.UtcNow
-            };
-        }
-        
-        public async Task<bool> ValidateAgentAsync(Agent agent)
-        {
-            await Task.CompletedTask;
-            
-            if (string.IsNullOrEmpty(agent.agentId) || string.IsNullOrEmpty(agent.llmConfiguration.model))
-                return false;
-                
-            if (agent.toolSetIds != null)
-            {
-                foreach (string toolSetId in agent.toolSetIds)
-                {
-                    if (!toolSets.ContainsKey(toolSetId))
-                    {
-                        LoggingService.LogWarning($"ToolSet not found: {toolSetId}");
-                        return false;
-                    }
-                }
+                LoggingService.LogError("Invalid agent configuration");
+                return;
             }
             
-            return true;
+            agentConfigs[agentConfig.agentId] = agentConfig;
         }
         
         public void RegisterToolSet(IToolSet toolSet)
         {
-            toolSets[toolSet.ToolSetId] = toolSet;
-            LoggingService.LogInfo($"ToolSet registered: {toolSet.ToolSetId}");
+            if (toolSet == null)
+            {
+                LoggingService.LogError("Cannot register null ToolSet");
+                return;
+            }
+            
+            string toolSetName = toolSet.GetType().Name;
+            registeredToolSets[toolSetName] = toolSet;
+            LoggingService.LogInfo($"ToolSet {toolSetName} registered with {toolSet.GetAvailableTools().Count} tools");
         }
         
-        public void UnregisterToolSet(string toolSetId)
+        public void UnregisterToolSet(string toolSetName)
         {
-            if (toolSets.Remove(toolSetId))
+            if (registeredToolSets.Remove(toolSetName))
             {
-                LoggingService.LogInfo($"ToolSet unregistered: {toolSetId}");
+                LoggingService.LogInfo($"ToolSet {toolSetName} unregistered");
             }
         }
         
-        public List<IToolSet> GetRegisteredToolSets()
+        public List<string> GetRegisteredToolSets()
         {
-            return toolSets.Values.ToList();
+            return new List<string>(registeredToolSets.Keys);
         }
         
-        public List<IToolSet> GetToolSetsForAgent(Agent agent)
+        private ToolDebugContext CreateDebugContext(AgentConfig agentConfig, ConversationContext context)
         {
-            if (agent.toolSetIds == null || agent.toolSetIds.Count == 0)
-                return new List<IToolSet>();
+            if (!agentConfig.debugTools)
+                return ToolDebugContext.Disabled;
                 
-            return agent.toolSetIds
-                .Where(id => toolSets.ContainsKey(id))
-                .Select(id => toolSets[id])
-                .ToList();
+            ConversationToolDebugHandler debugHandler = new ConversationToolDebugHandler(context);
+            return new ToolDebugContext(true, debugHandler);
         }
         
-        private LLMRequest BuildLLMRequest(Agent agent, ConversationContext context)
+        private LLMRequest BuildLLMRequest(AgentConfig agentConfig, ConversationContext context)
         {
-            List<IToolSet> agentToolSets = GetToolSetsForAgent(agent);
-            List<ToolConfiguration> availableTools = agentToolSets
-                .SelectMany(ts => ts.GetAvailableTools())
-                .ToList();
+            List<Message> messages = new List<Message>();
             
-            LoggingService.LogPromptConstruction(agent.agentId, context.GetMessages().Count);
+            if (agentConfig.systemPrompt != null)
+            {
+                messages.Add(new Message
+                {
+                    role = MessageRole.System,
+                    content = agentConfig.GetFullSystemPrompt(),
+                    timestamp = DateTime.UtcNow
+                });
+            }
+            
+            messages.AddRange(context.GetAllMessages());
+            
+            List<ToolConfiguration> toolConfigs = new List<ToolConfiguration>();
+            foreach (ToolConfig tool in agentConfig.availableTools)
+            {
+                if (tool != null && tool.enabled)
+                {
+                    toolConfigs.Add(new ToolConfiguration(tool));
+                }
+            }
             
             return new LLMRequest
             {
-                model = agent.llmConfiguration.model,
-                serviceUrl = agent.llmConfiguration.serviceUrl,
-                messages = context.GetMessages(),
-                tools = availableTools,
-                temperature = 0.7f,
-                maxTokens = 2000,
-                timestamp = DateTime.UtcNow
+                messages = messages,
+                tools = toolConfigs,
+                maxTokens = agentConfig.maxResponseTokens,
+                temperature = agentConfig.modelConfig?.temperature ?? 0.7f,
+                model = agentConfig.modelConfig?.modelName ?? "default",
+                provider = agentConfig.modelConfig?.provider ?? ServiceProvider.Custom
             };
         }
         
-        private async Task<AgentResponse> ProcessLLMResponse(Agent agent, LLMResponse llmResponse, ConversationContext context)
+        private async Task<LLMResponse> ExecuteLLMCallAsync(LLMRequest request, AgentConfig agentConfig)
         {
-            List<ToolResponse> toolResponses = new List<ToolResponse>();
-            
-            if (llmResponse.toolCalls != null && llmResponse.toolCalls.Count > 0)
+            switch (request.provider)
             {
-                toolResponses = await ExecuteToolCallsAsync(llmResponse.toolCalls);
-                await AddToolResponsesToContext(context, toolResponses);
+                case ServiceProvider.OpenAI:
+                    return await OpenAIService.CompleteChatAsync(
+                        request, 
+                        agentConfig.token, 
+                        agentConfig.serviceUrl);
+                
+                case ServiceProvider.QWEN:
+                    return await QWENService.CompleteChatAsync(
+                        request, 
+                        agentConfig.token, 
+                        agentConfig.serviceUrl);
+                
+                default:
+                    LoggingService.LogWarning($"Unsupported provider: {request.provider}. Using fallback simulation.");
+                    return await SimulateLLMCallAsync(request);
             }
+        }
+        
+        private async Task<LLMResponse> SimulateLLMCallAsync(LLMRequest request)
+        {
+            await Task.Delay(1000);
             
-            return new AgentResponse
+            return new LLMResponse
             {
-                agentId = agent.agentId,
-                content = llmResponse.content,
-                toolCalls = llmResponse.toolCalls ?? new List<ToolCall>(),
-                toolResponses = toolResponses,
-                state = AgentState.Completed,
+                content = "I understand your request and I'm here to help.",
+                toolCalls = null,
+                model = request.model,
                 timestamp = DateTime.UtcNow,
-                usage = llmResponse.usage
+                outputTokens = UnityEngine.Random.Range(50, 200),
+                success = true
             };
         }
         
-        private async Task<List<ToolResponse>> ExecuteToolCallsAsync(List<ToolCall> toolCalls)
+        private async Task<List<ToolResponse>> ExecuteToolCallsAsync(List<ToolCall> toolCalls, int maxCalls, ToolDebugContext debugContext)
         {
             List<ToolResponse> responses = new List<ToolResponse>();
+            int callsToExecute = Math.Min(toolCalls.Count, maxCalls);
             
-            foreach (ToolCall toolCall in toolCalls)
+            for (int i = 0; i < callsToExecute; i++)
             {
-                IToolSet targetToolSet = FindToolSetForTool(toolCall.name);
+                ToolCall call = toolCalls[i];
                 
-                if (targetToolSet != null)
+                try
                 {
-                    ToolResponse response = await targetToolSet.ExecuteToolAsync(toolCall);
-                    responses.Add(response);
+                    ToolResponse result = await ExecuteToolAsync(call.name, call.arguments, debugContext);
+                    
+                    responses.Add(new ToolResponse
+                    {
+                        toolCallId = call.id,
+                        content = result.content,
+                        success = true,
+                        responseTimestamp = DateTime.UtcNow
+                    });
                 }
-                else
+                catch (Exception ex)
                 {
-                    LoggingService.LogError($"No ToolSet found for tool: {toolCall.name}");
-                    responses.Add(CreateToolErrorResponse(toolCall));
+                    responses.Add(new ToolResponse
+                    {
+                        toolCallId = call.id,
+                        content = ex.Message,
+                        success = false,
+                        responseTimestamp = DateTime.UtcNow
+                    });
+                    
+                    LoggingService.LogToolResponse(call.name, "Error: " + ex.Message);
                 }
             }
             
             return responses;
         }
         
-        private async Task AddToolResponsesToContext(ConversationContext context, List<ToolResponse> toolResponses)
+        private async Task<ToolResponse> ExecuteToolAsync(string toolName, Dictionary<string, object> arguments, ToolDebugContext debugContext)
         {
-            foreach (ToolResponse response in toolResponses)
+            foreach (IToolSet toolSet in registeredToolSets.Values)
             {
-                Message toolMessage = new Message
+                if (toolSet.IsToolSupported(toolName))
                 {
-                    id = Guid.NewGuid().ToString(),
-                    role = MessageRole.Tool,
-                    type = MessageType.ToolResponse,
-                    content = response.content,
-                    toolCallId = response.toolCallId,
-                    timestamp = DateTime.UtcNow,
-                    conversationId = context.ConversationId
-                };
-                
-                context.AddMessage(toolMessage);
-            }
-            
-            await Task.CompletedTask;
-        }
-        
-        private IToolSet FindToolSetForTool(string toolName)
-        {
-            return toolSets.Values.FirstOrDefault(ts => ts.IsToolSupported(toolName));
-        }
-        
-        private string GenerateMockLLMResponse(LLMRequest request)
-        {
-            bool hasTools = request.tools != null && request.tools.Count > 0;
-            
-            if (hasTools && request.messages.Count > 1)
-            {
-                string lastMessage = request.messages.Last().content;
-                
-                if (lastMessage.ToLower().Contains("user") || lastMessage.ToLower().Contains("profile"))
-                {
-                    return "I'll help you with user management. Let me update your information.";
-                }
-                
-                if (lastMessage.ToLower().Contains("travel") || lastMessage.ToLower().Contains("trip"))
-                {
-                    return "I'll search for travel options for you. Let me find the best matches.";
+                    return await toolSet.ExecuteToolAsync(new ToolCall(toolName, arguments), debugContext);
                 }
             }
             
-            return "I understand your request and I'm here to help you with that.";
+            throw new InvalidOperationException($"Tool {toolName} not found in any registered ToolSet");
         }
         
-        private List<ToolCall> GenerateMockToolCalls(LLMRequest request)
-        {
-            if (request.tools == null || request.tools.Count == 0)
-                return new List<ToolCall>();
-            
-            string lastMessage = request.messages.LastOrDefault().content;
-            
-            if (lastMessage.ToLower().Contains("update") && lastMessage.ToLower().Contains("name"))
-            {
-                return new List<ToolCall>
-                {
-                    new ToolCall
-                    {
-                        id = Guid.NewGuid().ToString(),
-                        name = "update_user_name",
-                        arguments = new Dictionary<string, object> { ["id"] = "user123", ["name"] = "John Doe" }
-                    }
-                };
-            }
-            
-            if (lastMessage.ToLower().Contains("travel") || lastMessage.ToLower().Contains("trip"))
-            {
-                return new List<ToolCall>
-                {
-                    new ToolCall
-                    {
-                        id = Guid.NewGuid().ToString(),
-                        name = "search_travels_by_country",
-                        arguments = new Dictionary<string, object> { ["country"] = "Spain" }
-                    }
-                };
-            }
-            
-            return new List<ToolCall>();
-        }
-        
-        private AgentResponse CreateErrorResponse(Agent agent, string error)
+        private AgentResponse CreateErrorResponse(string agentId, string error)
         {
             return new AgentResponse
             {
-                agentId = agent.agentId,
-                content = $"Agent execution failed: {error}",
-                toolCalls = new List<ToolCall>(),
-                toolResponses = new List<ToolResponse>(),
-                state = AgentState.Error,
-                timestamp = DateTime.UtcNow,
-                usage = new Dictionary<string, object>()
-            };
-        }
-        
-        private ToolResponse CreateToolErrorResponse(ToolCall toolCall)
-        {
-            return new ToolResponse
-            {
-                toolCallId = toolCall.id,
-                content = $"Tool execution failed: Tool {toolCall.name} not found",
+                agentId = agentId,
+                content = $"Error: {error}",
                 success = false,
-                responseTimestamp = DateTime.UtcNow
+                timestamp = DateTime.UtcNow
             };
         }
-        
-       
     }
 }
