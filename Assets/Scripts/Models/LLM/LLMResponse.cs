@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using ChatSystem.Models.Context;
 using ChatSystem.Models.Tools;
 
 namespace ChatSystem.Models.LLM
 {
+    //TODO: Esta clase se podria optimizar/refactorizar!
     [Serializable]
     public class LLMResponse
     {
@@ -21,6 +23,8 @@ namespace ChatSystem.Models.LLM
         public string errorMessage;
         public DateTime timestamp;
         public string model;
+        public ConversationContext context;
+        
         
         public LLMResponse()
         {

@@ -11,7 +11,7 @@ using ChatSystem.Services.Context.Interfaces;
 using ChatSystem.Services.Logging;
 using ChatSystem.Enums;
 
-namespace ChatSystem.Controllers
+namespace ChatSystem.Examples
 {
     public class ChatController : IChatController
     {
@@ -134,7 +134,7 @@ namespace ChatSystem.Controllers
                     messageText
                 );
 
-                await DisplayNewMessages();
+                await DisplayNewMessages(response.context);
 
                 if (!response.success)
                 {
@@ -150,14 +150,19 @@ namespace ChatSystem.Controllers
             }
         }
 
-        private async Task DisplayNewMessages()
+        private async Task DisplayNewMessages(ConversationContext context)
         {
-            if (responseTarget == null || contextManager == null) return;
+            if (responseTarget == null)
+            {
+                return;
+            }
 
             try
             {
-                ConversationContext context = await contextManager.GetContextAsync(defaultConversationId);
-                if (context == null) return;
+                if (context == null)
+                {
+                    return;
+                }
 
                 List<Message> allMessages = context.GetAllMessages();
                 int currentMessageCount = allMessages.Count;

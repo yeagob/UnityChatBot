@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using ChatSystem.Models.Context;
 using ChatSystem.Models.LLM;
 using ChatSystem.Services.Context.Interfaces;
 using ChatSystem.Services.Persistence.Interfaces;
@@ -9,7 +8,6 @@ namespace ChatSystem.Services.Orchestrators.Interfaces
     public interface IChatOrchestrator
     {
         Task<LLMResponse> ProcessUserMessageAsync(string conversationId, string userMessage);
-        Task<LLMResponse> ProcessMessageAsync(string conversationId, Message message);
         void SetLLMOrchestrator(ILLMOrchestrator llmOrchestrator);
         void SetContextManager(IContextManager contextManager);
         void SetPersistenceService(IPersistenceService persistenceService);

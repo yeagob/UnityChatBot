@@ -123,7 +123,7 @@ namespace ChatSystem.Services.LLM
                 
                 if (msg.role == MessageRole.Tool)
                 {
-                    //Extra tool info?
+                    sb.Append($",\"tool_call_id\":\"{msg.toolCallId}\"");
                 }
                 
                 sb.Append("}");
