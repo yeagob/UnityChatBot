@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   promptId: 0
   promptName: General 0.1
-  content: "**Nombre:** Ana  \r\n**Rol:** Comercial especialista virtual en gesti\xF3n
-    de paquetes de viaje y asesoramiento tur\xEDstico de Exoticca. "
+  content: "Nombre: Maria\r\nRol: Comercial especialista virtual en gesti\xF3n de
+    paquetes de viaje y asesoramiento tur\xEDstico"
   enabled: 1
   priority: 0
   category: Test
