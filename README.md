@@ -31,7 +31,7 @@ Assets → Create → LLM → Provider Configuration
 **Required Settings:**
 - **Provider**: OpenAI
 - **API Key**: Your OpenAI API key
-- **Base URL**: "https://api.openai.com/v1"
+- **Base URL**: "https://api.openai.com/v1/"](https://api.openai.com/v1/chat/completions"
 
 ### 3. Scene Setup
 
