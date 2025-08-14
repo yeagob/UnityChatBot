@@ -223,8 +223,6 @@ namespace ChatSystem.Services.Agents
                         success = true,
                         responseTimestamp = DateTime.UtcNow
                     });
-                    
-                    LoggingService.LogToolResponse(call.name, "Success");
                 }
                 catch (Exception ex)
                 {

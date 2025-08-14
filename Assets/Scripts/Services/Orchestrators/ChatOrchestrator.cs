@@ -16,6 +16,7 @@ namespace ChatSystem.Services.Orchestrators
         private IContextManager contextManager;
         private IPersistenceService persistenceService;
         
+        //TODO: Estos 3 sets deberían estar en un consutructor!
         public void SetLLMOrchestrator(ILLMOrchestrator orchestrator)
         {
             llmOrchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
@@ -112,11 +113,13 @@ namespace ChatSystem.Services.Orchestrators
         {
             if (llmOrchestrator == null)
             {
+                LoggingService.LogCritical("[ChatOrchestrator] No LLM orchestrator configured");
                 throw new InvalidOperationException("LLMOrchestrator not set. Call SetLLMOrchestrator first.");
             }
             
             if (contextManager == null)
             {
+                LoggingService.LogCritical("[ChatOrchestrator] No context manager configured");
                 throw new InvalidOperationException("ContextManager not set. Call SetContextManager first.");
             }
         }
@@ -125,6 +128,7 @@ namespace ChatSystem.Services.Orchestrators
         {
             if (string.IsNullOrWhiteSpace(message.content))
             {
+                LoggingService.LogError($"[ChatOrchestrator] Message content is empty");
                 throw new ArgumentException("Message content cannot be empty", nameof(message));
             }
         }
