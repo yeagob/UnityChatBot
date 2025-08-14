@@ -42,6 +42,7 @@ namespace ChatSystem.Services.Orchestrators
             LLMResponse response = await ExecuteLLMProcessing(context);
             await ProcessLLMResponse(conversationId, response);
             
+            //WIP
             if (persistenceService != null)
             {
                 await persistenceService.SaveConversationAsync(context);
@@ -67,7 +68,6 @@ namespace ChatSystem.Services.Orchestrators
             
             await ProcessLLMResponse(conversationId, response);
             
-            //WIP
             if (persistenceService != null)
             {
                 await persistenceService.SaveConversationAsync(context);
