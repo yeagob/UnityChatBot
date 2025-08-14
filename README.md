@@ -30,11 +30,8 @@ Assets → Create → LLM → Provider Configuration
 
 **Required Settings:**
 - **Provider**: OpenAI
-- **Model Name**: "gpt-4" or "gpt-3.5-turbo"  
 - **API Key**: Your OpenAI API key
 - **Base URL**: "https://api.openai.com/v1"
-- **Temperature**: 0.7-1.0
-- **Max Tokens**: 2048-4096
 
 ### 3. Scene Setup
 
@@ -43,15 +40,12 @@ Use the provided **ChatScene** with **ChatPrefab** - works plug & play once prov
 **ChatPrefab Structure:**
 ```
 ChatPrefab
-├── ChatManager (All system initialization)
-├── ChatCanvas (UI)
-└── [Auto-configured components]
+├── ChatCanvasView (UI)
+└── ChatManager 
 ```
 
-**ChatManager Configuration:**
-- **Provider Configs**: Drag your Provider ScriptableObjects
-- **Default Conversation Id**: "main-conversation"
-- **Enable Debug Logs**: ✅ (for development)
+**ChatManager Object Configuration:**
+✅ **Provider Configs**: Drag your Provider ScriptableObject ✅
 
 ## 🔧 Configuration Reference
 
