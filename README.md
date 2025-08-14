@@ -11,41 +11,8 @@ Advanced Unity-based chatbot system featuring multi-LLM agent orchestration, MCP
 - **Multi-Agent System**: Orchestrated LLM agents with specialized capabilities  
 - **Real-Time Tools**: UserToolSet & TravelToolSet with live execution
 - **OpenAI Integration**: Validated tool calling without API errors
+- **QWEN Integration**: Prepared tool calling 
 - **SOLID Architecture**: Extensible, maintainable, production-ready
-
-## 🏗️ Architecture
-
-### System Flow
-```
-User Input → ChatView → ChatController → ChatOrchestrator → LLMOrchestrator → AgentExecutor → ToolSets
-```
-
-### Component Hierarchy
-```
-ChatManager (Root)
-├── Services
-│   ├── ContextManager (Conversation state)
-│   ├── AgentExecutor (Multi-agent execution)
-│   ├── PersistenceService (Storage layer)
-│   └── LoggingService (Centralized logging)
-├── Orchestrators  
-│   ├── ChatOrchestrator (Flow coordination)
-│   └── LLMOrchestrator (Agent management)
-├── Controllers
-│   └── ChatController (Business logic)
-├── Views
-│   ├── ChatView (Main UI)
-│   └── MessageView (Individual messages)
-└── ToolSets
-    ├── UserToolSet (User management)
-    └── TravelToolSet (Travel search)
-```
-
-### MVC + Orchestrator Pattern
-- **Model**: ConversationContext, Message, Agent configurations
-- **View**: ChatView (UI), MessageView (Components)  
-- **Controller**: ChatController (Business logic)
-- **Orchestrators**: ChatOrchestrator, LLMOrchestrator (Coordination)
 
 ## ⚙️ Setup Instructions
 
@@ -92,13 +59,9 @@ ChatPrefab
 ```csharp
 ModelConfig (ScriptableObject)  
 ├── provider: ServiceProvider  // OpenAI, QWEN, Claude
-├── modelName: string         // "gpt-4", "gpt-3.5-turbo"
 ├── apiKey: string           // Provider API key
 ├── baseURL: string          // API endpoint
-├── temperature: float       // 0.0-2.0
-├── maxTokens: int          // Response limit
-├── costPer1KTokens: float  // Cost tracking
-└── timeoutMs: int          // Request timeout
+
 ```
 
 ## 🔌 Supported LLM Providers
@@ -117,6 +80,40 @@ ModelConfig (ScriptableObject)
 - **Models**: Claude-3, Claude-2
 - **Tool Calling**: MCP structure prepared  
 - **Status**: Implementation pending
+
+## 🏗️ Architecture
+
+### System Flow
+```
+User Input → ChatView → ChatController → ChatOrchestrator → LLMOrchestrator → AgentExecutor → ToolSets
+```
+
+### Component Hierarchy
+```
+ChatManager (Root)
+├── Services
+│   ├── ContextManager (Conversation state)
+│   ├── AgentExecutor (Multi-agent execution)
+│   ├── PersistenceService (Storage layer)
+│   └── LoggingService (Centralized logging)
+├── Orchestrators  
+│   ├── ChatOrchestrator (Flow coordination)
+│   └── LLMOrchestrator (Agent management)
+├── Controllers
+│   └── ChatController (Business logic)
+├── Views
+│   ├── ChatView (Main UI)
+│   └── MessageView (Individual messages)
+└── ToolSets
+    ├── UserToolSet (User management)
+    └── TravelToolSet (Travel search)
+```
+
+### MVC + Orchestrator Pattern
+- **Model**: ConversationContext, Message, Agent configurations
+- **View**: ChatView (UI), MessageView (Components)  
+- **Controller**: ChatController (Business logic)
+- **Orchestrators**: ChatOrchestrator, LLMOrchestrator (Coordination)
 
 ## 📁 Project Structure
 
@@ -144,21 +141,6 @@ Assets/Scripts/
 └── Enums/                  # Type definitions
 ```
 
-## 🚀 Production Deployment
-
-### Security Checklist
-- ✅ **API Key Security**: Secure token handling
-- ✅ **Input Validation**: Tool parameter validation  
-- ✅ **Tool Sandboxing**: Isolated execution
-- ✅ **Error Handling**: Comprehensive try/catch
-- ✅ **Rate Limiting**: Framework prepared
-
-### Monitoring Ready
-- ✅ **Comprehensive Logging**: All operations tracked
-- ✅ **Performance Metrics**: Response time monitoring
-- ✅ **Error Tracking**: Exception capture
-- ✅ **Usage Analytics**: Tool usage statistics
-- ✅ **Cost Tracking**: Token usage monitoring
 
 ## 🔮 Phase 2 Roadmap
 
@@ -187,8 +169,8 @@ Assets/Scripts/
 
 ## 📄 License
 
-Private repository - All rights reserved
+WIP
 
 ---
 
-**Built with Unity 2022.3 | Powered by OpenAI | MCP Compliant**
+**Built with Unity 6000.0.45 | By Santiago Dopazo Hilario (@santiagogamelover) | Supported by Claude **
