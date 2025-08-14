@@ -45,7 +45,7 @@ namespace ChatSystem.Services.Orchestrators
         {
             if (activeAgentIds.Count == 0)
             {
-                LoggingService.LogWarning("No active agents available");
+                LoggingService.LogError("[LLMOrchestator] No active agents available!");
                 return CreateDefaultResponse("No active agents configured");
             }
             
@@ -67,6 +67,8 @@ namespace ChatSystem.Services.Orchestrators
                         }
                     }
                 }
+                
+                LoggingService.LogDebug($"[LLMOrchestrator] Agent responses: {agentResponses.Count}");  
                 
                 return MergeAgentResponses(agentResponses);
             }
@@ -102,6 +104,7 @@ namespace ChatSystem.Services.Orchestrators
         {
             if (responses.Count == 0)
             {
+                LoggingService.LogError("[LLMOrchestrator] No responses were merged!");
                 return CreateDefaultResponse("No agent responses received");
             }
             

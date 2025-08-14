@@ -1,6 +1,6 @@
 using ChatSystem.Configuration.ScriptableObjects;
 using UnityEngine;
-using ChatSystem.Controllers;
+using ChatSystem.Examples;
 using ChatSystem.Controllers.Interfaces;
 using ChatSystem.Views.Chat;
 using ChatSystem.Services.Orchestrators;
@@ -15,7 +15,6 @@ using ChatSystem.Services.Persistence;
 using ChatSystem.Services.Persistence.Interfaces;
 using ChatSystem.Services.Logging;
 using ChatSystem.Debugging;
-using ChatSystem.Enums;
 
 namespace ChatSystem.Bootstrap
 {

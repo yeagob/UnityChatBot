@@ -32,18 +32,46 @@ namespace ChatSystem.Services.Tools
         
         public async Task<ToolResponse> ExecuteToolAsync(ToolCall toolCall)
         {
+            return await ExecuteToolAsync(toolCall, ToolDebugContext.Disabled);
+        }
+        
+        public async Task<ToolResponse> ExecuteToolAsync(ToolCall toolCall, ToolDebugContext debugContext)
+        {
             LoggingService.LogToolCall(toolCall.name, toolCall.arguments);
             
-            ToolResponse response = toolCall.name switch
+            try
             {
-                "update_user_tag" => await ExecuteUpdateUserTagAsync(toolCall),
-                "update_user_name" => await ExecuteUpdateUserNameAsync(toolCall),
-                "add_user_comment" => await ExecuteAddUserCommentAsync(toolCall),
-                _ => CreateErrorResponse(toolCall.id, $"Unknown tool: {toolCall.name}")
-            };
-            
-            LoggingService.LogToolResponse(toolCall.name, response.content);
-            return response;
+                ToolResponse response = toolCall.name switch
+                {
+                    "update_user_tag" => await ExecuteUpdateUserTagAsync(toolCall),
+                    "update_user_name" => await ExecuteUpdateUserNameAsync(toolCall),
+                    "add_user_comment" => await ExecuteAddUserCommentAsync(toolCall),
+                    _ => CreateErrorResponse(toolCall.id, $"Unknown tool: {toolCall.name}")
+                };
+                
+                LoggingService.LogToolResponse(toolCall.name, response.content);
+                
+                if (response.success)
+                {
+                    debugContext.LogToolExecution(
+                        toolCall.name, 
+                        ToolSetId, 
+                        SerializeArguments(toolCall.arguments), 
+                        response.content
+                    );
+                }
+                else
+                {
+                    debugContext.LogToolError(toolCall.name, ToolSetId, response.content);
+                }
+                
+                return response;
+            }
+            catch (Exception ex)
+            {
+                debugContext.LogToolError(toolCall.name, ToolSetId, ex.Message);
+                return CreateErrorResponse(toolCall.id, $"Tool execution failed: {ex.Message}");
+            }
         }
         
         public async Task<bool> ValidateToolCallAsync(ToolCall toolCall)
@@ -127,6 +155,19 @@ namespace ChatSystem.Services.Tools
             {
                 return CreateErrorResponse(toolCall.id, $"Error adding comment: {ex.Message}");
             }
+        }
+        
+        private string SerializeArguments(Dictionary<string, object> arguments)
+        {
+            if (arguments == null || arguments.Count == 0)
+                return "{}";
+                
+            List<string> parts = new List<string>();
+            foreach (KeyValuePair<string, object> kvp in arguments)
+            {
+                parts.Add($"{kvp.Key}:{kvp.Value}");
+            }
+            return "{" + string.Join(", ", parts) + "}";
         }
         
         private ToolConfiguration CreateUpdateUserTagTool()
@@ -235,9 +276,5 @@ namespace ChatSystem.Services.Tools
                 responseTimestamp = DateTime.UtcNow
             };
         }
-        
-
-        
-
     }
 }

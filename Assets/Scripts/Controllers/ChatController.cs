@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using ChatSystem.Controllers.Interfaces;
@@ -6,26 +7,34 @@ using ChatSystem.Models.Context;
 using ChatSystem.Models.LLM;
 using ChatSystem.Views.Interfaces;
 using ChatSystem.Services.Orchestrators.Interfaces;
+using ChatSystem.Services.Context.Interfaces;
 using ChatSystem.Services.Logging;
+using ChatSystem.Enums;
 
-namespace ChatSystem.Controllers
+namespace ChatSystem.Examples
 {
     public class ChatController : IChatController
     {
         private string defaultConversationId;
-        private ConversationContext currentContext;
         private IResponsable responseTarget;
         private IChatOrchestrator chatOrchestrator;
+        private IContextManager contextManager;
+        private int lastDisplayedMessageCount;
 
         public ChatController(string conversationId = "default-conversation")
         {
             defaultConversationId = conversationId;
-            InitializeController();
+            lastDisplayedMessageCount = 0;
         }
 
         public void SetChatOrchestrator(IChatOrchestrator orchestrator)
         {
             chatOrchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
+        }
+
+        public void SetContextManager(IContextManager manager)
+        {
+            contextManager = manager ?? throw new ArgumentNullException(nameof(manager));
         }
 
         public void InitializeConversation(string conversationId)
@@ -35,7 +44,8 @@ namespace ChatSystem.Controllers
                 conversationId = Guid.NewGuid().ToString();
             }
 
-            currentContext = new ConversationContext(conversationId);
+            defaultConversationId = conversationId;
+            lastDisplayedMessageCount = 0;
         }
 
         public void SetResponseTarget(IResponsable target)
@@ -46,9 +56,9 @@ namespace ChatSystem.Controllers
 
         public async Task ProcessUserMessageAsync(string messageText)
         {
-            if (string.IsNullOrWhiteSpace(messageText) || currentContext == null)
+            if (string.IsNullOrWhiteSpace(messageText))
             {
-                LoggingService.LogWarning("[ChatController] Invalid message or context is null");
+                LoggingService.LogWarning("[ChatController] Invalid message");
                 return;
             }
 
@@ -64,20 +74,30 @@ namespace ChatSystem.Controllers
 
         public ConversationContext GetCurrentContext()
         {
-            return currentContext;
+            if (contextManager == null) return null;
+            
+            try
+            {
+                return contextManager.GetContextAsync(defaultConversationId).Result;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public void ClearConversation()
         {
-            if (currentContext != null)
+            if (chatOrchestrator != null)
             {
-                InitializeConversation(currentContext.conversationId);
+                chatOrchestrator.ClearConversation(defaultConversationId);
+                lastDisplayedMessageCount = 0;
             }
         }
 
         private async Task HandleUserMessage(string messageText)
         {
-            AddUserMessageToContext(messageText);
+            DisplayUserMessage(messageText);
             
             if (chatOrchestrator != null)
             {
@@ -89,22 +109,34 @@ namespace ChatSystem.Controllers
             }
         }
 
+        private void DisplayUserMessage(string messageText)
+        {
+            Message userMessage = new Message
+            {
+                id = Guid.NewGuid().ToString(),
+                role = MessageRole.User,
+                type = MessageType.Text,
+                content = messageText,
+                timestamp = DateTime.UtcNow,
+                conversationId = defaultConversationId
+            };
+            
+            responseTarget?.ReceiveResponse(userMessage);
+            LogUserMessage(messageText);
+        }
+
         private async Task ProcessWithOrchestrator(string messageText)
         {
             try
             {
                 LLMResponse response = await chatOrchestrator.ProcessUserMessageAsync(
-                    currentContext.conversationId, 
+                    defaultConversationId, 
                     messageText
                 );
 
-                if (response.success && !string.IsNullOrEmpty(response.content))
-                {
-                    currentContext.AddAssistantMessage(response.content);
-                    NotifyResponseTarget(GetLastMessage());
-                    LogAssistantResponse(response.content);
-                }
-                else
+                await DisplayNewMessages(response.context);
+
+                if (!response.success)
                 {
                     string errorMsg = response.errorMessage ?? "Unknown orchestrator error";
                     LoggingService.LogError($"[ChatController] Orchestrator failed. Error: {errorMsg}");
@@ -114,30 +146,52 @@ namespace ChatSystem.Controllers
             catch (Exception ex)
             {
                 LoggingService.LogError($"[ChatController] Exception in ProcessWithOrchestrator: {ex.Message}");
-                LoggingService.LogError($"[ChatController] Stack trace: {ex.StackTrace}");
                 HandleProcessingError(ex);
             }
         }
 
-        private void AddUserMessageToContext(string messageText)
+        private async Task DisplayNewMessages(ConversationContext context)
         {
-            currentContext.AddUserMessage(messageText);
-            
-            Message userMessage = GetLastMessage();
-            NotifyResponseTarget(userMessage);
-            
-            LogUserMessage(messageText);
+            if (responseTarget == null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (context == null)
+                {
+                    return;
+                }
+
+                List<Message> allMessages = context.GetAllMessages();
+                int currentMessageCount = allMessages.Count;
+
+                if (currentMessageCount > lastDisplayedMessageCount)
+                {
+                    for (int i = lastDisplayedMessageCount; i < currentMessageCount; i++)
+                    {
+                        Message message = allMessages[i];
+                        
+                        if (message.role != MessageRole.User)
+                        {
+                            responseTarget.ReceiveResponse(message);
+                            LoggingService.LogDebug($"[ChatController] Displayed message: {message.role} - {GetMessagePreview(message.content)}");
+                        }
+                    }
+                    lastDisplayedMessageCount = currentMessageCount;
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggingService.LogError($"[ChatController] Error displaying messages: {ex.Message}");
+            }
         }
 
-        private Message GetLastMessage()
+        private string GetMessagePreview(string content)
         {
-            var messages = currentContext.GetAllMessages();
-            return messages[messages.Count - 1];
-        }
-
-        private void NotifyResponseTarget(Message message)
-        {
-            responseTarget?.ReceiveResponse(message);
+            if (string.IsNullOrEmpty(content)) return "";
+            return content.Length > 50 ? content.Substring(0, 50) + "..." : content;
         }
 
         private void HandleOrchestratorError(string errorMessage)
@@ -154,20 +208,9 @@ namespace ChatSystem.Controllers
             LoggingService.LogError($"[ChatController] {errorMessage}");
         }
 
-        private void InitializeController()
-        {
-            InitializeConversation(defaultConversationId);
-        }
-
         private void LogUserMessage(string message)
         {
             LoggingService.LogInfo($"[ChatController] User message received: {message}");
         }
-
-        private void LogAssistantResponse(string response)
-        {
-            LoggingService.LogInfo($"[ChatController] Assistant response generated: {response}");
-        }
-
     }
 }

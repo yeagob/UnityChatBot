@@ -33,18 +33,46 @@ namespace ChatSystem.Services.Tools
         
         public async Task<ToolResponse> ExecuteToolAsync(ToolCall toolCall)
         {
+            return await ExecuteToolAsync(toolCall, ToolDebugContext.Disabled);
+        }
+        
+        public async Task<ToolResponse> ExecuteToolAsync(ToolCall toolCall, ToolDebugContext debugContext)
+        {
             LoggingService.LogToolCall(toolCall.name, toolCall.arguments);
             
-            ToolResponse response = toolCall.name switch
+            try
             {
-                "search_travels_by_country" => await ExecuteSearchByCountryAsync(toolCall),
-                "search_travels_advanced" => await ExecuteAdvancedSearchAsync(toolCall),
-                "get_travel_details" => await ExecuteGetTravelDetailsAsync(toolCall),
-                _ => CreateErrorResponse(toolCall.id, $"Unknown tool: {toolCall.name}")
-            };
-            
-            LoggingService.LogToolResponse(toolCall.name, response.content);
-            return response;
+                ToolResponse response = toolCall.name switch
+                {
+                    "search_travels_by_country" => await ExecuteSearchByCountryAsync(toolCall),
+                    "search_travels_advanced" => await ExecuteAdvancedSearchAsync(toolCall),
+                    "get_travel_details" => await ExecuteGetTravelDetailsAsync(toolCall),
+                    _ => CreateErrorResponse(toolCall.id, $"Unknown tool: {toolCall.name}")
+                };
+                
+                LoggingService.LogToolResponse(toolCall.name, response.content);
+                
+                if (response.success)
+                {
+                    debugContext.LogToolExecution(
+                        toolCall.name, 
+                        ToolSetId, 
+                        SerializeArguments(toolCall.arguments), 
+                        response.content
+                    );
+                }
+                else
+                {
+                    debugContext.LogToolError(toolCall.name, ToolSetId, response.content);
+                }
+                
+                return response;
+            }
+            catch (Exception ex)
+            {
+                debugContext.LogToolError(toolCall.name, ToolSetId, ex.Message);
+                return CreateErrorResponse(toolCall.id, $"Tool execution failed: {ex.Message}");
+            }
         }
         
         public async Task<bool> ValidateToolCallAsync(ToolCall toolCall)
@@ -164,6 +192,19 @@ namespace ChatSystem.Services.Tools
             }
         }
         
+        private string SerializeArguments(Dictionary<string, object> arguments)
+        {
+            if (arguments == null || arguments.Count == 0)
+                return "{}";
+                
+            List<string> parts = new List<string>();
+            foreach (KeyValuePair<string, object> kvp in arguments)
+            {
+                parts.Add($"{kvp.Key}:{kvp.Value}");
+            }
+            return "{" + string.Join(", ", parts) + "}";
+        }
+        
         private void InitializeMockTravelData()
         {
             travelData["countries"] = new[] { "Spain", "France", "Italy", "Japan", "Thailand", "Peru" };
@@ -176,7 +217,6 @@ namespace ChatSystem.Services.Tools
             {
                 toolId = "search_travels_by_country",
                 toolName = "search_travels_by_country",
-                //description = "Search available travels by destination country",
                 toolType = ToolType.TravelSearch,
                 inputSchema = new ToolSchema
                 {
@@ -204,7 +244,6 @@ namespace ChatSystem.Services.Tools
             {
                 toolId = "search_travels_advanced",
                 toolName = "search_travels_advanced",
-                //description = "Advanced travel search with optional filters",
                 toolType = ToolType.TravelSearch,
                 inputSchema = new ToolSchema
                 {
@@ -234,7 +273,6 @@ namespace ChatSystem.Services.Tools
             {
                 toolId = "get_travel_details",
                 toolName = "get_travel_details",
-                //description = "Get detailed information about a specific travel",
                 toolType = ToolType.TravelDetails,
                 inputSchema = new ToolSchema
                 {
@@ -277,8 +315,6 @@ namespace ChatSystem.Services.Tools
                 responseTimestamp = DateTime.UtcNow
             };
         }
-        
-
         
         private string SerializeToJson(object obj)
         {
@@ -326,7 +362,5 @@ namespace ChatSystem.Services.Tools
                 
             return $"\"{value}\"";
         }
-        
-
     }
 }

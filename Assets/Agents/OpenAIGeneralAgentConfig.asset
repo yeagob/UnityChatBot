@@ -19,7 +19,9 @@ MonoBehaviour:
   modelConfig: {fileID: 11400000, guid: e32e072598c4e694ea426df2fb2bcb4c, type: 2}
   systemPrompt: {fileID: 11400000, guid: 88c4ff789ee2a8e4abde51e0753cf1d6, type: 2}
   contextPrompts: []
-  availableTools: []
+  availableTools:
+  - {fileID: 11400000, guid: bda898df686a38a42a90ce9457cef786, type: 2}
+  debugTools: 1
   canExecuteTools: 1
   maxToolCalls: 5
   maxResponseTokens: 2048

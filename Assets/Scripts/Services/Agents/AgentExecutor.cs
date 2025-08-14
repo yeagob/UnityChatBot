@@ -11,6 +11,7 @@ using ChatSystem.Services.Tools.Interfaces;
 using ChatSystem.Services.Agents.Interfaces;
 using ChatSystem.Services.Logging;
 using ChatSystem.Services.LLM;
+using ChatSystem.Services.Tools;
 using ChatSystem.Enums;
 
 namespace ChatSystem.Services.Agents
@@ -51,8 +52,10 @@ namespace ChatSystem.Services.Agents
                 {
                     context.AddAssistantMessage(llmResponse.content, llmResponse.toolCalls);
                     
+                    ToolDebugContext debugContext = CreateDebugContext(agentConfig, context);
+                    
                     List<ToolResponse> toolResponses = await ExecuteToolCallsAsync(
-                        llmResponse.toolCalls, agentConfig.maxToolCalls);
+                        llmResponse.toolCalls, agentConfig.maxToolCalls, debugContext);
                     
                     foreach (ToolResponse toolResponse in toolResponses)
                     {
@@ -116,6 +119,15 @@ namespace ChatSystem.Services.Agents
         public List<string> GetRegisteredToolSets()
         {
             return new List<string>(registeredToolSets.Keys);
+        }
+        
+        private ToolDebugContext CreateDebugContext(AgentConfig agentConfig, ConversationContext context)
+        {
+            if (!agentConfig.debugTools)
+                return ToolDebugContext.Disabled;
+                
+            ConversationToolDebugHandler debugHandler = new ConversationToolDebugHandler(context);
+            return new ToolDebugContext(true, debugHandler);
         }
         
         private LLMRequest BuildLLMRequest(AgentConfig agentConfig, ConversationContext context)
@@ -191,7 +203,7 @@ namespace ChatSystem.Services.Agents
             };
         }
         
-        private async Task<List<ToolResponse>> ExecuteToolCallsAsync(List<ToolCall> toolCalls, int maxCalls)
+        private async Task<List<ToolResponse>> ExecuteToolCallsAsync(List<ToolCall> toolCalls, int maxCalls, ToolDebugContext debugContext)
         {
             List<ToolResponse> responses = new List<ToolResponse>();
             int callsToExecute = Math.Min(toolCalls.Count, maxCalls);
@@ -202,7 +214,7 @@ namespace ChatSystem.Services.Agents
                 
                 try
                 {
-                    ToolResponse result = await ExecuteToolAsync(call.name, call.arguments);
+                    ToolResponse result = await ExecuteToolAsync(call.name, call.arguments, debugContext);
                     
                     responses.Add(new ToolResponse
                     {
@@ -211,8 +223,6 @@ namespace ChatSystem.Services.Agents
                         success = true,
                         responseTimestamp = DateTime.UtcNow
                     });
-                    
-                    LoggingService.LogToolResponse(call.name, "Success");
                 }
                 catch (Exception ex)
                 {
@@ -231,13 +241,13 @@ namespace ChatSystem.Services.Agents
             return responses;
         }
         
-        private async Task<ToolResponse> ExecuteToolAsync(string toolName, Dictionary<string, object> arguments)
+        private async Task<ToolResponse> ExecuteToolAsync(string toolName, Dictionary<string, object> arguments, ToolDebugContext debugContext)
         {
             foreach (IToolSet toolSet in registeredToolSets.Values)
             {
                 if (toolSet.IsToolSupported(toolName))
                 {
-                    return await toolSet.ExecuteToolAsync(new ToolCall(toolName, arguments));
+                    return await toolSet.ExecuteToolAsync(new ToolCall(toolName, arguments), debugContext);
                 }
             }
             

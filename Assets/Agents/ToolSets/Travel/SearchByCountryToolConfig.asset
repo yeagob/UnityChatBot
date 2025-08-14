@@ -13,16 +13,16 @@ MonoBehaviour:
   m_Name: SearchByCountryToolConfig
   m_EditorClassIdentifier: 
   toolId: 0
-  toolName: SearchByCountry
+  toolName: search_travels_by_country
   toolType: 1
   function:
-    name: SearchByCountry
+    name: search_travels_by_country
     description: Permite buscar en la basede datos informacion de un viaje en base
       a un pais dado.
     parameters:
       type: object
       properties:
-      - key: Country
+      - key: country
         value:
           type: string
           description: Pais del que se quiere obtener informacion de viajes
@@ -31,7 +31,7 @@ MonoBehaviour:
             type: 
             description: 
       required:
-      - Country
+      - country
   annotations:
     title: 
     readOnlyHint: 0
