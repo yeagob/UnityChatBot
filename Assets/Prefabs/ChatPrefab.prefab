@@ -163,7 +163,6 @@ MonoBehaviour:
   sendButton: {fileID: 5345494413641129093}
   loadingIndicator: {fileID: 2922676046272323173}
   messageViewPrefab: {fileID: 2644470415952731590, guid: d18607baa73a6164596c0fd1863e1383, type: 3}
-  messageSpacing: 10
 --- !u!223 &1998319234521805043
 Canvas:
   m_ObjectHideFlags: 0
@@ -1209,7 +1208,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4624848783501948299}
-  - component: {fileID: 9087766922154550491}
+  - component: {fileID: 2291726577805511291}
   m_Layer: 5
   m_Name: ChatManager
   m_TagString: Untagged
@@ -1232,7 +1231,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4899981664275380164}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &9087766922154550491
+--- !u!114 &2291726577805511291
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1241,15 +1240,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 4921806107826428602}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 609ca666851441b4085c8a6a97e27c96, type: 3}
+  m_Script: {fileID: 11500000, guid: 33a663729ed743649a46df31d15a5eb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   chatView: {fileID: 2775288775905471253}
-  agentConfigurations: []
+  agentConfigurations:
+  - {fileID: 11400000, guid: 5666bea5f0c28a243aa3ba4dc6f538c5, type: 2}
   defaultConversationId: main-conversation
-  logLevel: 1
-  enableDebugLogs: 1
-  createDebugObjects: 1
+  logLevel: 0
+  createDebugObjects: 0
 --- !u!1 &4973500674699566319
 GameObject:
   m_ObjectHideFlags: 0
