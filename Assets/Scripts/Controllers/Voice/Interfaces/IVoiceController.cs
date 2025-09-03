@@ -14,6 +14,9 @@ namespace ChatSystem.Controllers.Voice.Interfaces
         Task ProcessVoiceInputAsync(AudioData audioData);
         Task StopVoiceSessionAsync();
         Task SetActiveAgentAsync(string agentId);
+        Task StartRecordingAsync();
+        Task StopRecordingAsync();
+        Task SendTextMessageAsync(string message);
         
         bool IsSessionActive { get; }
         string CurrentConversationId { get; }
