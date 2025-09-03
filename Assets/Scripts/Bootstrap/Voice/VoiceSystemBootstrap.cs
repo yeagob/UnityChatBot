@@ -19,7 +19,7 @@ namespace ChatSystem.Bootstrap.Voice
         [Header("Voice System Configuration")]
         [SerializeField] private VoiceAgentConfig[] voiceAgentConfigs;
         [SerializeField] private VoiceView voiceView;
-        [SerializeField] private string defaultConversationId = "voice-conversation";
+        [SerializeField] private string defaultVoiceConversationId = "voice-conversation";
         [SerializeField] private string defaultVoiceAgentId = "voice-agent-default";
         
         [Header("Voice System Settings")]
@@ -41,40 +41,7 @@ namespace ChatSystem.Bootstrap.Voice
             }
             
             CreateVoiceServices();
-        }
-
-        protected override void RegisterAgents()
-        {
-            base.RegisterAgents();
             RegisterVoiceAgents();
-        }
-
-        protected override void CreateControllers()
-        {
-            base.CreateControllers();
-            CreateVoiceControllers();
-        }
-
-        protected override void ConfigureServices()
-        {
-            base.ConfigureServices();
-            ConfigureVoiceServices();
-        }
-
-        protected override void ConnectComponents()
-        {
-            base.ConnectComponents();
-            ConnectVoiceComponents();
-        }
-
-        protected override void CreateDebugObjects()
-        {
-            base.CreateDebugObjects();
-            
-            if (createVoiceDebugObjects)
-            {
-                CreateVoiceDebugObjects();
-            }
         }
 
         private void CreateVoiceServices()
@@ -96,6 +63,9 @@ namespace ChatSystem.Bootstrap.Voice
                 contextManager
             );
 
+            CreateVoiceControllers();
+            ConfigureVoiceServices();
+
             LoggingService.LogInfo("Voice services created successfully");
         }
 
@@ -111,7 +81,7 @@ namespace ChatSystem.Bootstrap.Voice
             {
                 if (voiceAgent != null)
                 {
-                    llmOrchestrator.RegisterAgent(voiceAgent);
+                    llmOrchestrator.RegisterAgentConfig(voiceAgent);
                     LoggingService.LogInfo($"Registered voice agent: {voiceAgent.AgentName}");
                 }
             }
@@ -138,6 +108,12 @@ namespace ChatSystem.Bootstrap.Voice
             voiceController.SetContextManager(contextManager);
 
             LoggingService.LogInfo("Voice services configured");
+        }
+
+        protected override void ConnectComponents()
+        {
+            base.ConnectComponents();
+            ConnectVoiceComponents();
         }
 
         private void ConnectVoiceComponents()
@@ -174,6 +150,16 @@ namespace ChatSystem.Bootstrap.Voice
 
             voiceView.SetAvailableAgents(agentIds, agentNames);
             LoggingService.LogInfo($"Setup {agentNames.Length} agents in UI");
+        }
+
+        protected override void CreateDebugObjectsIfEnabled()
+        {
+            base.CreateDebugObjectsIfEnabled();
+            
+            if (createVoiceDebugObjects)
+            {
+                CreateVoiceDebugObjects();
+            }
         }
 
         private void CreateVoiceDebugObjects()
@@ -227,7 +213,7 @@ namespace ChatSystem.Bootstrap.Voice
 
             try
             {
-                await voiceController.StartVoiceSessionAsync(defaultConversationId, agentId);
+                await voiceController.StartVoiceSessionAsync(defaultVoiceConversationId, agentId);
                 LoggingService.LogInfo($"Default voice session started with agent: {agentId}");
             }
             catch (System.Exception ex)
@@ -300,6 +286,19 @@ namespace ChatSystem.Bootstrap.Voice
         {
             LoggingService.LogInfo($"WebSocket Status: {webSocketService?.ConnectionStatus ?? "Not Available"}");
         }
+
+        [ContextMenu("Show WebSocket Info")]
+        private void ShowWebSocketInfo()
+        {
+            if (webSocketService == null)
+            {
+                LoggingService.LogWarning("WebSocketService not available");
+                return;
+            }
+
+            LoggingService.LogInfo($"Connected: {webSocketService.IsConnected}");
+            LoggingService.LogInfo($"Status: {webSocketService.ConnectionStatus}");
+        }
     }
 
     public class AudioDebugComponent : MonoBehaviour
@@ -341,6 +340,14 @@ namespace ChatSystem.Bootstrap.Voice
             LoggingService.LogInfo($"Playing: {audioService.IsPlaying}");
             LoggingService.LogInfo($"Volume: {audioService.CurrentVolume}");
             LoggingService.LogInfo($"Available Microphones: {audioService.AvailableMicrophones?.Length ?? 0}");
+            
+            if (audioService.AvailableMicrophones != null)
+            {
+                for (int i = 0; i < audioService.AvailableMicrophones.Length; i++)
+                {
+                    LoggingService.LogInfo($"  Mic {i}: {audioService.AvailableMicrophones[i]}");
+                }
+            }
         }
     }
 
@@ -389,6 +396,26 @@ namespace ChatSystem.Bootstrap.Voice
             LoggingService.LogInfo($"Session Active: {controller.IsSessionActive}");
             LoggingService.LogInfo($"Conversation ID: {controller.CurrentConversationId ?? "None"}");
             LoggingService.LogInfo($"Agent ID: {controller.CurrentAgentId ?? "None"}");
+        }
+
+        [ContextMenu("Test Start Voice Session")]
+        private async void TestStartSession()
+        {
+            if (controller == null)
+            {
+                LoggingService.LogWarning("VoiceController not available");
+                return;
+            }
+
+            try
+            {
+                await controller.StartVoiceSessionAsync("test-conversation", "default-agent");
+                LoggingService.LogInfo("Test voice session started");
+            }
+            catch (System.Exception ex)
+            {
+                LoggingService.LogError($"Failed to start test session: {ex.Message}");
+            }
         }
     }
 
