@@ -14,7 +14,7 @@ using ChatSystem.Services.Logging;
 
 namespace ChatSystem.Bootstrap.Voice
 {
-    public class VoiceSystemBootstrap : DependencyBootstrap
+    public class VoiceSystemBootstrap : ChatManager
     {
         [Header("Voice System Configuration")]
         [SerializeField] private VoiceAgentConfig[] voiceAgentConfigs;

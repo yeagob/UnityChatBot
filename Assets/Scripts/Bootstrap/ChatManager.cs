@@ -80,7 +80,7 @@ namespace ChatSystem.Bootstrap
             agentExecutor.RegisterToolSet(travelToolSet);
         }
         
-        private void CreateServices()
+        protected virtual void CreateServices()
         {
             llmOrchestrator = new LLMOrchestrator(agentExecutor);
             chatOrchestrator = new ChatOrchestrator();
