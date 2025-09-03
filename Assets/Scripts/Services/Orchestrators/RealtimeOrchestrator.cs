@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using ChatSystem.Services.Orchestrators.Interfaces;
 using ChatSystem.Services.Communication.Interfaces;
 using ChatSystem.Services.Audio.Interfaces;
@@ -9,7 +10,9 @@ using ChatSystem.Services.Logging;
 using ChatSystem.Models.Audio;
 using ChatSystem.Models.Communication;
 using ChatSystem.Models.Context;
+using ChatSystem.Models.Tools;
 using ChatSystem.Configuration.Voice;
+using ChatSystem.Configuration.ScriptableObjects;
 using ChatSystem.Enums;
 
 namespace ChatSystem.Services.Orchestrators
@@ -23,7 +26,7 @@ namespace ChatSystem.Services.Orchestrators
         
         private string currentSessionId;
         private string currentAgentId;
-        private VoiceAgentConfig currentAgentConfig;
+        private VoiceAgentConfig currentVoiceAgentConfig;
         private bool isSessionActive;
 
         public event Action<string> OnTranscriptionReceived;
@@ -63,9 +66,9 @@ namespace ChatSystem.Services.Orchestrators
 
                 currentSessionId = conversationId;
                 currentAgentId = agentId;
-                currentAgentConfig = GetVoiceAgentConfig(agentId);
+                currentVoiceAgentConfig = FindVoiceAgentConfig(agentId);
                 
-                if (currentAgentConfig == null)
+                if (currentVoiceAgentConfig == null)
                 {
                     string errorMsg = $"VoiceAgentConfig not found for agent: {agentId}";
                     LoggingService.LogError(errorMsg);
@@ -76,7 +79,7 @@ namespace ChatSystem.Services.Orchestrators
                 await ConnectWebSocket();
                 await InitializeSession();
                 
-                audioService.SetVoiceSettings(currentAgentConfig.VoiceSettings);
+                audioService.SetVoiceSettings(currentVoiceAgentConfig.VoiceSettings);
                 
                 isSessionActive = true;
                 LoggingService.LogInfo($"Realtime session started: {conversationId} with agent: {agentId}");
@@ -134,6 +137,9 @@ namespace ChatSystem.Services.Orchestrators
                 };
 
                 await webSocketService.SendEventAsync(textEvent);
+                
+                await contextManager.AddUserMessageAsync(currentSessionId, message);
+                
                 LoggingService.LogInfo($"Sent text message: {message}");
             }
             catch (Exception ex)
@@ -165,7 +171,7 @@ namespace ChatSystem.Services.Orchestrators
                 
                 currentSessionId = null;
                 currentAgentId = null;
-                currentAgentConfig = null;
+                currentVoiceAgentConfig = null;
                 
                 LoggingService.LogInfo("Realtime session ended");
             }
@@ -186,7 +192,7 @@ namespace ChatSystem.Services.Orchestrators
                     return;
                 }
 
-                VoiceAgentConfig newAgentConfig = GetVoiceAgentConfig(newAgentId);
+                VoiceAgentConfig newAgentConfig = FindVoiceAgentConfig(newAgentId);
                 if (newAgentConfig == null)
                 {
                     string errorMsg = $"VoiceAgentConfig not found for agent: {newAgentId}";
@@ -196,7 +202,7 @@ namespace ChatSystem.Services.Orchestrators
                 }
 
                 currentAgentId = newAgentId;
-                currentAgentConfig = newAgentConfig;
+                currentVoiceAgentConfig = newAgentConfig;
                 audioService.SetVoiceSettings(newAgentConfig.VoiceSettings);
                 
                 await UpdateSessionConfiguration();
@@ -212,13 +218,13 @@ namespace ChatSystem.Services.Orchestrators
 
         private async Task ConnectWebSocket()
         {
-            string apiKey = GetApiKey();
+            string apiKey = GetApiKeyFromAgentConfig();
             if (string.IsNullOrEmpty(apiKey))
             {
-                throw new InvalidOperationException("OpenAI API key not configured");
+                throw new InvalidOperationException("OpenAI API key not configured in agent provider settings");
             }
 
-            await webSocketService.ConnectAsync(currentAgentConfig.RealtimeEndpoint, apiKey);
+            await webSocketService.ConnectAsync(currentVoiceAgentConfig.RealtimeEndpoint, apiKey);
         }
 
         private async Task InitializeSession()
@@ -231,15 +237,15 @@ namespace ChatSystem.Services.Orchestrators
                 {
                     session = new
                     {
-                        model = currentAgentConfig.Model,
-                        voice = currentAgentConfig.Voice,
+                        model = currentVoiceAgentConfig.Model,
+                        voice = currentVoiceAgentConfig.Voice,
                         instructions = GetSystemPrompt(),
-                        turn_detection = currentAgentConfig.EnableTurnDetection ? 
+                        turn_detection = currentVoiceAgentConfig.EnableTurnDetection ? 
                             new { type = "server_vad" } : null,
                         tools = GetToolDefinitions(),
                         tool_choice = "auto",
-                        temperature = currentAgentConfig.ModelConfig?.Temperature ?? 1.0f,
-                        max_response_output_tokens = currentAgentConfig.MaxResponseTokens
+                        temperature = currentVoiceAgentConfig.ModelConfig?.Temperature ?? 1.0f,
+                        max_response_output_tokens = currentVoiceAgentConfig.MaxResponseTokens
                     }
                 }
             };
@@ -257,8 +263,8 @@ namespace ChatSystem.Services.Orchestrators
                 {
                     session = new
                     {
-                        model = currentAgentConfig.Model,
-                        voice = currentAgentConfig.Voice,
+                        model = currentVoiceAgentConfig.Model,
+                        voice = currentVoiceAgentConfig.Voice,
                         instructions = GetSystemPrompt(),
                         tools = GetToolDefinitions()
                     }
@@ -333,7 +339,7 @@ namespace ChatSystem.Services.Orchestrators
         private async Task HandleToolCall(WebSocketEvent wsEvent)
         {
             string toolName = ExtractToolName(wsEvent.data.ToString());
-            string toolArguments = ExtractToolArguments(wsEvent.data.ToString());
+            string toolArgumentsJson = ExtractToolArguments(wsEvent.data.ToString());
             string toolCallId = ExtractToolCallId(wsEvent.data.ToString());
             
             if (!string.IsNullOrEmpty(toolName))
@@ -343,10 +349,15 @@ namespace ChatSystem.Services.Orchestrators
                 
                 try
                 {
-                    var toolResult = await agentExecutor.ExecuteToolAsync(
-                        currentAgentId, toolName, toolArguments, currentSessionId);
+                    ConversationContext context = await contextManager.GetContextAsync(currentSessionId);
                     
-                    await SendToolResponse(toolCallId, toolResult.Content);
+                    var agentResponse = await agentExecutor.ExecuteAgentAsync(currentAgentId, context);
+                    
+                    string toolResult = agentResponse.success ? agentResponse.content : $"Tool execution failed: {agentResponse.content}";
+                    
+                    await contextManager.AddToolMessageAsync(currentSessionId, toolResult, toolCallId);
+                    
+                    await SendToolResponse(toolCallId, toolResult);
                 }
                 catch (Exception ex)
                 {
@@ -395,34 +406,127 @@ namespace ChatSystem.Services.Orchestrators
             await webSocketService.SendEventAsync(toolResponse);
         }
 
-        private VoiceAgentConfig GetVoiceAgentConfig(string agentId)
+        private VoiceAgentConfig FindVoiceAgentConfig(string agentId)
         {
             return null;
         }
 
-        private string GetApiKey()
+        private string GetApiKeyFromAgentConfig()
         {
-            return Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? 
-                   PlayerPrefs.GetString("OPENAI_API_KEY", "");
+            if (currentVoiceAgentConfig?.ProviderConfig?.ApiKey != null)
+            {
+                return currentVoiceAgentConfig.ProviderConfig.ApiKey;
+            }
+            
+            string envKey = System.Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+            if (!string.IsNullOrEmpty(envKey))
+            {
+                return envKey;
+            }
+            
+            LoggingService.LogError("No API key found in agent provider configuration or environment");
+            return string.Empty;
         }
 
         private string GetSystemPrompt()
         {
-            return currentAgentConfig?.SystemPrompt?.SystemPrompt ?? 
-                   "You are a helpful assistant with voice capabilities.";
+            return currentVoiceAgentConfig?.SystemPrompt?.SystemPrompt ?? 
+                   "You are a helpful voice assistant with tool capabilities.";
         }
 
         private object[] GetToolDefinitions()
         {
-            return new object[0];
+            if (currentVoiceAgentConfig?.AvailableTools == null)
+                return new object[0];
+
+            List<object> tools = new List<object>();
+            
+            foreach (ToolConfig toolConfig in currentVoiceAgentConfig.AvailableTools)
+            {
+                if (toolConfig != null && toolConfig.Enabled)
+                {
+                    tools.Add(new
+                    {
+                        type = "function",
+                        function = new
+                        {
+                            name = toolConfig.ToolId,
+                            description = toolConfig.InputSchema?.Description ?? "",
+                            parameters = toolConfig.InputSchema?.ToOpenAIFormat() ?? new object()
+                        }
+                    });
+                }
+            }
+            
+            return tools.ToArray();
         }
 
-        private string ExtractTranscriptionText(string data) => "";
-        private byte[] ExtractAudioData(string data) => new byte[0];
-        private string ExtractToolName(string data) => "";
-        private string ExtractToolArguments(string data) => "";
-        private string ExtractToolCallId(string data) => "";
-        private string ExtractResponseText(string data) => "";
-        private string ExtractErrorMessage(string data) => "";
+        private string ExtractTranscriptionText(string data)
+        {
+            return ExtractJsonValue(data, "transcript") ?? "";
+        }
+
+        private byte[] ExtractAudioData(string data)
+        {
+            string base64Audio = ExtractJsonValue(data, "delta");
+            if (!string.IsNullOrEmpty(base64Audio))
+            {
+                try
+                {
+                    return Convert.FromBase64String(base64Audio);
+                }
+                catch (Exception ex)
+                {
+                    LoggingService.LogError($"Failed to decode base64 audio: {ex.Message}");
+                }
+            }
+            return new byte[0];
+        }
+
+        private string ExtractToolName(string data)
+        {
+            return ExtractJsonValue(data, "name") ?? "";
+        }
+
+        private string ExtractToolArguments(string data)
+        {
+            return ExtractJsonValue(data, "arguments") ?? "{}";
+        }
+
+        private string ExtractToolCallId(string data)
+        {
+            return ExtractJsonValue(data, "call_id") ?? Guid.NewGuid().ToString();
+        }
+
+        private string ExtractResponseText(string data)
+        {
+            return ExtractJsonValue(data, "text") ?? "";
+        }
+
+        private string ExtractErrorMessage(string data)
+        {
+            return ExtractJsonValue(data, "message") ?? ExtractJsonValue(data, "error") ?? "Unknown error";
+        }
+
+        private string ExtractJsonValue(string json, string key)
+        {
+            if (string.IsNullOrEmpty(json) || string.IsNullOrEmpty(key))
+                return null;
+                
+            string searchKey = $@"""{key}"":""";
+            int startIndex = json.IndexOf(searchKey);
+            if (startIndex == -1) 
+            {
+                searchKey = $@"""{key}"": """;
+                startIndex = json.IndexOf(searchKey);
+                if (startIndex == -1) return null;
+            }
+            
+            startIndex += searchKey.Length;
+            int endIndex = json.IndexOf('"', startIndex);
+            if (endIndex == -1) return null;
+            
+            return json.Substring(startIndex, endIndex - startIndex);
+        }
     }
 }
