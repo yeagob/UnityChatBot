@@ -33,14 +33,14 @@ namespace ChatSystem.Bootstrap
         [Header("Debug")]
         [SerializeField] private bool createDebugObjects = true;
         
-        private IChatController chatController;
-        private IChatOrchestrator chatOrchestrator;
-        private ILLMOrchestrator llmOrchestrator;
-        private IContextManager contextManager;
-        private IAgentExecutor agentExecutor;
-        private IPersistenceService persistenceService;
-        private IToolSet userToolSet;
-        private IToolSet travelToolSet;
+        protected IChatController chatController;
+        protected IChatOrchestrator chatOrchestrator;
+        protected ILLMOrchestrator llmOrchestrator;
+        protected IContextManager contextManager;
+        protected IAgentExecutor agentExecutor;
+        protected IPersistenceService persistenceService;
+        protected IToolSet userToolSet;
+        protected IToolSet travelToolSet;
         
         private void Start()
         {
@@ -122,7 +122,7 @@ namespace ChatSystem.Bootstrap
             }
         }
         
-        private void ConnectComponents()
+        protected virtual void ConnectComponents()
         {
             ConnectViewToController();
         }
@@ -139,7 +139,7 @@ namespace ChatSystem.Bootstrap
             }
         }
         
-        private void CreateDebugObjectsIfEnabled()
+        protected virtual void CreateDebugObjectsIfEnabled()
         {
             if (!createDebugObjects) return;
             

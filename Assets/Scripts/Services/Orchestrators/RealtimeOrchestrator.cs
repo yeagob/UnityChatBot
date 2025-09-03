@@ -238,8 +238,8 @@ namespace ChatSystem.Services.Orchestrators
                             new { type = "server_vad" } : null,
                         tools = GetToolDefinitions(),
                         tool_choice = "auto",
-                        temperature = currentAgentConfig.ModelConfig?.Temperature ?? 1.0f,
-                        max_response_output_tokens = currentAgentConfig.MaxResponseTokens
+                        temperature = currentAgentConfig.modelConfig?.temperature?? 1.0f,
+                        max_response_output_tokens = currentAgentConfig.maxResponseTokens
                     }
                 }
             };
@@ -408,7 +408,7 @@ namespace ChatSystem.Services.Orchestrators
 
         private string GetSystemPrompt()
         {
-            return currentAgentConfig?.SystemPrompt?.SystemPrompt ?? 
+            return currentAgentConfig?.systemPrompt?.content??
                    "You are a helpful assistant with voice capabilities.";
         }
 

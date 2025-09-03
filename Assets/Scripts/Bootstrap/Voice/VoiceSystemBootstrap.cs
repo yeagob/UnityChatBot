@@ -82,7 +82,7 @@ namespace ChatSystem.Bootstrap.Voice
                 if (voiceAgent != null)
                 {
                     llmOrchestrator.RegisterAgentConfig(voiceAgent);
-                    LoggingService.LogInfo($"Registered voice agent: {voiceAgent.AgentName}");
+                    LoggingService.LogInfo($"Registered voice agent: {voiceAgent.agentName}");
                 }
             }
 
@@ -144,8 +144,8 @@ namespace ChatSystem.Bootstrap.Voice
 
             for (int i = 0; i < voiceAgentConfigs.Length; i++)
             {
-                agentIds[i] = voiceAgentConfigs[i].AgentId;
-                agentNames[i] = voiceAgentConfigs[i].AgentName;
+                agentIds[i] = voiceAgentConfigs[i].agentId;
+                agentNames[i] = voiceAgentConfigs[i].agentName;
             }
 
             voiceView.SetAvailableAgents(agentIds, agentNames);
@@ -208,7 +208,7 @@ namespace ChatSystem.Bootstrap.Voice
             }
 
             string agentId = (voiceAgentConfigs != null && voiceAgentConfigs.Length > 0) 
-                ? voiceAgentConfigs[0].AgentId 
+                ? voiceAgentConfigs[0].agentId 
                 : defaultVoiceAgentId;
 
             try
