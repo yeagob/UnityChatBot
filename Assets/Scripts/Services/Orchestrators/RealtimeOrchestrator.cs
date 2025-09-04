@@ -15,6 +15,7 @@ using ChatSystem.Models.Context;
 using ChatSystem.Models.Tools;
 using ChatSystem.Configuration.Voice;
 using ChatSystem.Enums;
+using ChatSystem.Services.Tools;
 
 namespace ChatSystem.Services.Orchestrators
 {
@@ -380,10 +381,10 @@ namespace ChatSystem.Services.Orchestrators
 
         private ToolDebugContext CreateDebugContext()
         {
-            if (currentAgentConfig == null || !currentAgentConfig.DebugTools)
+            if (currentAgentConfig == null || !currentAgentConfig.debugTools)
                 return ToolDebugContext.Disabled;
                 
-            ConversationContext context = contextManager.GetConversationContext(currentSessionId);
+            ConversationContext context = contextManager.GetContextAsync(currentSessionId).Result;
             ConversationToolDebugHandler debugHandler = new ConversationToolDebugHandler(context);
             return new ToolDebugContext(true, debugHandler);
         }
