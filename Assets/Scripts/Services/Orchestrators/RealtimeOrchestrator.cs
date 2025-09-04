@@ -8,6 +8,7 @@ using ChatSystem.Services.Agents.Interfaces;
 using ChatSystem.Services.Context.Interfaces;
 using ChatSystem.Services.Logging;
 using ChatSystem.Services.LLM;
+using ChatSystem.Services.Tools.Interfaces;
 using ChatSystem.Models.Audio;
 using ChatSystem.Models.Communication;
 using ChatSystem.Models.Context;
@@ -23,6 +24,7 @@ namespace ChatSystem.Services.Orchestrators
         private readonly IAudioService audioService;
         private readonly IAgentExecutor agentExecutor;
         private readonly IContextManager contextManager;
+        private readonly Dictionary<string, IToolSet> registeredToolSets;
         
         private string currentSessionId;
         private string currentAgentId;
@@ -50,9 +52,23 @@ namespace ChatSystem.Services.Orchestrators
             this.audioService = audioService;
             this.agentExecutor = agentExecutor;
             this.contextManager = contextManager;
+            this.registeredToolSets = new Dictionary<string, IToolSet>();
             
             SetupWebSocketEvents();
             LoggingService.LogInfo("RealtimeOrchestrator initialized");
+        }
+
+        public void RegisterToolSet(IToolSet toolSet)
+        {
+            if (toolSet == null)
+            {
+                LoggingService.LogError("Cannot register null ToolSet in RealtimeOrchestrator");
+                return;
+            }
+            
+            string toolSetName = toolSet.GetType().Name;
+            registeredToolSets[toolSetName] = toolSet;
+            LoggingService.LogInfo($"ToolSet {toolSetName} registered in RealtimeOrchestrator");
         }
 
         public async Task StartSessionAsync(string conversationId, string agentId)
@@ -311,11 +327,12 @@ namespace ChatSystem.Services.Orchestrators
                 
                 try
                 {
-                    var toolResult = await agentExecutor.ExecuteToolAsync(
-                        currentAgentId, toolName, toolArguments, currentSessionId);
+                    ToolResponse toolResult = await ExecuteToolDirectly(toolName, toolArguments, toolCallId);
                     
-                    WebSocketEvent toolResponse = OpenAIService.CreateRealtimeToolResponse(toolCallId, toolResult.Content);
+                    WebSocketEvent toolResponse = OpenAIService.CreateRealtimeToolResponse(toolCallId, toolResult.content);
                     await webSocketService.SendEventAsync(toolResponse);
+                    
+                    await contextManager.AddToolMessageAsync(currentSessionId, toolResult.content, toolCallId);
                 }
                 catch (Exception ex)
                 {
@@ -324,6 +341,51 @@ namespace ChatSystem.Services.Orchestrators
                     await webSocketService.SendEventAsync(errorResponse);
                 }
             }
+        }
+
+        private async Task<ToolResponse> ExecuteToolDirectly(string toolName, string toolArgumentsJson, string toolCallId)
+        {
+            Dictionary<string, object> arguments = ParseToolArguments(toolArgumentsJson);
+            ToolCall toolCall = new ToolCall(toolName, arguments) { id = toolCallId };
+            
+            foreach (IToolSet toolSet in registeredToolSets.Values)
+            {
+                if (toolSet.IsToolSupported(toolName))
+                {
+                    ToolDebugContext debugContext = CreateDebugContext();
+                    return await toolSet.ExecuteToolAsync(toolCall, debugContext);
+                }
+            }
+            
+            throw new InvalidOperationException($"Tool {toolName} not found in any registered ToolSet");
+        }
+
+        private Dictionary<string, object> ParseToolArguments(string argumentsJson)
+        {
+            if (string.IsNullOrEmpty(argumentsJson) || argumentsJson == "{}")
+            {
+                return new Dictionary<string, object>();
+            }
+            
+            try
+            {
+                return SimpleJsonParser.ParseArguments(argumentsJson);
+            }
+            catch (Exception ex)
+            {
+                LoggingService.LogError($"Failed to parse tool arguments: {ex.Message}");
+                return new Dictionary<string, object>();
+            }
+        }
+
+        private ToolDebugContext CreateDebugContext()
+        {
+            if (currentAgentConfig == null || !currentAgentConfig.DebugTools)
+                return ToolDebugContext.Disabled;
+                
+            ConversationContext context = contextManager.GetConversationContext(currentSessionId);
+            ConversationToolDebugHandler debugHandler = new ConversationToolDebugHandler(context);
+            return new ToolDebugContext(true, debugHandler);
         }
 
         private async Task HandleTextResponse(WebSocketEvent wsEvent)
