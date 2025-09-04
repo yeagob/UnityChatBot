@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b684ec0c86a3c6648ab1b518285fd4b9, type: 3}
   m_Name: VoiceAgentConfig
   m_EditorClassIdentifier: 
-  agentId: 
-  agentName: 
-  description: 
+  agentId: 3
+  agentName: Voice
+  description: Voz agente
   providerConfig: {fileID: 11400000, guid: f8fb9b49342e84244aeca3534379ab2e, type: 2}
   modelConfig: {fileID: 11400000, guid: 34c62b6841a879d4e90713bc3d876bb2, type: 2}
   systemPrompt: {fileID: 11400000, guid: 88c4ff789ee2a8e4abde51e0753cf1d6, type: 2}

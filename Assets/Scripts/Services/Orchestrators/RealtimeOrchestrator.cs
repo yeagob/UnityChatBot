@@ -47,13 +47,15 @@ namespace ChatSystem.Services.Orchestrators
             IWebSocketService webSocketService,
             IAudioService audioService,
             IAgentExecutor agentExecutor,
-            IContextManager contextManager)
+            IContextManager contextManager,
+            VoiceAgentConfig currentAgentConfig)
         {
             this.webSocketService = webSocketService;
             this.audioService = audioService;
             this.agentExecutor = agentExecutor;
             this.contextManager = contextManager;
             this.registeredToolSets = new Dictionary<string, IToolSet>();
+            this.currentAgentConfig = currentAgentConfig;
             
             SetupWebSocketEvents();
             LoggingService.LogInfo("RealtimeOrchestrator initialized");
@@ -84,17 +86,8 @@ namespace ChatSystem.Services.Orchestrators
 
                 currentSessionId = conversationId;
                 currentAgentId = agentId;
-                currentAgentConfig = GetVoiceAgentConfig(agentId);
-                
-                if (currentAgentConfig == null)
-                {
-                    string errorMsg = $"VoiceAgentConfig not found for agent: {agentId}";
-                    LoggingService.LogError(errorMsg);
-                    OnErrorOccurred?.Invoke(errorMsg);
-                    return;
-                }
 
-                availableTools = GetAgentTools(agentId);
+                availableTools = currentAgentConfig.availableTools;
                 
                 await ConnectWebSocket();
                 await InitializeSessionWithOpenAI();
@@ -197,19 +190,8 @@ namespace ChatSystem.Services.Orchestrators
                     return;
                 }
 
-                VoiceAgentConfig newAgentConfig = GetVoiceAgentConfig(newAgentId);
-                if (newAgentConfig == null)
-                {
-                    string errorMsg = $"VoiceAgentConfig not found for agent: {newAgentId}";
-                    LoggingService.LogError(errorMsg);
-                    OnErrorOccurred?.Invoke(errorMsg);
-                    return;
-                }
-
-                currentAgentId = newAgentId;
-                currentAgentConfig = newAgentConfig;
                 availableTools = GetAgentTools(newAgentId);
-                audioService.SetVoiceSettings(newAgentConfig.VoiceSettings);
+                audioService.SetVoiceSettings(currentAgentConfig.VoiceSettings);
                 
                 await UpdateSessionWithOpenAI();
                 
@@ -408,13 +390,7 @@ namespace ChatSystem.Services.Orchestrators
             OnErrorOccurred?.Invoke(errorMessage);
         }
 
-        private VoiceAgentConfig GetVoiceAgentConfig(string agentId)
-        {
-            LoggingService.LogWarning("GetVoiceAgentConfig not implemented - using mock config");
-            return null;
-        }
-
-        private List<ToolConfiguration> GetAgentTools(string agentId)
+         private List<ToolConfiguration> GetAgentTools(string agentId)
         {
             LoggingService.LogWarning("GetAgentTools not implemented - returning empty list");
             return new List<ToolConfiguration>();

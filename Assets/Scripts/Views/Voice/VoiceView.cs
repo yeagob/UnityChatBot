@@ -13,7 +13,6 @@ namespace ChatSystem.Views.Voice
         [Header("UI Components")]
         [SerializeField] private Button recordButton;
         [SerializeField] private Button startSessionButton;
-        [SerializeField] private Button stopSessionButton;
         [SerializeField] private TMP_Dropdown agentDropdown;
         [SerializeField] private TMP_InputField textInputField;
         [SerializeField] private Button sendTextButton;
@@ -50,7 +49,7 @@ namespace ChatSystem.Views.Voice
             currentConversationId = defaultConversationId;
         }
 
-        private void SetupUIEvents()
+		private void SetupUIEvents()
         {
             if (recordButton != null)
             {
@@ -60,11 +59,6 @@ namespace ChatSystem.Views.Voice
             if (startSessionButton != null)
             {
                 startSessionButton.onClick.AddListener(StartSession);
-            }
-            
-            if (stopSessionButton != null)
-            {
-                stopSessionButton.onClick.AddListener(StopSession);
             }
             
             if (sendTextButton != null)
@@ -296,6 +290,7 @@ namespace ChatSystem.Views.Voice
             {
                 string selectedAgent = GetSelectedAgent();
                 await voiceController.StartVoiceSessionAsync(currentConversationId, selectedAgent);
+                Debug.Log("SESION DE VOZ INICIADA");
             }
             catch (Exception ex)
             {
@@ -379,9 +374,6 @@ namespace ChatSystem.Views.Voice
             if (startSessionButton != null)
                 startSessionButton.interactable = !isSessionActive;
                 
-            if (stopSessionButton != null)
-                stopSessionButton.interactable = isSessionActive;
-                
             if (recordButton != null)
                 recordButton.interactable = isSessionActive;
                 
@@ -412,10 +404,9 @@ namespace ChatSystem.Views.Voice
                 recordButton.onClick.RemoveAllListeners();
             if (startSessionButton != null)
                 startSessionButton.onClick.RemoveAllListeners();
-            if (stopSessionButton != null)
-                stopSessionButton.onClick.RemoveAllListeners();
             if (sendTextButton != null)
                 sendTextButton.onClick.RemoveAllListeners();
+
         }
     }
 }

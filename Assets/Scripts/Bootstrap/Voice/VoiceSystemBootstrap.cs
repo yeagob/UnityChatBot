@@ -94,7 +94,8 @@ namespace ChatSystem.Bootstrap.Voice
                 webSocketService,
                 audioService,
                 agentExecutor,
-                contextManager
+                contextManager,
+                voiceAgentConfigs[0]
             );
 
             LoggingService.LogInfo("Voice services created successfully");
