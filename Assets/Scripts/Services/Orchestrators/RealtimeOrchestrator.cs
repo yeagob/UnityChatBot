@@ -31,7 +31,6 @@ namespace ChatSystem.Services.Orchestrators
         private string currentAgentId;
         private VoiceAgentConfig currentAgentConfig;
         private bool isSessionActive;
-        private List<ToolConfiguration> availableTools;
 
         public event Action<string> OnTranscriptionReceived;
         public event Action<string> OnResponseGenerated;
@@ -86,8 +85,6 @@ namespace ChatSystem.Services.Orchestrators
 
                 currentSessionId = conversationId;
                 currentAgentId = agentId;
-
-                availableTools = currentAgentConfig.availableTools;
                 
                 await ConnectWebSocket();
                 await InitializeSessionWithOpenAI();
@@ -169,7 +166,6 @@ namespace ChatSystem.Services.Orchestrators
                 currentSessionId = null;
                 currentAgentId = null;
                 currentAgentConfig = null;
-                availableTools = null;
                 
                 LoggingService.LogInfo("Realtime session ended");
             }
@@ -190,7 +186,7 @@ namespace ChatSystem.Services.Orchestrators
                     return;
                 }
 
-                availableTools = GetAgentTools(newAgentId);
+                currentAgentId = newAgentId;
                 audioService.SetVoiceSettings(currentAgentConfig.VoiceSettings);
                 
                 await UpdateSessionWithOpenAI();
@@ -217,16 +213,48 @@ namespace ChatSystem.Services.Orchestrators
 
         private async Task InitializeSessionWithOpenAI()
         {
-            WebSocketEvent sessionUpdate = OpenAIService.CreateRealtimeSessionUpdate(currentAgentConfig, availableTools);
+            List<ToolConfiguration> toolConfigurations = GetCurrentAgentToolConfigurations();
+            WebSocketEvent sessionUpdate = OpenAIService.CreateRealtimeSessionUpdate(currentAgentConfig, toolConfigurations);
             await webSocketService.SendEventAsync(sessionUpdate);
             LoggingService.LogInfo("OpenAI Realtime session initialized with tools and configuration");
         }
 
         private async Task UpdateSessionWithOpenAI()
         {
-            WebSocketEvent sessionUpdate = OpenAIService.CreateRealtimeSessionUpdate(currentAgentConfig, availableTools);
+            List<ToolConfiguration> toolConfigurations = GetCurrentAgentToolConfigurations();
+            WebSocketEvent sessionUpdate = OpenAIService.CreateRealtimeSessionUpdate(currentAgentConfig, toolConfigurations);
             await webSocketService.SendEventAsync(sessionUpdate);
             LoggingService.LogInfo("OpenAI Realtime session updated with new agent configuration");
+        }
+
+        private List<ToolConfiguration> GetCurrentAgentToolConfigurations()
+        {
+            List<ToolConfiguration> toolConfigurations = new List<ToolConfiguration>();
+            
+            if (currentAgentConfig == null || currentAgentConfig.availableTools == null)
+            {
+                LoggingService.LogWarning("No agent config or tools available");
+                return toolConfigurations;
+            }
+
+            foreach (var toolConfig in currentAgentConfig.availableTools)
+            {
+                if (toolConfig != null && toolConfig.enabled)
+                {
+                    ToolConfiguration toolConfiguration = new ToolConfiguration
+                    {
+                        name = toolConfig.function.name,
+                        description = toolConfig.function.description,
+                        schema = toolConfig.function.parameters,
+                        annotations = toolConfig.annotations
+                    };
+                    
+                    toolConfigurations.Add(toolConfiguration);
+                }
+            }
+            
+            LoggingService.LogInfo($"Generated {toolConfigurations.Count} tool configurations from agent");
+            return toolConfigurations;
         }
 
         private void SetupWebSocketEvents()
@@ -388,12 +416,6 @@ namespace ChatSystem.Services.Orchestrators
             string errorMessage = ExtractErrorMessage(wsEvent.data.ToString());
             LoggingService.LogError($"WebSocket error: {errorMessage}");
             OnErrorOccurred?.Invoke(errorMessage);
-        }
-
-         private List<ToolConfiguration> GetAgentTools(string agentId)
-        {
-            LoggingService.LogWarning("GetAgentTools not implemented - returning empty list");
-            return new List<ToolConfiguration>();
         }
 
         private string GetApiKey()
