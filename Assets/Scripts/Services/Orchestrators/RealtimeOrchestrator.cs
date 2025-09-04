@@ -202,7 +202,7 @@ namespace ChatSystem.Services.Orchestrators
 
         private async Task ConnectWebSocket()
         {
-            string apiKey = GetApiKey();
+            string apiKey = currentAgentConfig.providerConfig?.token;
             if (string.IsNullOrEmpty(apiKey))
             {
                 throw new InvalidOperationException("OpenAI API key not configured");
@@ -213,6 +213,7 @@ namespace ChatSystem.Services.Orchestrators
 
         private async Task InitializeSessionWithOpenAI()
         {
+            await ConnectWebSocket();
             List<ToolConfiguration> toolConfigurations = GetCurrentAgentToolConfigurations();
             WebSocketEvent sessionUpdate = OpenAIService.CreateRealtimeSessionUpdate(currentAgentConfig, toolConfigurations);
             await webSocketService.SendEventAsync(sessionUpdate);
@@ -409,12 +410,6 @@ namespace ChatSystem.Services.Orchestrators
             string errorMessage = ExtractErrorMessage(wsEvent.data.ToString());
             LoggingService.LogError($"WebSocket error: {errorMessage}");
             OnErrorOccurred?.Invoke(errorMessage);
-        }
-
-        private string GetApiKey()
-        {
-            return Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? 
-                   UnityEngine.PlayerPrefs.GetString("OPENAI_API_KEY", "");
         }
 
         private string ExtractTranscriptionText(string data)
