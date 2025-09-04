@@ -243,9 +243,9 @@ namespace ChatSystem.Services.Orchestrators
                 {
                     ToolConfiguration toolConfiguration = new ToolConfiguration
                     {
-                        name = toolConfig.function.name,
+                        toolName = toolConfig.function.name,
                         description = toolConfig.function.description,
-                        schema = toolConfig.function.parameters,
+                        inputSchema = toolConfig.function.parameters,
                         annotations = toolConfig.annotations
                     };
                     
