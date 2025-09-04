@@ -8,6 +8,8 @@ using ChatSystem.Models.LLM;
 using ChatSystem.Models.Context;
 using ChatSystem.Models.Tools;
 using ChatSystem.Models.LLM.OpenAI;
+using ChatSystem.Configuration.ScriptableObjects;
+using ChatSystem.Configuration.Voice;
 using ChatSystem.Services.Logging;
 using ChatSystem.Enums;
 
@@ -45,7 +47,240 @@ namespace ChatSystem.Services.LLM
                 return CreateErrorResponse(request.model, ex.Message);
             }
         }
-        
+
+        #region Realtime API Methods
+
+        public static string BuildRealtimeSessionPayload(VoiceAgentConfig agentConfig)
+        {
+            try
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append("{");
+                sb.Append("\"type\":\"session.update\",");
+                sb.Append($"\"event_id\":\"{Guid.NewGuid()}\",");
+                sb.Append("\"session\":{");
+                
+                sb.Append($"\"model\":\"{agentConfig.Model}\",");
+                sb.Append($"\"voice\":\"{agentConfig.Voice}\",");
+                sb.Append($"\"instructions\":\"{EscapeJsonString(GetSystemPromptFromConfig(agentConfig))}\",");
+                
+                if (agentConfig.EnableTurnDetection)
+                {
+                    sb.Append("\"turn_detection\":{\"type\":\"server_vad\"},");
+                }
+                
+                AppendRealtimeTools(sb, agentConfig);
+                sb.Append("\"tool_choice\":\"auto\",");
+                sb.Append($"\"temperature\":{GetTemperatureFromConfig(agentConfig)},");
+                sb.Append($"\"max_response_output_tokens\":{agentConfig.MaxResponseTokens}");
+                
+                sb.Append("}}");
+                
+                string payload = sb.ToString();
+                LoggingService.LogDebug($"[OpenAIService] Realtime session payload: {payload}");
+                return payload;
+            }
+            catch (Exception ex)
+            {
+                LoggingService.LogError($"[OpenAIService] Failed to build realtime session payload: {ex.Message}");
+                return "{}";
+            }
+        }
+
+        public static string BuildRealtimeTextMessagePayload(string message)
+        {
+            try
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append("{");
+                sb.Append("\"type\":\"conversation.item.create\",");
+                sb.Append($"\"event_id\":\"{Guid.NewGuid()}\",");
+                sb.Append("\"item\":{");
+                sb.Append("\"type\":\"message\",");
+                sb.Append("\"role\":\"user\",");
+                sb.Append("\"content\":[{");
+                sb.Append("\"type\":\"input_text\",");
+                sb.Append($"\"text\":\"{EscapeJsonString(message)}\"");
+                sb.Append("}]}}");
+                
+                return sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                LoggingService.LogError($"[OpenAIService] Failed to build text message payload: {ex.Message}");
+                return "{}";
+            }
+        }
+
+        public static string BuildRealtimeToolResponsePayload(string toolCallId, string result)
+        {
+            try
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append("{");
+                sb.Append("\"type\":\"conversation.item.create\",");
+                sb.Append($"\"event_id\":\"{Guid.NewGuid()}\",");
+                sb.Append("\"item\":{");
+                sb.Append("\"type\":\"function_call_output\",");
+                sb.Append($"\"call_id\":\"{toolCallId}\",");
+                sb.Append($"\"output\":\"{EscapeJsonString(result)}\"");
+                sb.Append("}}");
+                
+                return sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                LoggingService.LogError($"[OpenAIService] Failed to build tool response payload: {ex.Message}");
+                return "{}";
+            }
+        }
+
+        public static string BuildRealtimeAudioPayload(byte[] audioData)
+        {
+            try
+            {
+                string base64Audio = Convert.ToBase64String(audioData);
+                
+                StringBuilder sb = new StringBuilder();
+                sb.Append("{");
+                sb.Append("\"type\":\"input_audio_buffer.append\",");
+                sb.Append($"\"event_id\":\"{Guid.NewGuid()}\",");
+                sb.Append($"\"audio\":\"{base64Audio}\"");
+                sb.Append("}");
+                
+                return sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                LoggingService.LogError($"[OpenAIService] Failed to build audio payload: {ex.Message}");
+                return "{}";
+            }
+        }
+
+        private static void AppendRealtimeTools(StringBuilder sb, VoiceAgentConfig agentConfig)
+        {
+            if (agentConfig.AvailableTools == null || agentConfig.AvailableTools.Length == 0)
+            {
+                return;
+            }
+
+            List<ToolConfig> enabledTools = new List<ToolConfig>();
+            foreach (ToolConfig tool in agentConfig.AvailableTools)
+            {
+                if (tool != null && tool.Enabled)
+                {
+                    enabledTools.Add(tool);
+                }
+            }
+
+            if (enabledTools.Count == 0)
+            {
+                return;
+            }
+
+            sb.Append("\"tools\":[");
+            
+            for (int i = 0; i < enabledTools.Count; i++)
+            {
+                if (i > 0) sb.Append(",");
+                
+                ToolConfig tool = enabledTools[i];
+                sb.Append("{");
+                sb.Append("\"type\":\"function\",");
+                sb.Append("\"function\":{");
+                sb.Append($"\"name\":\"{tool.ToolId}\",");
+                sb.Append($"\"description\":\"{EscapeJsonString(tool.InputSchema?.Description ?? "")}\",");
+                
+                if (tool.InputSchema != null)
+                {
+                    sb.Append("\"parameters\":");
+                    sb.Append(SerializeToolParameters(tool));
+                }
+                else
+                {
+                    sb.Append("\"parameters\":{\"type\":\"object\",\"properties\":{}}");
+                }
+                
+                sb.Append("}}");
+            }
+            
+            sb.Append("],");
+        }
+
+        private static string SerializeToolParameters(ToolConfig tool)
+        {
+            try
+            {
+                if (tool.InputSchema?.Parameters == null)
+                {
+                    return "{\"type\":\"object\",\"properties\":{}}";
+                }
+
+                StringBuilder sb = new StringBuilder();
+                sb.Append("{\"type\":\"object\",\"properties\":{");
+
+                bool first = true;
+                foreach (var param in tool.InputSchema.Parameters)
+                {
+                    if (!first) sb.Append(",");
+                    
+                    sb.Append($"\"{param.Name}\":{{");
+                    sb.Append($"\"type\":\"{param.Type}\",");
+                    sb.Append($"\"description\":\"{EscapeJsonString(param.Description ?? "")}\"");
+                    
+                    if (param.Enum != null && param.Enum.Length > 0)
+                    {
+                        sb.Append(",\"enum\":[");
+                        for (int i = 0; i < param.Enum.Length; i++)
+                        {
+                            if (i > 0) sb.Append(",");
+                            sb.Append($"\"{EscapeJsonString(param.Enum[i])}\"");
+                        }
+                        sb.Append("]");
+                    }
+                    
+                    sb.Append("}");
+                    first = false;
+                }
+
+                sb.Append("}");
+
+                if (tool.InputSchema.Required != null && tool.InputSchema.Required.Length > 0)
+                {
+                    sb.Append(",\"required\":[");
+                    for (int i = 0; i < tool.InputSchema.Required.Length; i++)
+                    {
+                        if (i > 0) sb.Append(",");
+                        sb.Append($"\"{tool.InputSchema.Required[i]}\"");
+                    }
+                    sb.Append("]");
+                }
+
+                sb.Append("}");
+                return sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                LoggingService.LogError($"[OpenAIService] Failed to serialize tool parameters: {ex.Message}");
+                return "{\"type\":\"object\",\"properties\":{}}";
+            }
+        }
+
+        private static string GetSystemPromptFromConfig(VoiceAgentConfig agentConfig)
+        {
+            return agentConfig?.SystemPrompt?.SystemPrompt ?? 
+                   "You are a helpful voice assistant with tool capabilities.";
+        }
+
+        private static float GetTemperatureFromConfig(VoiceAgentConfig agentConfig)
+        {
+            return agentConfig?.ModelConfig?.Temperature ?? 1.0f;
+        }
+
+        #endregion
+
+        #region Existing Chat API Methods
+
         private static UnityWebRequest CreateWebRequest(string jsonPayload, string apiKey, string baseUrl)
         {
             UnityWebRequest webRequest = new UnityWebRequest(baseUrl, "POST");
@@ -353,7 +588,7 @@ namespace ChatSystem.Services.LLM
         
         private static LLMResponse CreateErrorResponse(string model, string error)
         {
-            return new LLMResponse
+            return new LLLResponse
             {
                 content = $"Error: {error}",
                 model = model,
@@ -371,5 +606,7 @@ namespace ChatSystem.Services.LLM
                 await Task.Yield();
             }
         }
+
+        #endregion
     }
 }
