@@ -84,11 +84,11 @@ namespace ChatSystem.Bootstrap
         {
             llmOrchestrator = new LLMOrchestrator(agentExecutor);
             chatOrchestrator = new ChatOrchestrator();
-            
+
             RegisterAgentConfigurations();
         }
-        
-        private void RegisterAgentConfigurations()
+
+        protected virtual void RegisterAgentConfigurations()
         {
             if (agentConfigurations != null && agentConfigurations.Length > 0)
             {
@@ -102,12 +102,12 @@ namespace ChatSystem.Bootstrap
             }
         }
         
-        private void CreateControllers()
+        protected virtual void CreateControllers()
         {
             chatController = new ChatController(defaultConversationId);
         }
-        
-        private void ConfigureServices()
+
+        protected virtual void ConfigureServices()
         {
             if (chatOrchestrator is ChatOrchestrator chatOrchestratorImpl)
             {

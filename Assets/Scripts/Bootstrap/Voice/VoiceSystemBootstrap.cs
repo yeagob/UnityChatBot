@@ -11,10 +11,11 @@ using ChatSystem.Controllers.Voice.Interfaces;
 using ChatSystem.Views.Voice;
 using ChatSystem.Configuration.Voice;
 using ChatSystem.Services.Logging;
+using ChatSystem.Bootstrap.Voice.Debug;
 
 namespace ChatSystem.Bootstrap.Voice
 {
-    public class VoiceSystemBootstrap : DependencyBootstrap
+    public class VoiceSystemBootstrap : ChatManager
     {
         [Header("Voice System Configuration")]
         [SerializeField] private VoiceAgentConfig[] voiceAgentConfigs;
@@ -43,9 +44,9 @@ namespace ChatSystem.Bootstrap.Voice
             CreateVoiceServices();
         }
 
-        protected override void RegisterAgents()
+        protected override void RegisterAgentConfigurations()
         {
-            base.RegisterAgents();
+            base.RegisterAgentConfigurations();
             RegisterVoiceAgents();
         }
 
@@ -67,9 +68,9 @@ namespace ChatSystem.Bootstrap.Voice
             ConnectVoiceComponents();
         }
 
-        protected override void CreateDebugObjects()
+        protected override void CreateDebugObjectsIfEnabled()
         {
-            base.CreateDebugObjects();
+            base.CreateDebugObjectsIfEnabled();
             
             if (createVoiceDebugObjects)
             {
@@ -111,8 +112,8 @@ namespace ChatSystem.Bootstrap.Voice
             {
                 if (voiceAgent != null)
                 {
-                    llmOrchestrator.RegisterAgent(voiceAgent);
-                    LoggingService.LogInfo($"Registered voice agent: {voiceAgent.AgentName}");
+                    llmOrchestrator.RegisterAgentConfig(voiceAgent);
+                    LoggingService.LogInfo($"Registered voice agent: {voiceAgent.agentName}");
                 }
             }
 
@@ -168,8 +169,8 @@ namespace ChatSystem.Bootstrap.Voice
 
             for (int i = 0; i < voiceAgentConfigs.Length; i++)
             {
-                agentIds[i] = voiceAgentConfigs[i].AgentId.ToString();
-                agentNames[i] = voiceAgentConfigs[i].AgentName;
+                agentIds[i] = voiceAgentConfigs[i].agentId.ToString();
+                agentNames[i] = voiceAgentConfigs[i].agentName;
             }
 
             voiceView.SetAvailableAgents(agentIds, agentNames);

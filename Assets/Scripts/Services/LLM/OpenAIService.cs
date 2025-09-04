@@ -122,8 +122,8 @@ namespace ChatSystem.Services.LLM
                         new { type = "server_vad", threshold = 0.5, prefix_padding_ms = 300, silence_duration_ms = 200 } : null,
                     tools = BuildRealtimeToolsArray(tools),
                     tool_choice = "auto",
-                    temperature = agentConfig.ModelConfig?.Temperature ?? 1.0f,
-                    max_response_output_tokens = agentConfig.MaxResponseTokens,
+                    temperature = agentConfig.modelConfig?.temperature ?? 1.0f,
+                    max_response_output_tokens = agentConfig.maxResponseTokens,
                     input_audio_format = ConvertToOpenAIFormat(agentConfig.VoiceSettings.inputFormat),
                     output_audio_format = ConvertToOpenAIFormat(agentConfig.VoiceSettings.outputFormat)
                 }
@@ -142,8 +142,8 @@ namespace ChatSystem.Services.LLM
                 realtimeTools.Add(new
                 {
                     type = "function",
-                    name = tool.ToolId,
-                    description = tool.Description,
+                    name = tool.toolId,
+                    description = tool.description,
                     parameters = BuildRealtimeParameters(tool)
                 });
             }
@@ -153,20 +153,20 @@ namespace ChatSystem.Services.LLM
 
         private static object BuildRealtimeParameters(ToolConfiguration tool)
         {
-            if (tool.InputSchema?.Properties == null || tool.InputSchema.Properties.Count == 0)
+            if (tool.inputSchema?.properties == null || tool.inputSchema.properties.Count == 0)
             {
                 return new { type = "object", properties = new { }, required = new string[0] };
             }
 
             Dictionary<string, object> properties = new Dictionary<string, object>();
             
-            foreach (var property in tool.InputSchema.Properties)
+            foreach (var property in tool.inputSchema.properties)
             {
                 properties[property.Key] = new
                 {
-                    type = property.Value.Type,
-                    description = property.Value.Description,
-                    @enum = property.Value.Enum
+                    type = property.Value.type,
+                    description = property.Value.description,
+                    @enum = property.Value
                 };
             }
 
@@ -174,13 +174,13 @@ namespace ChatSystem.Services.LLM
             {
                 type = "object",
                 properties = properties,
-                required = tool.InputSchema.Required ?? new List<string>()
+                required = tool.inputSchema.required ?? new List<string>()
             };
         }
 
         private static string GetSystemPromptFromConfig(VoiceAgentConfig agentConfig)
         {
-            return agentConfig?.SystemPrompt?.SystemPrompt ?? 
+            return agentConfig?.systemPrompt?.content ?? 
                    "You are a helpful voice assistant with tool capabilities.";
         }
 

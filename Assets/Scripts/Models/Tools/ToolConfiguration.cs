@@ -12,6 +12,7 @@ namespace ChatSystem.Models.Tools
     {
         public string toolId;
         public string toolName;
+        public string description;
         public ToolType toolType;
         public ToolSchema inputSchema;
         public ToolAnnotations annotations;
@@ -36,6 +37,7 @@ namespace ChatSystem.Models.Tools
             
             toolId = config.toolId;
             toolName = config.toolName;
+            description = config.function.description;
             toolType = config.toolType;
             annotations = config.annotations;
             enabled = config.enabled;
