@@ -14,12 +14,12 @@ using ChatSystem.Services.Logging;
 
 namespace ChatSystem.Bootstrap.Voice
 {
-    public class VoiceSystemBootstrap : ChatManager
+    public class VoiceSystemBootstrap : DependencyBootstrap
     {
         [Header("Voice System Configuration")]
         [SerializeField] private VoiceAgentConfig[] voiceAgentConfigs;
         [SerializeField] private VoiceView voiceView;
-        [SerializeField] private string defaultVoiceConversationId = "voice-conversation";
+        [SerializeField] private string defaultConversationId = "voice-conversation";
         [SerializeField] private string defaultVoiceAgentId = "voice-agent-default";
         
         [Header("Voice System Settings")]
@@ -41,7 +41,40 @@ namespace ChatSystem.Bootstrap.Voice
             }
             
             CreateVoiceServices();
+        }
+
+        protected override void RegisterAgents()
+        {
+            base.RegisterAgents();
             RegisterVoiceAgents();
+        }
+
+        protected override void CreateControllers()
+        {
+            base.CreateControllers();
+            CreateVoiceControllers();
+        }
+
+        protected override void ConfigureServices()
+        {
+            base.ConfigureServices();
+            ConfigureVoiceServices();
+        }
+
+        protected override void ConnectComponents()
+        {
+            base.ConnectComponents();
+            ConnectVoiceComponents();
+        }
+
+        protected override void CreateDebugObjects()
+        {
+            base.CreateDebugObjects();
+            
+            if (createVoiceDebugObjects)
+            {
+                CreateVoiceDebugObjects();
+            }
         }
 
         private void CreateVoiceServices()
@@ -63,9 +96,6 @@ namespace ChatSystem.Bootstrap.Voice
                 contextManager
             );
 
-            CreateVoiceControllers();
-            ConfigureVoiceServices();
-
             LoggingService.LogInfo("Voice services created successfully");
         }
 
@@ -81,8 +111,8 @@ namespace ChatSystem.Bootstrap.Voice
             {
                 if (voiceAgent != null)
                 {
-                    llmOrchestrator.RegisterAgentConfig(voiceAgent);
-                    LoggingService.LogInfo($"Registered voice agent: {voiceAgent.agentName}");
+                    llmOrchestrator.RegisterAgent(voiceAgent);
+                    LoggingService.LogInfo($"Registered voice agent: {voiceAgent.AgentName}");
                 }
             }
 
@@ -110,12 +140,6 @@ namespace ChatSystem.Bootstrap.Voice
             LoggingService.LogInfo("Voice services configured");
         }
 
-        protected override void ConnectComponents()
-        {
-            base.ConnectComponents();
-            ConnectVoiceComponents();
-        }
-
         private void ConnectVoiceComponents()
         {
             if (voiceView != null && voiceController != null)
@@ -134,7 +158,7 @@ namespace ChatSystem.Bootstrap.Voice
 
         private void SetupVoiceAgentsInUI()
         {
-            if (voiceAgentConfigs == null || voiceAgentConfigs.Length == 0 || voiceView == null)
+            if (voiceView == null || voiceAgentConfigs == null || voiceAgentConfigs.Length == 0)
             {
                 return;
             }
@@ -144,280 +168,192 @@ namespace ChatSystem.Bootstrap.Voice
 
             for (int i = 0; i < voiceAgentConfigs.Length; i++)
             {
-                agentIds[i] = voiceAgentConfigs[i].agentId;
-                agentNames[i] = voiceAgentConfigs[i].agentName;
+                agentIds[i] = voiceAgentConfigs[i].AgentId.ToString();
+                agentNames[i] = voiceAgentConfigs[i].AgentName;
             }
 
             voiceView.SetAvailableAgents(agentIds, agentNames);
-            LoggingService.LogInfo($"Setup {agentNames.Length} agents in UI");
-        }
-
-        protected override void CreateDebugObjectsIfEnabled()
-        {
-            base.CreateDebugObjectsIfEnabled();
-            
-            if (createVoiceDebugObjects)
-            {
-                CreateVoiceDebugObjects();
-            }
         }
 
         private void CreateVoiceDebugObjects()
         {
-            if (webSocketService != null)
-            {
-                GameObject webSocketDebug = new GameObject("[DEBUG] WebSocketService");
-                webSocketDebug.transform.SetParent(transform);
-                WebSocketDebugComponent wsDebugComponent = webSocketDebug.AddComponent<WebSocketDebugComponent>();
-                wsDebugComponent.Initialize(webSocketService);
-            }
+            GameObject debugParent = new GameObject("[DEBUG] Voice Components");
+            debugParent.transform.SetParent(transform);
 
-            if (audioService != null)
-            {
-                GameObject audioDebug = new GameObject("[DEBUG] AudioService");
-                audioDebug.transform.SetParent(transform);
-                AudioDebugComponent audioDebugComponent = audioDebug.AddComponent<AudioDebugComponent>();
-                audioDebugComponent.Initialize(audioService);
-            }
-
-            if (realtimeOrchestrator != null)
-            {
-                GameObject realtimeDebug = new GameObject("[DEBUG] RealtimeOrchestrator");
-                realtimeDebug.transform.SetParent(transform);
-                RealtimeOrchestratorDebugComponent rtDebugComponent = realtimeDebug.AddComponent<RealtimeOrchestratorDebugComponent>();
-                rtDebugComponent.Initialize(realtimeOrchestrator);
-            }
-
-            if (voiceController != null)
-            {
-                GameObject voiceControllerDebug = new GameObject("[DEBUG] VoiceController");
-                voiceControllerDebug.transform.SetParent(transform);
-                VoiceControllerDebugComponent vcDebugComponent = voiceControllerDebug.AddComponent<VoiceControllerDebugComponent>();
-                vcDebugComponent.Initialize(voiceController);
-            }
+            CreateWebSocketDebugObject(debugParent.transform);
+            CreateAudioDebugObject(debugParent.transform);
+            CreateRealtimeOrchestratorDebugObject(debugParent.transform);
+            CreateVoiceControllerDebugObject(debugParent.transform);
 
             LoggingService.LogInfo("Voice debug objects created");
         }
 
-        public async void StartDefaultVoiceSession()
+        private void CreateWebSocketDebugObject(Transform parent)
         {
-            if (voiceController == null)
-            {
-                LoggingService.LogError("Cannot start voice session: VoiceController not initialized");
-                return;
-            }
-
-            string agentId = (voiceAgentConfigs != null && voiceAgentConfigs.Length > 0) 
-                ? voiceAgentConfigs[0].agentId 
-                : defaultVoiceAgentId;
-
-            try
-            {
-                await voiceController.StartVoiceSessionAsync(defaultVoiceConversationId, agentId);
-                LoggingService.LogInfo($"Default voice session started with agent: {agentId}");
-            }
-            catch (System.Exception ex)
-            {
-                LoggingService.LogError($"Failed to start default voice session: {ex.Message}");
-            }
-        }
-
-        private void OnDestroy()
-        {
-            if (webSocketService != null)
-            {
-                webSocketService.Dispose();
-            }
-
-            if (realtimeOrchestrator != null && realtimeOrchestrator.IsSessionActive)
-            {
-                realtimeOrchestrator.EndSessionAsync();
-            }
-        }
-
-        [ContextMenu("Test Voice Session")]
-        private void TestVoiceSession()
-        {
-            StartDefaultVoiceSession();
-        }
-
-        [ContextMenu("Stop Voice Session")]
-        private async void StopVoiceSession()
-        {
-            if (voiceController != null)
-            {
-                await voiceController.StopVoiceSessionAsync();
-            }
-        }
-
-        [ContextMenu("Show Voice System Info")]
-        private void ShowVoiceSystemInfo()
-        {
-            LoggingService.LogInfo("=== Voice System Information ===");
-            LoggingService.LogInfo($"VoiceAgentConfigs: {(voiceAgentConfigs?.Length ?? 0)}");
-            LoggingService.LogInfo($"WebSocketService: {(webSocketService != null ? "Ready" : "Not Ready")}");
-            LoggingService.LogInfo($"AudioService: {(audioService != null ? "Ready" : "Not Ready")}");
-            LoggingService.LogInfo($"RealtimeOrchestrator: {(realtimeOrchestrator != null ? "Ready" : "Not Ready")}");
-            LoggingService.LogInfo($"VoiceController: {(voiceController != null ? "Ready" : "Not Ready")}");
-            LoggingService.LogInfo($"VoiceView: {(voiceView != null ? "Connected" : "Not Connected")}");
+            GameObject debugGO = new GameObject("[DEBUG] WebSocketService");
+            debugGO.transform.SetParent(parent);
             
-            if (voiceController != null)
-            {
-                LoggingService.LogInfo($"Session Active: {voiceController.IsSessionActive}");
-                LoggingService.LogInfo($"Current Conversation: {voiceController.CurrentConversationId ?? "None"}");
-                LoggingService.LogInfo($"Current Agent: {voiceController.CurrentAgentId ?? "None"}");
-            }
+            WebSocketDebugComponent debugComponent = debugGO.AddComponent<WebSocketDebugComponent>();
+            debugComponent.webSocketService = webSocketService;
+        }
+
+        private void CreateAudioDebugObject(Transform parent)
+        {
+            GameObject debugGO = new GameObject("[DEBUG] AudioService");
+            debugGO.transform.SetParent(parent);
+            
+            AudioDebugComponent debugComponent = debugGO.AddComponent<AudioDebugComponent>();
+            debugComponent.audioService = audioService;
+        }
+
+        private void CreateRealtimeOrchestratorDebugObject(Transform parent)
+        {
+            GameObject debugGO = new GameObject("[DEBUG] RealtimeOrchestrator");
+            debugGO.transform.SetParent(parent);
+            
+            RealtimeOrchestratorDebugComponent debugComponent = debugGO.AddComponent<RealtimeOrchestratorDebugComponent>();
+            debugComponent.realtimeOrchestrator = realtimeOrchestrator;
+        }
+
+        private void CreateVoiceControllerDebugObject(Transform parent)
+        {
+            GameObject debugGO = new GameObject("[DEBUG] VoiceController");
+            debugGO.transform.SetParent(parent);
+            
+            VoiceControllerDebugComponent debugComponent = debugGO.AddComponent<VoiceControllerDebugComponent>();
+            debugComponent.voiceController = voiceController;
         }
     }
+}
 
-    #region Debug Components
-
+namespace ChatSystem.Bootstrap.Voice.Debug
+{
     public class WebSocketDebugComponent : MonoBehaviour
     {
-        private IWebSocketService webSocketService;
+        public IWebSocketService webSocketService;
 
-        public void Initialize(IWebSocketService service)
-        {
-            webSocketService = service;
-        }
-
-        [ContextMenu("Test WebSocket Connection")]
+        [ContextMenu("Test Connection")]
         private void TestConnection()
         {
             LoggingService.LogInfo($"WebSocket Status: {webSocketService?.ConnectionStatus ?? "Not Available"}");
         }
 
-        [ContextMenu("Show WebSocket Info")]
-        private void ShowWebSocketInfo()
+        [ContextMenu("Show Connection Info")]
+        private void ShowConnectionInfo()
         {
-            if (webSocketService == null)
+            if (webSocketService != null)
             {
-                LoggingService.LogWarning("WebSocketService not available");
-                return;
+                LoggingService.LogInfo($"Is Connected: {webSocketService.IsConnected}");
+                LoggingService.LogInfo($"Status: {webSocketService.ConnectionStatus}");
             }
-
-            LoggingService.LogInfo($"Connected: {webSocketService.IsConnected}");
-            LoggingService.LogInfo($"Status: {webSocketService.ConnectionStatus}");
         }
     }
 
     public class AudioDebugComponent : MonoBehaviour
     {
-        private IAudioService audioService;
+        public IAudioService audioService;
 
-        public void Initialize(IAudioService service)
+        [ContextMenu("Test Audio Info")]
+        private void TestAudioInfo()
         {
-            audioService = service;
+            if (audioService != null)
+            {
+                LoggingService.LogInfo($"Is Recording: {audioService.IsRecording}");
+                LoggingService.LogInfo($"Is Playing: {audioService.IsPlaying}");
+                LoggingService.LogInfo($"Available Mics: {string.Join(", ", audioService.AvailableMicrophones)}");
+            }
         }
 
-        [ContextMenu("Test Audio Recording")]
-        private async void TestRecording()
+        [ContextMenu("Start Test Recording")]
+        private async void StartTestRecording()
         {
-            if (audioService == null) return;
-            
-            if (audioService.IsRecording)
-            {
-                await audioService.StopRecordingAsync();
-                LoggingService.LogInfo("Audio recording stopped");
-            }
-            else
+            if (audioService != null)
             {
                 bool started = await audioService.StartRecordingAsync();
-                LoggingService.LogInfo($"Audio recording started: {started}");
+                LoggingService.LogInfo($"Recording started: {started}");
             }
         }
 
-        [ContextMenu("Show Audio Status")]
-        private void ShowAudioStatus()
+        [ContextMenu("Stop Test Recording")]
+        private async void StopTestRecording()
         {
-            if (audioService == null)
+            if (audioService != null)
             {
-                LoggingService.LogWarning("AudioService not available");
-                return;
-            }
-
-            LoggingService.LogInfo($"Recording: {audioService.IsRecording}");
-            LoggingService.LogInfo($"Playing: {audioService.IsPlaying}");
-            LoggingService.LogInfo($"Volume: {audioService.CurrentVolume}");
-            LoggingService.LogInfo($"Available Microphones: {audioService.AvailableMicrophones?.Length ?? 0}");
-            
-            if (audioService.AvailableMicrophones != null)
-            {
-                for (int i = 0; i < audioService.AvailableMicrophones.Length; i++)
-                {
-                    LoggingService.LogInfo($"  Mic {i}: {audioService.AvailableMicrophones[i]}");
-                }
+                await audioService.StopRecordingAsync();
+                LoggingService.LogInfo("Recording stopped");
             }
         }
     }
 
     public class RealtimeOrchestratorDebugComponent : MonoBehaviour
     {
-        private IRealtimeOrchestrator orchestrator;
+        public IRealtimeOrchestrator realtimeOrchestrator;
 
-        public void Initialize(IRealtimeOrchestrator service)
+        [ContextMenu("Test Session Status")]
+        private void TestSessionStatus()
         {
-            orchestrator = service;
+            if (realtimeOrchestrator != null)
+            {
+                LoggingService.LogInfo($"Session Active: {realtimeOrchestrator.IsSessionActive}");
+                LoggingService.LogInfo($"Session ID: {realtimeOrchestrator.CurrentSessionId}");
+                LoggingService.LogInfo($"Agent ID: {realtimeOrchestrator.CurrentAgentId}");
+            }
         }
 
-        [ContextMenu("Show Orchestrator Status")]
-        private void ShowStatus()
+        [ContextMenu("Start Test Session")]
+        private async void StartTestSession()
         {
-            if (orchestrator == null)
+            if (realtimeOrchestrator != null)
             {
-                LoggingService.LogWarning("RealtimeOrchestrator not available");
-                return;
+                await realtimeOrchestrator.StartSessionAsync("debug-session", "debug-agent");
+                LoggingService.LogInfo("Debug session started");
             }
+        }
 
-            LoggingService.LogInfo($"Session Active: {orchestrator.IsSessionActive}");
-            LoggingService.LogInfo($"Session ID: {orchestrator.CurrentSessionId ?? "None"}");
-            LoggingService.LogInfo($"Agent ID: {orchestrator.CurrentAgentId ?? "None"}");
+        [ContextMenu("End Test Session")]
+        private async void EndTestSession()
+        {
+            if (realtimeOrchestrator != null)
+            {
+                await realtimeOrchestrator.EndSessionAsync();
+                LoggingService.LogInfo("Debug session ended");
+            }
         }
     }
 
     public class VoiceControllerDebugComponent : MonoBehaviour
     {
-        private IVoiceController controller;
+        public IVoiceController voiceController;
 
-        public void Initialize(IVoiceController service)
+        [ContextMenu("Test Controller Status")]
+        private void TestControllerStatus()
         {
-            controller = service;
+            if (voiceController != null)
+            {
+                LoggingService.LogInfo($"Session Active: {voiceController.IsSessionActive}");
+                LoggingService.LogInfo($"Conversation ID: {voiceController.CurrentConversationId}");
+                LoggingService.LogInfo($"Agent ID: {voiceController.CurrentAgentId}");
+            }
         }
 
-        [ContextMenu("Show Controller Status")]
-        private void ShowStatus()
+        [ContextMenu("Start Test Voice Session")]
+        private async void StartTestVoiceSession()
         {
-            if (controller == null)
+            if (voiceController != null)
             {
-                LoggingService.LogWarning("VoiceController not available");
-                return;
+                await voiceController.StartVoiceSessionAsync("debug-conversation", "debug-voice-agent");
+                LoggingService.LogInfo("Debug voice session started");
             }
-
-            LoggingService.LogInfo($"Session Active: {controller.IsSessionActive}");
-            LoggingService.LogInfo($"Conversation ID: {controller.CurrentConversationId ?? "None"}");
-            LoggingService.LogInfo($"Agent ID: {controller.CurrentAgentId ?? "None"}");
         }
 
-        [ContextMenu("Test Start Voice Session")]
-        private async void TestStartSession()
+        [ContextMenu("Send Test Text Message")]
+        private async void SendTestTextMessage()
         {
-            if (controller == null)
+            if (voiceController != null)
             {
-                LoggingService.LogWarning("VoiceController not available");
-                return;
-            }
-
-            try
-            {
-                await controller.StartVoiceSessionAsync("test-conversation", "default-agent");
-                LoggingService.LogInfo("Test voice session started");
-            }
-            catch (System.Exception ex)
-            {
-                LoggingService.LogError($"Failed to start test session: {ex.Message}");
+                await voiceController.SendTextMessageAsync("This is a test message from debug");
+                LoggingService.LogInfo("Debug text message sent");
             }
         }
     }
-
-    #endregion
 }
