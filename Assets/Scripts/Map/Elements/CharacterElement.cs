@@ -10,10 +10,10 @@ namespace MapSystem.Elements
     public class CharacterElement : MapElement
     {
         [Header("Character Properties")]
-        [SerializeField] private float movementSpeed = 1.0f;
-        [SerializeField] private bool canMove = true;
-        [SerializeField] private bool isPlayerControlled = false;
-        [SerializeField] private ViewDirection facingDirection = ViewDirection.Forward;
+        [SerializeField] private float movementSpeed ;
+        [SerializeField] private bool canMove ;
+        [SerializeField] private bool isPlayerControlled ;
+        [SerializeField] private ViewDirection facingDirection;
         
         [Header("Character Stats")]
         [SerializeField] private int healthPoints = 100;
@@ -117,14 +117,17 @@ namespace MapSystem.Elements
             int rowDelta = toCell.row - fromCell.row;
             int columnDelta = toCell.column - fromCell.column;
             
-            if (Mathf.Abs(rowDelta) > Mathf.Abs(columnDelta))
+            if (columnDelta != 0)
             {
-                facingDirection = rowDelta > 0 ? ViewDirection.Down : ViewDirection.Up;
+                UpdateFacingDirection(columnDelta < 0);
             }
-            else if (columnDelta != 0)
-            {
-                facingDirection = columnDelta > 0 ? ViewDirection.Right : ViewDirection.Left;
-            }
+        }
+        
+        private void UpdateFacingDirection(bool left)
+        {
+            facingDirection = !left ? ViewDirection.Right : ViewDirection.Left;
+            
+            elementSprite.flipX = facingDirection == ViewDirection.Right;
             
             context.SetProperty("facingDirection", facingDirection);
         }
@@ -146,11 +149,6 @@ namespace MapSystem.Elements
         
         public VisionResult ScanSurroundings()
         {
-            if (mapSystem == null)
-            {
-                return VisionResult.Empty(ViewDirection.Forward, CurrentGridCell, visionDistance);
-            }
-            
             return mapSystem.GetElementsInVisionRange(this);
         }
         
@@ -238,12 +236,8 @@ namespace MapSystem.Elements
         {
             switch (direction)
             {
-                case ViewDirection.Up: return Vector3.up;
-                case ViewDirection.Down: return Vector3.down;
                 case ViewDirection.Left: return Vector3.left;
                 case ViewDirection.Right: return Vector3.right;
-                case ViewDirection.Forward: return Vector3.up;
-                case ViewDirection.Backward: return Vector3.down;
                 default: return Vector3.up;
             }
         }

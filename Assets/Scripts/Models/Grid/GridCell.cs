@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 
 namespace Grid.Models.Grid
 {
@@ -7,13 +8,21 @@ namespace Grid.Models.Grid
     {
         public int row;
         public int column;
+        public UnityEngine.Vector3 position;
 
+        public GridCell(int row, int column, UnityEngine.Vector3 position)
+        {
+            this.row = row;
+            this.column = column;
+            this.position = position;
+        }
+        
         public GridCell(int row, int column)
         {
             this.row = row;
             this.column = column;
+            this.position = UnityEngine.Vector3.zero;
         }
-        
 
         public int GetLinearIndex(int gridWidth)
         {
@@ -41,7 +50,7 @@ namespace Grid.Models.Grid
 
         public override string ToString()
         {
-            return $"GridCell(Row: {row}, Column: {column})";
+            return $"GridCell(Row: {row}, Column: {column}), position: {position}";
         }
 
         public static bool operator ==(GridCell left, GridCell right)

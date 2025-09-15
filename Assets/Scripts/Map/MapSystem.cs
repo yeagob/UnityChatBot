@@ -4,74 +4,75 @@ using UnityEngine;
 using Grid.Models.Grid;
 using MapSystem.Models.Map;
 using MapSystem.Enums;
+using UnityEngine.Serialization;
 
 namespace MapSystem
 {
     public class MapSystem : MonoBehaviour
     {
         [Header("Dependencies")]
-        [SerializeField] private GridSystem gridSystem;
+        [SerializeField] private GridSystem _gridSystem;
         
+        [FormerlySerializedAs("_autoCreateCells")]
         [Header("Map Configuration")]
-        [SerializeField] private bool autoCreateCells = true;
-        [SerializeField] private bool debugMode = false;
+         private bool _initialized = false;
+        [SerializeField] private bool _debugMode = false;
         
-        private MapCell[] mapCells;
-        private Dictionary<string, MapElement> registeredElements;
-        private bool isInitialized = false;
+        private MapCell[] _mapCells;
+        private Dictionary<string, MapElement> _registeredElements = new Dictionary<string, MapElement>();
         
-        public GridSystem GridSystem => gridSystem;
-        public bool IsInitialized => isInitialized;
-        
-        private void Awake()
-        {
-            InitializeMapSystem();
-        }
-        
-        private void Start()
-        {
-            if (autoCreateCells)
-            {
-                CreateMapCells();
-            }
-        }
+        public GridSystem GridSystem => _gridSystem;
+        public bool IsInitialized => _initialized;
+  
         
         private void InitializeMapSystem()
         {
-            if (gridSystem == null)
+            
+            if (!_initialized)
             {
-                gridSystem = GetComponent<GridSystem>();
-                if (gridSystem == null)
-                {
-                    gridSystem = FindObjectOfType<GridSystem>();
-                }
+                _gridSystem.Initialize();
+                CreateMapCells();
+                RegisterElements();
+                _initialized = true;
             }
             
-            registeredElements = new Dictionary<string, MapElement>();
+            _registeredElements = new Dictionary<string, MapElement>();
         }
         
+
+
+        private void RegisterElements()
+        {
+            foreach (Transform child in transform)
+            {
+                MapElement mapElement = child.GetComponent<MapElement>();
+                if (mapElement != null)
+                {
+                    RegisterElement(mapElement);
+                }
+            }
+        }
+
         private void CreateMapCells()
         {
-            if (gridSystem == null)
+            if (_gridSystem == null)
             {
                 Debug.LogError("MapSystem: GridSystem dependency not found!");
                 return;
             }
             
-            GridConfiguration config = gridSystem.GetGridConfiguration();
+            GridConfiguration config = _gridSystem.GetGridConfiguration();
             int totalCells = config.GetTotalCells();
             
-            mapCells = new MapCell[totalCells];
+            _mapCells = new MapCell[totalCells];
             
             for (int i = 0; i < totalCells; i++)
             {
-                GridCell gridCell = gridSystem.GetGridCellFromLinearIndex(i);
-                mapCells[i] = new MapCell(gridCell);
+                GridCell gridCell = _gridSystem.GetGridCellFromLinearIndex(i);
+                _mapCells[i] = new MapCell(gridCell);
             }
             
-            isInitialized = true;
-            
-            if (debugMode)
+            if (_debugMode)
             {
                 Debug.Log($"MapSystem: Created {totalCells} map cells");
             }
@@ -79,25 +80,28 @@ namespace MapSystem
         
         public void RegisterElement(MapElement element)
         {
-            if (element == null || !isInitialized)
+            if (element == null)
             {
                 return;
             }
             
-            string elementId = element.Context.elementId;
+            string elementId = element.Id.ToString();
             
-            if (!registeredElements.ContainsKey(elementId))
+            if (!_registeredElements.ContainsKey(elementId))
             {
-                registeredElements[elementId] = element;
+                _registeredElements[elementId] = element;
                 
-                GridCell elementCell = element.CurrentGridCell;
+                GridCell elementCell = _gridSystem.GetGridCellFromLinearIndex(element.CurrentGridIndex);
+                
+                element.SetGridPosition(elementCell, this);
+
                 MapCell mapCell = GetMapCell(elementCell);
                 
                 if (mapCell != null)
                 {
                     mapCell.AddElement(element);
-                    
-                    if (debugMode)
+
+                    if (_debugMode)
                     {
                         Debug.Log($"MapSystem: Registered element {element.name} at {elementCell}");
                     }
@@ -107,16 +111,16 @@ namespace MapSystem
         
         public void UnregisterElement(MapElement element)
         {
-            if (element == null || !isInitialized)
+            if (element == null )
             {
                 return;
             }
             
             string elementId = element.Context.elementId;
             
-            if (registeredElements.ContainsKey(elementId))
+            if (_registeredElements.ContainsKey(elementId))
             {
-                registeredElements.Remove(elementId);
+                _registeredElements.Remove(elementId);
                 
                 GridCell elementCell = element.CurrentGridCell;
                 MapCell mapCell = GetMapCell(elementCell);
@@ -125,7 +129,7 @@ namespace MapSystem
                 {
                     mapCell.RemoveElement(element);
                     
-                    if (debugMode)
+                    if (_debugMode)
                     {
                         Debug.Log($"MapSystem: Unregistered element {element.name} from {elementCell}");
                     }
@@ -135,7 +139,7 @@ namespace MapSystem
         
         public void MoveElement(MapElement element, GridCell newCell)
         {
-            if (element == null || !isInitialized)
+            if (element == null)
             {
                 return;
             }
@@ -148,9 +152,9 @@ namespace MapSystem
             {
                 oldMapCell.RemoveElement(element);
                 newMapCell.AddElement(element);
-                element.SetGridPosition(newCell);
+                element.SetGridPosition(newCell, this);
                 
-                if (debugMode)
+                if (_debugMode)
                 {
                     Debug.Log($"MapSystem: Moved element {element.name} from {oldCell} to {newCell}");
                 }
@@ -159,19 +163,19 @@ namespace MapSystem
         
         public MapCell GetMapCell(GridCell gridCell)
         {
-            if (!isInitialized || mapCells == null)
+            if ( _mapCells == null)
             {
                 return null;
             }
             
-            GridConfiguration config = gridSystem.GetGridConfiguration();
+            GridConfiguration config = _gridSystem.GetGridConfiguration();
             if (!config.IsValidGridCell(gridCell))
             {
                 return null;
             }
             
-            int linearIndex = gridSystem.GetLinearIndex(gridCell);
-            return mapCells[linearIndex];
+            int linearIndex = _gridSystem.GetLinearIndex(gridCell);
+            return _mapCells[linearIndex];
         }
         
         public MapCell GetMapCell(int row, int column)
@@ -181,25 +185,25 @@ namespace MapSystem
         
         public Vector3 GetWorldPositionFromGridCell(GridCell gridCell)
         {
-            if (gridSystem != null)
+            if (_gridSystem != null)
             {
-                return gridSystem.GetCellCenterWorldPosition(gridCell);
+                return _gridSystem.GetCellCenterWorldPosition(gridCell);
             }
             return Vector3.zero;
         }
         
         public GridResult<GridCell> GetGridCellFromWorldPosition(Vector3 worldPosition)
         {
-            if (gridSystem != null)
+            if (_gridSystem != null)
             {
-                return gridSystem.WorldPointToGridCell(worldPosition);
+                return _gridSystem.WorldPointToGridCell(worldPosition);
             }
             return GridResult<GridCell>.Failure();
         }
         
         public float GetDistanceBetweenElements(MapElement elementA, MapElement elementB)
         {
-            if (elementA == null || elementB == null || gridSystem == null)
+            if (elementA == null || elementB == null || _gridSystem == null)
             {
                 return float.MaxValue;
             }
@@ -236,8 +240,8 @@ namespace MapSystem
         
         public MapElement[] GetAllElements()
         {
-            MapElement[] elements = new MapElement[registeredElements.Count];
-            registeredElements.Values.CopyTo(elements, 0);
+            MapElement[] elements = new MapElement[_registeredElements.Count];
+            _registeredElements.Values.CopyTo(elements, 0);
             return elements;
         }
         
@@ -245,7 +249,7 @@ namespace MapSystem
         {
             List<MapElement> filteredElements = new List<MapElement>();
             
-            foreach (MapElement element in registeredElements.Values)
+            foreach (MapElement element in _registeredElements.Values)
             {
                 if (element.ElementType == elementType)
                 {
@@ -258,19 +262,19 @@ namespace MapSystem
         
         public MapElement GetElementById(string elementId)
         {
-            registeredElements.TryGetValue(elementId, out MapElement element);
+            _registeredElements.TryGetValue(elementId, out MapElement element);
             return element;
         }
         
         public int GetTotalElementCount()
         {
-            return registeredElements.Count;
+            return _registeredElements.Count;
         }
         
         public int GetElementCountByType(MapElementType elementType)
         {
             int count = 0;
-            foreach (MapElement element in registeredElements.Values)
+            foreach (MapElement element in _registeredElements.Values)
             {
                 if (element.ElementType == elementType)
                 {
@@ -282,12 +286,14 @@ namespace MapSystem
         
         public MapCell[] GetAllMapCells()
         {
-            return mapCells;
+            InitializeMapSystem();
+
+            return _mapCells;
         }
         
         public void SetDebugMode(bool enabled)
         {
-            debugMode = enabled;
+            _debugMode = enabled;
         }
     }
 }

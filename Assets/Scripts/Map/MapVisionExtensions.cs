@@ -32,18 +32,6 @@ namespace MapSystem.Vision
                 case ViewDirection.Right:
                     ScanHorizontalDirection(mapSystem, observerCell, 1, maxRange, visibleElements, scannedCells);
                     break;
-                case ViewDirection.Up:
-                    ScanVerticalDirection(mapSystem, observerCell, -1, maxRange, visibleElements, scannedCells);
-                    break;
-                case ViewDirection.Down:
-                    ScanVerticalDirection(mapSystem, observerCell, 1, maxRange, visibleElements, scannedCells);
-                    break;
-                case ViewDirection.Forward:
-                    ScanForwardDirection(mapSystem, observerCell, maxRange, visibleElements, scannedCells);
-                    break;
-                case ViewDirection.Backward:
-                    ScanBackwardDirection(mapSystem, observerCell, maxRange, visibleElements, scannedCells);
-                    break;
             }
             
             return VisionResult.Success(direction, observerCell, maxRange, visibleElements, scannedCells);
@@ -59,22 +47,10 @@ namespace MapSystem.Vision
             return mapSystem.GetElementsInDirection(observerCell, ViewDirection.Right, maxRange);
         }
         
-        public static VisionResult GetElementsAbove(this MapSystem mapSystem, GridCell observerCell, int maxRange = int.MaxValue)
-        {
-            return mapSystem.GetElementsInDirection(observerCell, ViewDirection.Up, maxRange);
-        }
-        
-        public static VisionResult GetElementsBelow(this MapSystem mapSystem, GridCell observerCell, int maxRange = int.MaxValue)
-        {
-            return mapSystem.GetElementsInDirection(observerCell, ViewDirection.Down, maxRange);
-        }
+ 
         
         public static VisionResult GetElementsInVisionRange(this MapSystem mapSystem, MapElement observer)
         {
-            if (observer == null)
-            {
-                return VisionResult.Empty(ViewDirection.Forward, new GridCell(0, 0), 0);
-            }
             
             GridCell observerCell = observer.CurrentGridCell;
             int visionRange = observer.VisionDistance;
@@ -114,7 +90,7 @@ namespace MapSystem.Vision
                 }
             }
             
-            return VisionResult.Success(ViewDirection.Forward, observerCell, visionRange, visibleElements, scannedCells);
+            return VisionResult.Success(ViewDirection.Left, observerCell, visionRange, visibleElements, scannedCells);
         }
         
         private static void ScanHorizontalDirection(MapSystem mapSystem, GridCell observerCell, int direction, int maxRange, 

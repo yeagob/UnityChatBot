@@ -23,7 +23,7 @@ namespace MapSystem.Models.Context
         public MapElementContext()
         {
             elementId = System.Guid.NewGuid().ToString();
-            creationTime = Time.time;
+            creationTime = 0;
             customProperties = new Dictionary<string, object>();
             interactionHistory = new List<string>();
         }

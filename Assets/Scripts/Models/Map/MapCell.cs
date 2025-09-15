@@ -21,7 +21,9 @@ namespace MapSystem.Models.Map
             this.isTraversable = true;
             this.traversalCost = 1.0f;
         }
-        
+
+        public Vector3 WorldPosition => gridCell.position;
+
         public void AddElement(MapElement element)
         {
             if (element != null && !elements.Contains(element))

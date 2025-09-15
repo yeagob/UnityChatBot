@@ -13,7 +13,7 @@ namespace Grid
         [Header("Input")]
         [SerializeField] private Camera _targetCamera;
 
-        private void Awake()
+        public void Initialize()
         {
             InitializeGrid();
         }
@@ -68,7 +68,12 @@ namespace Grid
             int column = Mathf.FloorToInt(adjustedX / _gridConfig.cellWidth);
             int row = Mathf.FloorToInt(-adjustedY / _gridConfig.cellHeight);
             
-            GridCell cell = new GridCell(row, column);
+            float worldX = _gridConfig.offsetLeft + (column * _gridConfig.cellWidth) + (_gridConfig.cellWidth * 0.5f);
+            float worldY = -(_gridConfig.offsetTop + (row * _gridConfig.cellHeight) + (_gridConfig.cellHeight * 0.5f));
+            Vector3 localPosition = new Vector3(worldX, worldY, 0f);
+            Vector3 center = transform.TransformPoint(localPosition);
+            
+            GridCell cell = new GridCell(row, column, center);
             
             if (_gridConfig.IsValidGridCell(cell))
             {
@@ -94,7 +99,11 @@ namespace Grid
 
         public Vector3 GetCellCenterWorldPosition(int row, int column)
         {
-            return GetCellCenterWorldPosition(new GridCell(row, column));
+            float worldX = _gridConfig.offsetLeft + (column * _gridConfig.cellWidth) + (_gridConfig.cellWidth * 0.5f);
+            float worldY = -(_gridConfig.offsetTop + (row * _gridConfig.cellHeight) + (_gridConfig.cellHeight * 0.5f));
+            Vector3 localPosition = new Vector3(worldX, worldY, 0f);
+            Vector3 center = transform.TransformPoint(localPosition);
+            return GetCellCenterWorldPosition(new GridCell(row, column, center));
         }
 
         public Vector3[] GetCellMultiplePositions(GridCell cell, int objectCount)
@@ -144,13 +153,19 @@ namespace Grid
         {
             if (i < 0 || i >= _gridConfig.GetTotalCells())
             {
-                return new GridCell(-1, -1);
+                return new GridCell(-1, -1, Vector3.zero);
             }
     
             int row = i / _gridConfig.gridWidth;
             int column = i % _gridConfig.gridWidth;
+            
+            float worldX = _gridConfig.offsetLeft + (column * _gridConfig.cellWidth) + (_gridConfig.cellWidth * 0.5f);
+            float worldY = -(_gridConfig.offsetTop + (row * _gridConfig.cellHeight) + (_gridConfig.cellHeight * 0.5f));
+            Vector3 localPosition = new Vector3(worldX, worldY, 0f);
+            Vector3 center = transform.TransformPoint(localPosition);
     
-            return new GridCell(row, column);
+            return new GridCell(row, column, center);
         }
-    }
+        }
+        
 }

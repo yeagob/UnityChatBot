@@ -187,18 +187,6 @@ namespace Grid.Grid
             
             return borderCells;
         }
-
-        public static List<GridCell> GetCornerCells(this GridSystem gridSystem)
-        {
-            List<GridCell> cornerCells = new List<GridCell>();
-            GridConfiguration config = gridSystem.GetGridConfiguration();
-            
-            cornerCells.Add(new GridCell(0, 0));
-            cornerCells.Add(new GridCell(0, config.gridWidth - 1));
-            cornerCells.Add(new GridCell(config.gridHeight - 1, 0));
-            cornerCells.Add(new GridCell(config.gridHeight - 1, config.gridWidth - 1));
-            
-            return cornerCells;
-        }
+        
     }
 }

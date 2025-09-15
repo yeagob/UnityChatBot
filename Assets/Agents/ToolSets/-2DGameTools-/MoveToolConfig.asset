@@ -13,15 +13,33 @@ MonoBehaviour:
   m_Name: MoveToolConfig
   m_EditorClassIdentifier: 
   toolId: 0
-  toolName: teleport
+  toolName: move
   toolType: 3
   function:
-    name: teleport
-    description: Teletransporta a mago lejos de aqui.
+    name: move
+    description: Permite moverser instantaneamente a la casilla destino.
     parameters:
       type: object
-      properties: []
-      required: []
+      properties:
+      - key: col
+        value:
+          type: number
+          description: 
+          enumValues: []
+          items:
+            type: 
+            description: 
+      - key: row
+        value:
+          type: number
+          description: 
+          enumValues: []
+          items:
+            type: 
+            description: 
+      required:
+      - col
+      - row
   annotations:
     title: 
     readOnlyHint: 0

@@ -141,7 +141,7 @@ namespace MapSystem.Elements
             
             if (mapSystem != null)
             {
-                var mapCell = mapSystem.GetMapCell(currentGridCell);
+                var mapCell = mapSystem.GetMapCell(CurrentGridCell);
                 if (mapCell != null)
                 {
                     mapCell.SetTraversable(!blocksMovement);

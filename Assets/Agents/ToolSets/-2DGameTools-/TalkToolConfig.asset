@@ -10,27 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1689bfe41020f8a45995d425251a2b6f, type: 3}
-  m_Name: AttackToolConfig
+  m_Name: TalkToolConfig
   m_EditorClassIdentifier: 
   toolId: 0
-  toolName: attack
+  toolName: talk
   toolType: 3
   function:
-    name: attack
-    description: Ejecuta un ataque al elemento objetivo.
+    name: talk
+    description: "Expresa en voz alta palabras, que ser\xE1n escuchadas por los personajes
+      cercanos."
     parameters:
       type: object
-      properties:
-      - key: targetId
-        value:
-          type: string
-          description: 
-          enumValues: []
-          items:
-            type: 
-            description: 
-      required:
-      - targetId
+      properties: []
+      required: []
   annotations:
     title: 
     readOnlyHint: 0

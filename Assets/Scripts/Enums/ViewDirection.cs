@@ -4,9 +4,5 @@ namespace MapSystem.Enums
     {
         Left,
         Right,
-        Up,
-        Down,
-        Forward,
-        Backward
     }
 }
