@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43ed1e55f7515cc4a9e118ddca548f65, type: 3}
   m_Name: PedroAgentConfig
   m_EditorClassIdentifier: 
-  agentId: 0
+  agentId: Pedro
   agentName: Pedro
   description: Predro NPC
   providerConfig: {fileID: 11400000, guid: aa8ef07821d96dd469f4dfa6e7b49c3b, type: 2}
@@ -20,6 +20,16 @@ MonoBehaviour:
   systemPrompt: {fileID: 11400000, guid: cd5ebd70a1087b24a84e27c701bcc40f, type: 2}
   contextPrompts:
   - {fileID: 11400000, guid: 4f9a5ec1f0764b94eb3e6c3df40a14d0, type: 2}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   availableTools:
   - {fileID: 11400000, guid: 24f9d0d0791ebe9448bd8dce1aa784f2, type: 2}
   - {fileID: 11400000, guid: cf9aeeb0e002d2c4989d0929f127411d, type: 2}

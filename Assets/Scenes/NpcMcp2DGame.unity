@@ -1245,8 +1245,8 @@ MonoBehaviour:
     offsetLeft: -4.5
     offsetTop: -4.79
     gridColor: {r: 1, g: 1, b: 1, a: 1}
-    showGridNumbers: 1
-    showGridGizmos: 1
+    showGridNumbers: 0
+    showGridGizmos: 0
   _targetCamera: {fileID: 128288997}
 --- !u!114 &751119948
 MonoBehaviour:

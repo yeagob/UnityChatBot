@@ -21,8 +21,17 @@ MonoBehaviour:
       cercanos."
     parameters:
       type: object
-      properties: []
-      required: []
+      properties:
+      - key: message
+        value:
+          type: string
+          description: 
+          enumValues: []
+          items:
+            type: 
+            description: 
+      required:
+      - message
   annotations:
     title: 
     readOnlyHint: 0

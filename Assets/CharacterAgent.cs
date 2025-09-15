@@ -9,6 +9,7 @@ using ChatSystem.Services.Agents.Interfaces;
 using ChatSystem.Services.Orchestrators;
 using ChatSystem.Services.Context;
 using ChatSystem.Services.Agents;
+using ChatSystem.Services.Logging;
 using ChatSystem.Services.Tools;
 using ChatSystem.Services.Persistence;
 using ChatSystem.Services.Persistence.Interfaces;
@@ -47,6 +48,7 @@ namespace ChatSystem.Characters
             CreateToolSets();
             CreateServices();
             ConfigureServices();
+            LoggingService.Initialize(LogLevel.Debug);
            ExecuteInitialAgentCall();
         }
         
