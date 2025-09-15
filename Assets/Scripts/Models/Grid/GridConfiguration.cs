@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace GridSystem.Models.Grid
+namespace Grid.Models.Grid
 {
     [Serializable]
     public class GridConfiguration

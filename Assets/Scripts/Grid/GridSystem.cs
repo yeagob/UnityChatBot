@@ -1,9 +1,9 @@
 using UnityEngine;
-using GridSystem.Models.Grid;
-using GridSystem.Enums;
-using GridSystem.Configuration;
+using Grid.Models.Grid;
+using Grid.Enums;
+using Grid.Configuration;
 
-namespace GridSystem.Grid
+namespace Grid
 {
     public class GridSystem : MonoBehaviour
     {
@@ -97,12 +97,6 @@ namespace GridSystem.Grid
             return GetCellCenterWorldPosition(new GridCell(row, column));
         }
 
-        public Vector3 GetCellCenterWorldPosition(int linearIndex)
-        {
-            GridCell cell = new GridCell(linearIndex, gridConfig.gridWidth);
-            return GetCellCenterWorldPosition(cell);
-        }
-
         public Vector3[] GetCellMultiplePositions(GridCell cell, int objectCount)
         {
             if (!gridConfig.IsValidGridCell(cell) || objectCount < 1 || objectCount > GridSystemConfiguration.MAX_OBJECTS_PER_CELL)
@@ -139,16 +133,7 @@ namespace GridSystem.Grid
         {
             return cell.GetLinearIndex(gridConfig.gridWidth);
         }
-
-        public int GetLinearIndex(int row, int column)
-        {
-            return new GridCell(row, column).GetLinearIndex(gridConfig.gridWidth);
-        }
-
-        public GridCell GetGridCellFromLinearIndex(int linearIndex)
-        {
-            return new GridCell(linearIndex, gridConfig.gridWidth);
-        }
+        
 
         public GridConfiguration GetGridConfiguration()
         {

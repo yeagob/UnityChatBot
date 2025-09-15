@@ -1,4 +1,4 @@
-namespace GridSystem.Enums
+namespace Grid.Enums
 {
     public enum GridDirection
     {

@@ -1,6 +1,6 @@
 using System;
 
-namespace GridSystem.Models.Grid
+namespace Grid.Models.Grid
 {
     [Serializable]
     public struct GridResult<T>

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GridSystem.Configuration
+namespace Grid.Configuration
 {
     public static class GridSystemConfiguration
     {

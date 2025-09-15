@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using GridSystem.Models.Grid;
+using Grid.Models.Grid;
 using MapSystem.Models.Map;
 using MapSystem.Models.Vision;
 using MapSystem.Enums;
@@ -92,7 +92,7 @@ namespace MapSystem.Vision
                     
                     if (gridConfig.IsValidGridCell(targetCell))
                     {
-                        int distance = GridSystem.Grid.GridUtilities.GetManhattanDistance(observerCell, targetCell);
+                        int distance = Grid.Grid.GridUtilities.GetManhattanDistance(observerCell, targetCell);
                         
                         if (distance <= visionRange && distance > 0)
                         {
@@ -137,7 +137,7 @@ namespace MapSystem.Vision
                         
                         if (mapCell != null && mapCell.HasElements())
                         {
-                            int distance = GridSystem.Grid.GridUtilities.GetManhattanDistance(observerCell, targetCell);
+                            int distance = Grid.Grid.GridUtilities.GetManhattanDistance(observerCell, targetCell);
                             
                             foreach (MapElement element in mapCell.GetElements())
                             {
@@ -176,7 +176,7 @@ namespace MapSystem.Vision
                         
                         if (mapCell != null && mapCell.HasElements())
                         {
-                            int distance = GridSystem.Grid.GridUtilities.GetManhattanDistance(observerCell, targetCell);
+                            int distance = Grid.Grid.GridUtilities.GetManhattanDistance(observerCell, targetCell);
                             
                             foreach (MapElement element in mapCell.GetElements())
                             {

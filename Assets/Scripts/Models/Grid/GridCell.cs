@@ -1,6 +1,6 @@
 using System;
 
-namespace GridSystem.Models.Grid
+namespace Grid.Models.Grid
 {
     [Serializable]
     public struct GridCell
@@ -13,12 +13,7 @@ namespace GridSystem.Models.Grid
             this.row = row;
             this.column = column;
         }
-
-        public GridCell(int linearIndex, int gridWidth)
-        {
-            this.row = linearIndex / gridWidth;
-            this.column = linearIndex % gridWidth;
-        }
+        
 
         public int GetLinearIndex(int gridWidth)
         {

@@ -1,7 +1,7 @@
-using GridSystem.Models.Grid;
-using GridSystem.Enums;
+using Grid.Enums;
+using Grid.Models.Grid;
 
-namespace GridSystem.Grid
+namespace Grid.Grid
 {
     public static class GridNavigationExtensions
     {

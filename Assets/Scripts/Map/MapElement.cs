@@ -1,5 +1,5 @@
 using UnityEngine;
-using GridSystem.Models.Grid;
+using Grid.Models.Grid;
 using MapSystem.Enums;
 using MapSystem.Models.Context;
 

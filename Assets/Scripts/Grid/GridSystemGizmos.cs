@@ -1,21 +1,23 @@
+using Grid.Configuration;
+using Grid.Models.Grid;
 using UnityEngine;
-using GridSystem.Models.Grid;
-using GridSystem.Configuration;
 
-namespace GridSystem.Grid
+namespace Grid.Grid
 {
     public partial class GridSystem
     {
+        GridConfiguration _gridConfig;
+        
         private void OnDrawGizmos()
         {
-            if (gridConfig == null || !gridConfig.showGridGizmos)
+            if (_gridConfig == null || !_gridConfig.showGridGizmos)
             {
                 return;
             }
 
             DrawGridLines();
             
-            if (gridConfig.showGridNumbers)
+            if (_gridConfig.showGridNumbers)
             {
                 DrawGridNumbers();
             }
@@ -23,15 +25,15 @@ namespace GridSystem.Grid
 
         private void DrawGridLines()
         {
-            Gizmos.color = gridConfig.gridColor;
+            Gizmos.color = _gridConfig.gridColor;
             
             Vector3 gridStartPosition = GetGridStartPosition();
-            float totalWidth = gridConfig.GetTotalWidth();
-            float totalHeight = gridConfig.GetTotalHeight();
+            float totalWidth = _gridConfig.GetTotalWidth();
+            float totalHeight = _gridConfig.GetTotalHeight();
 
-            for (int row = 0; row <= gridConfig.gridHeight; row++)
+            for (int row = 0; row <= _gridConfig.gridHeight; row++)
             {
-                Vector3 lineStart = gridStartPosition + new Vector3(0, -row * gridConfig.cellHeight, 0);
+                Vector3 lineStart = gridStartPosition + new Vector3(0, -row * _gridConfig.cellHeight, 0);
                 Vector3 lineEnd = lineStart + new Vector3(totalWidth, 0, 0);
                 
                 lineStart = transform.TransformPoint(lineStart);
@@ -40,9 +42,9 @@ namespace GridSystem.Grid
                 Gizmos.DrawLine(lineStart, lineEnd);
             }
 
-            for (int column = 0; column <= gridConfig.gridWidth; column++)
+            for (int column = 0; column <= _gridConfig.gridWidth; column++)
             {
-                Vector3 lineStart = gridStartPosition + new Vector3(column * gridConfig.cellWidth, 0, 0);
+                Vector3 lineStart = gridStartPosition + new Vector3(column * _gridConfig.cellWidth, 0, 0);
                 Vector3 lineEnd = lineStart + new Vector3(0, -totalHeight, 0);
                 
                 lineStart = transform.TransformPoint(lineStart);
@@ -54,9 +56,9 @@ namespace GridSystem.Grid
 
         private void DrawGridNumbers()
         {
-            for (int row = 0; row < gridConfig.gridHeight; row++)
+            for (int row = 0; row < _gridConfig.gridHeight; row++)
             {
-                for (int column = 0; column < gridConfig.gridWidth; column++)
+                for (int column = 0; column < _gridConfig.gridWidth; column++)
                 {
                     GridCell cell = new GridCell(row, column);
                     Vector3 cellCenter = GetCellCenterWorldPosition(cell);
@@ -77,33 +79,33 @@ namespace GridSystem.Grid
 
         private Vector3 GetGridStartPosition()
         {
-            return new Vector3(gridConfig.offsetLeft, gridConfig.offsetTop, 0);
+            return new Vector3(_gridConfig.offsetLeft, _gridConfig.offsetTop, 0);
         }
 
         public void DrawCellHighlight(GridCell cell, Color highlightColor)
         {
-            if (!gridConfig.IsValidGridCell(cell))
+            if (!_gridConfig.IsValidGridCell(cell))
             {
                 return;
             }
 
             Gizmos.color = highlightColor;
             Vector3 cellCenter = GetCellCenterWorldPosition(cell);
-            Vector3 cellSize = new Vector3(gridConfig.cellWidth, gridConfig.cellHeight, 0.1f);
+            Vector3 cellSize = new Vector3(_gridConfig.cellWidth, _gridConfig.cellHeight, 0.1f);
             
             Gizmos.DrawWireCube(cellCenter, cellSize);
         }
 
         public void DrawCellFill(GridCell cell, Color fillColor)
         {
-            if (!gridConfig.IsValidGridCell(cell))
+            if (!_gridConfig.IsValidGridCell(cell))
             {
                 return;
             }
 
             Gizmos.color = fillColor;
             Vector3 cellCenter = GetCellCenterWorldPosition(cell);
-            Vector3 cellSize = new Vector3(gridConfig.cellWidth, gridConfig.cellHeight, 0.01f);
+            Vector3 cellSize = new Vector3(_gridConfig.cellWidth, _gridConfig.cellHeight, 0.01f);
             
             Gizmos.DrawCube(cellCenter, cellSize);
         }
@@ -111,18 +113,23 @@ namespace GridSystem.Grid
         public Bounds GetGridBounds()
         {
             Vector3 center = transform.TransformPoint(
-                gridConfig.offsetLeft + gridConfig.GetTotalWidth() * 0.5f,
-                gridConfig.offsetTop - gridConfig.GetTotalHeight() * 0.5f,
+                _gridConfig.offsetLeft + _gridConfig.GetTotalWidth() * 0.5f,
+                _gridConfig.offsetTop - _gridConfig.GetTotalHeight() * 0.5f,
                 0
             );
             
             Vector3 size = new Vector3(
-                gridConfig.GetTotalWidth(),
-                gridConfig.GetTotalHeight(),
+                _gridConfig.GetTotalWidth(),
+                _gridConfig.GetTotalHeight(),
                 0.1f
             );
 
             return new Bounds(center, size);
+        }
+
+        public GridConfiguration GetGridConfiguration()
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

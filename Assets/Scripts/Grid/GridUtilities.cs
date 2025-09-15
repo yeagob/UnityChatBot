@@ -1,9 +1,9 @@
 using System.Collections.Generic;
+using Grid.Enums;
+using Grid.Models.Grid;
 using UnityEngine;
-using GridSystem.Models.Grid;
-using GridSystem.Enums;
 
-namespace GridSystem.Grid
+namespace Grid.Grid
 {
     public static class GridUtilities
     {

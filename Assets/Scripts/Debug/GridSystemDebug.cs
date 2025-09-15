@@ -1,8 +1,8 @@
+using Grid.Enums;
+using Grid.Models.Grid;
 using UnityEngine;
-using GridSystem.Models.Grid;
-using GridSystem.Enums;
 
-namespace GridSystem.Debug
+namespace Grid.Debug
 {
     public class GridSystemDebug : MonoBehaviour
     {

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
-using GridSystem.Models.Grid;
-using GridSystem.Grid;
+using Grid.Models.Grid;
+using Grid.Grid;
 using MapSystem.Models.Map;
 using MapSystem.Enums;
 using MapSystem.Models.Vision;
@@ -11,7 +11,7 @@ namespace MapSystem
     public class MapSystem : MonoBehaviour
     {
         [Header("Dependencies")]
-        [SerializeField] private GridSystem.Grid.GridSystem gridSystem;
+        [SerializeField] private GridSystem gridSystem;
         
         [Header("Map Configuration")]
         [SerializeField] private bool autoCreateCells = true;
@@ -21,7 +21,7 @@ namespace MapSystem
         private Dictionary<string, MapElement> registeredElements;
         private bool isInitialized = false;
         
-        public GridSystem.Grid.GridSystem GridSystem => gridSystem;
+        public GridSystem GridSystem => gridSystem;
         public bool IsInitialized => isInitialized;
         
         private void Awake()
@@ -41,10 +41,10 @@ namespace MapSystem
         {
             if (gridSystem == null)
             {
-                gridSystem = GetComponent<GridSystem.Grid.GridSystem>();
+                gridSystem = GetComponent<GridSystem>();
                 if (gridSystem == null)
                 {
-                    gridSystem = FindObjectOfType<GridSystem.Grid.GridSystem>();
+                    gridSystem = FindObjectOfType<GridSystem>();
                 }
             }
             

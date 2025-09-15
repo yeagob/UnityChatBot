@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using GridSystem.Models.Grid;
+using Grid.Models.Grid;
 using MapSystem.Enums;
 
 namespace MapSystem.Models.Vision

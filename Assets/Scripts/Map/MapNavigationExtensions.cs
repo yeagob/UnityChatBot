@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using GridSystem.Models.Grid;
+using Grid.Models.Grid;
 using MapSystem.Models.Map;
-using GridSystem.Grid;
+using Grid.Grid;
 
 namespace MapSystem.Navigation
 {
