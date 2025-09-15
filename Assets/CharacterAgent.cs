@@ -106,7 +106,7 @@ namespace ChatSystem.Characters
             if (agentConfigurations != null && agentConfigurations.Length > 0)
             {
                 AgentConfig firstAgent = agentConfigurations[0];
-                firstAgent.contextPrompts.Add(CreatePromptMap(mapSystem.GetAllMapCells()));
+                firstAgent.contextPrompts.Add(CreatePromptMap(mapSystem.GetAllCellsWithElements()));
                 chatOrchestrator.ProcessUserMessageAsync(characterElement.Id.ToString(), "Actúa con libertad");
             }
         }
@@ -124,9 +124,6 @@ public struct MapCellJson
 {
     public int row;
     public int col;
-    public Vector3 worldPosition;
-    public bool isTraversable;
-    public float traversalCost;
     public MapElementJson[] elements;
 }
 
@@ -136,7 +133,6 @@ public struct MapElementJson
     public int id;
     public string type;
     public string name;
-    public bool canBeTraversed;
 }
 
 [System.Serializable]
@@ -148,13 +144,13 @@ public struct MapMetadata
     public DateTime generatedAt;
 }
 
-private PromptConfig CreatePromptMap(MapCell[] getAllMapCells)
+private PromptConfig CreatePromptMap(MapCell[] mapElementsCells)
 {
     List<MapCellJson> cellsJson = new List<MapCellJson>();
     int traversableCount = 0;
     int totalElements = 0;
     
-    foreach (MapCell cell in getAllMapCells)
+    foreach (MapCell cell in mapElementsCells)
     {
         List<MapElementJson> elementsJson = new List<MapElementJson>();
         
@@ -165,7 +161,6 @@ private PromptConfig CreatePromptMap(MapCell[] getAllMapCells)
                 id = element.Id,
                 type = element.ElementType.ToString(),
                 name = element.name,
-                canBeTraversed = element.CanBeTraversed()
             });
         }
         
@@ -173,9 +168,6 @@ private PromptConfig CreatePromptMap(MapCell[] getAllMapCells)
         {
             row = cell.gridCell.row,
             col = cell.gridCell.column,
-            worldPosition = cell.WorldPosition,
-            isTraversable = cell.isTraversable,
-            traversalCost = cell.traversalCost,
             elements = elementsJson.ToArray()
         });
         
@@ -188,7 +180,7 @@ private PromptConfig CreatePromptMap(MapCell[] getAllMapCells)
         cells = cellsJson.ToArray(),
         metadata = new MapMetadata
         {
-            totalCells = getAllMapCells.Length,
+            totalCells = mapElementsCells.Length,
             traversableCells = traversableCount,
             elementsCount = totalElements,
             generatedAt = DateTime.UtcNow

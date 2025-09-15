@@ -295,5 +295,20 @@ namespace MapSystem
         {
             _debugMode = enabled;
         }
+
+        public MapCell[] GetAllCellsWithElements()
+        {
+            List <MapCell> result = new List<MapCell>();
+            
+            foreach (MapCell cell in GetAllMapCells())
+            {
+                if (cell.HasElements())
+                {
+                    result.Add(cell);
+                }
+            }
+            
+            return result.ToArray();
+        }
     }
 }
