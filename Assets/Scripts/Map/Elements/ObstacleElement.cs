@@ -14,7 +14,7 @@ namespace MapSystem.Elements
         [SerializeField] private float destructionForce = 50.0f;
         
         [Header("Obstacle Type")]
-        [SerializeField] private ObstacleType obstacleType = ObstacleType.Wall;
+        [SerializeField] private ObstacleType obstacleType;
         
         public bool IsDestructible => isDestructible;
         public int Durability => durability;
@@ -173,18 +173,9 @@ namespace MapSystem.Elements
                     SetBlocksMovement(true);
                     SetBlocksVision(true);
                     break;
-                case ObstacleType.Fence:
-                    SetBlocksMovement(true);
-                    SetBlocksVision(false);
-                    break;
                 case ObstacleType.Decoration:
                     SetBlocksMovement(false);
                     SetBlocksVision(false);
-                    break;
-                case ObstacleType.Barrier:
-                    SetBlocksMovement(true);
-                    SetBlocksVision(true);
-                    SetDestructible(true);
                     break;
             }
         }
@@ -213,14 +204,8 @@ namespace MapSystem.Elements
                 case ObstacleType.Wall:
                     gizmosColor = Color.black;
                     break;
-                case ObstacleType.Fence:
-                    gizmosColor = Color.brown;
-                    break;
                 case ObstacleType.Decoration:
                     gizmosColor = Color.green;
-                    break;
-                case ObstacleType.Barrier:
-                    gizmosColor = Color.red;
                     break;
             }
             
@@ -239,8 +224,6 @@ namespace MapSystem.Elements
     public enum ObstacleType
     {
         Wall,
-        Fence,
-        Decoration,
-        Barrier
+        Decoration
     }
 }

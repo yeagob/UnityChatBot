@@ -1,6 +1,6 @@
+using System;
 using UnityEngine;
 using Grid.Models.Grid;
-using Grid.Enums;
 using Grid.Configuration;
 
 namespace Grid
@@ -8,10 +8,10 @@ namespace Grid
     public class GridSystem : MonoBehaviour
     {
         [Header("Grid Configuration")]
-        [SerializeField] private GridConfiguration gridConfig;
+        [SerializeField] protected GridConfiguration _gridConfig;
 
         [Header("Input")]
-        [SerializeField] private Camera targetCamera;
+        [SerializeField] private Camera _targetCamera;
 
         private void Awake()
         {
@@ -20,20 +20,20 @@ namespace Grid
 
         private void InitializeGrid()
         {
-            if (gridConfig == null)
+            if (_gridConfig == null)
             {
                 CreateDefaultConfiguration();
             }
 
-            if (targetCamera == null)
+            if (_targetCamera == null)
             {
-                targetCamera = Camera.main;
+                _targetCamera = Camera.main;
             }
         }
 
         private void CreateDefaultConfiguration()
         {
-            gridConfig = new GridConfiguration
+            _gridConfig = new GridConfiguration
             {
                 gridWidth = GridSystemConfiguration.DEFAULT_GRID_WIDTH,
                 gridHeight = GridSystemConfiguration.DEFAULT_GRID_HEIGHT,
@@ -49,12 +49,12 @@ namespace Grid
 
         public GridResult<GridCell> ScreenPointToGridCell(Vector3 screenPoint)
         {
-            if (targetCamera == null)
+            if (_targetCamera == null)
             {
                 return GridResult<GridCell>.Failure();
             }
 
-            Vector3 worldPoint = targetCamera.ScreenToWorldPoint(screenPoint);
+            Vector3 worldPoint = _targetCamera.ScreenToWorldPoint(screenPoint);
             return WorldPointToGridCell(worldPoint);
         }
 
@@ -62,15 +62,15 @@ namespace Grid
         {
             Vector3 localPoint = transform.InverseTransformPoint(worldPoint);
             
-            float adjustedX = localPoint.x - gridConfig.offsetLeft;
-            float adjustedY = localPoint.y + gridConfig.offsetTop;
+            float adjustedX = localPoint.x - _gridConfig.offsetLeft;
+            float adjustedY = localPoint.y + _gridConfig.offsetTop;
             
-            int column = Mathf.FloorToInt(adjustedX / gridConfig.cellWidth);
-            int row = Mathf.FloorToInt(-adjustedY / gridConfig.cellHeight);
+            int column = Mathf.FloorToInt(adjustedX / _gridConfig.cellWidth);
+            int row = Mathf.FloorToInt(-adjustedY / _gridConfig.cellHeight);
             
             GridCell cell = new GridCell(row, column);
             
-            if (gridConfig.IsValidGridCell(cell))
+            if (_gridConfig.IsValidGridCell(cell))
             {
                 return GridResult<GridCell>.Success(cell);
             }
@@ -80,13 +80,13 @@ namespace Grid
 
         public Vector3 GetCellCenterWorldPosition(GridCell cell)
         {
-            if (!gridConfig.IsValidGridCell(cell))
+            if (!_gridConfig.IsValidGridCell(cell))
             {
                 return Vector3.zero;
             }
 
-            float worldX = gridConfig.offsetLeft + (cell.column * gridConfig.cellWidth) + (gridConfig.cellWidth * 0.5f);
-            float worldY = -(gridConfig.offsetTop + (cell.row * gridConfig.cellHeight) + (gridConfig.cellHeight * 0.5f));
+            float worldX = _gridConfig.offsetLeft + (cell.column * _gridConfig.cellWidth) + (_gridConfig.cellWidth * 0.5f);
+            float worldY = -(_gridConfig.offsetTop + (cell.row * _gridConfig.cellHeight) + (_gridConfig.cellHeight * 0.5f));
             
             Vector3 localPosition = new Vector3(worldX, worldY, 0f);
             return transform.TransformPoint(localPosition);
@@ -99,9 +99,9 @@ namespace Grid
 
         public Vector3[] GetCellMultiplePositions(GridCell cell, int objectCount)
         {
-            if (!gridConfig.IsValidGridCell(cell) || objectCount < 1 || objectCount > GridSystemConfiguration.MAX_OBJECTS_PER_CELL)
+            if (!_gridConfig.IsValidGridCell(cell) || objectCount < 1 || objectCount > GridSystemConfiguration.MAX_OBJECTS_PER_CELL)
             {
-                return new Vector3[0];
+                return Array.Empty<Vector3>();
             }
 
             Vector3 centerPosition = GetCellCenterWorldPosition(cell);
@@ -113,7 +113,7 @@ namespace Grid
                 return positions;
             }
 
-            float cellWorldWidth = gridConfig.cellWidth;
+            float cellWorldWidth = _gridConfig.cellWidth;
             float spacing = cellWorldWidth / (objectCount + 1);
             float startX = centerPosition.x - (cellWorldWidth * 0.5f) + spacing;
 
@@ -131,18 +131,26 @@ namespace Grid
 
         public int GetLinearIndex(GridCell cell)
         {
-            return cell.GetLinearIndex(gridConfig.gridWidth);
+            return cell.GetLinearIndex(_gridConfig.gridWidth);
         }
         
 
         public GridConfiguration GetGridConfiguration()
         {
-            return gridConfig;
+            return _gridConfig;
         }
 
-        public void SetGridConfiguration(GridConfiguration newConfig)
+        public GridCell GetGridCellFromLinearIndex(int i)
         {
-            gridConfig = newConfig;
+            if (i < 0 || i >= _gridConfig.GetTotalCells())
+            {
+                return new GridCell(-1, -1);
+            }
+    
+            int row = i / _gridConfig.gridWidth;
+            int column = i % _gridConfig.gridWidth;
+    
+            return new GridCell(row, column);
         }
     }
 }

@@ -1,10 +1,9 @@
 using System.Collections.Generic;
+using Grid;
 using UnityEngine;
 using Grid.Models.Grid;
-using Grid.Grid;
 using MapSystem.Models.Map;
 using MapSystem.Enums;
-using MapSystem.Models.Vision;
 
 namespace MapSystem
 {
@@ -218,7 +217,7 @@ namespace MapSystem
                 return int.MaxValue;
             }
             
-            return GridSystem.Grid.GridUtilities.GetManhattanDistance(
+            return Grid.Grid.GridUtilities.GetManhattanDistance(
                 elementA.CurrentGridCell, 
                 elementB.CurrentGridCell
             );

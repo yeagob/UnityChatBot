@@ -5,7 +5,7 @@ using MapSystem.Models.Vision;
 using MapSystem.Vision;
 using MapSystem.Navigation;
 
-namespace MapSystem.Debug
+namespace MapSystem.MapDebug
 {
     public class MapSystemDebug : MonoBehaviour
     {

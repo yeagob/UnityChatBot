@@ -4,10 +4,8 @@ using UnityEngine;
 
 namespace Grid.Grid
 {
-    public partial class GridSystem
+    public partial class GridSystemGizmos: GridSystem 
     {
-        GridConfiguration _gridConfig;
-        
         private void OnDrawGizmos()
         {
             if (_gridConfig == null || !_gridConfig.showGridGizmos)
