@@ -871,7 +871,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1057120130}
+  - {fileID: 1974394607}
+  - {fileID: 1657247700}
   - {fileID: 2045105062}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -896,7 +897,7 @@ MonoBehaviour:
     offsetTop: -4.79
     gridColor: {r: 1, g: 1, b: 1, a: 1}
     showGridNumbers: 1
-    showGridGizmos: 0
+    showGridGizmos: 1
   _targetCamera: {fileID: 128288997}
 --- !u!114 &751119948
 MonoBehaviour:
@@ -1401,39 +1402,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 935574310}
   m_CullTransparentMesh: 1
---- !u!1 &1057120129
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1057120130}
-  m_Layer: 0
-  m_Name: NpcMcps
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1057120130
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1057120129}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1974394607}
-  - {fileID: 1657247700}
-  m_Father: {fileID: 751119946}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1105070460
 GameObject:
   m_ObjectHideFlags: 0
@@ -2393,7 +2361,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1057120130}
+    m_TransformParent: {fileID: 751119946}
     m_Modifications:
     - target: {fileID: 538936845631433979, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: m_Name
@@ -2485,7 +2453,7 @@ PrefabInstance:
       objectReference: {fileID: 751119948}
     - target: {fileID: 8337982968093562386, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: currentGridIndex
-      value: 69
+      value: 37
       objectReference: {fileID: 0}
     - target: {fileID: 8337982968093562386, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: context.elementId
@@ -3333,7 +3301,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1057120130}
+    m_TransformParent: {fileID: 751119946}
     m_Modifications:
     - target: {fileID: 538936845631433979, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: m_Name
@@ -3417,7 +3385,7 @@ PrefabInstance:
       objectReference: {fileID: 751119948}
     - target: {fileID: 8337982968093562386, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: currentGridIndex
-      value: 37
+      value: 41
       objectReference: {fileID: 0}
     - target: {fileID: 8337982968093562386, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: context.elementId
