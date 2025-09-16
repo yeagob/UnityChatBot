@@ -178,9 +178,10 @@ namespace MapSystem
             return _mapCells[linearIndex];
         }
         
-        public MapCell GetMapCell(int row, int column)
+        public GridCell GetGridCell(int row, int column)
         {
-            return GetMapCell(new GridCell(row, column));
+            GridCell gridCell = _gridSystem.GetGridCell(row, column);
+            return gridCell;
         }
         
         public Vector3 GetWorldPositionFromGridCell(GridCell gridCell)

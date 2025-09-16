@@ -104,9 +104,9 @@ namespace MapSystem.Elements
         {
             context.AddInteraction("Obstacle was destroyed");
             
-            if (mapSystem != null)
+            if (_mapSystem != null)
             {
-                mapSystem.UnregisterElement(this);
+                _mapSystem.UnregisterElement(this);
             }
             
             gameObject.SetActive(false);
@@ -139,9 +139,9 @@ namespace MapSystem.Elements
             context.SetProperty("blocksMovement", blocksMovement);
             context.AddInteraction($"Movement blocking changed to {blocksMovement}");
             
-            if (mapSystem != null)
+            if (_mapSystem != null)
             {
-                var mapCell = mapSystem.GetMapCell(CurrentGridCell);
+                var mapCell = _mapSystem.GetMapCell(CurrentGridCell);
                 if (mapCell != null)
                 {
                     mapCell.SetTraversable(!blocksMovement);

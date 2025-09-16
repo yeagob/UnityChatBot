@@ -105,7 +105,7 @@ namespace ChatSystem.Services.Agents
             
             string toolSetName = toolSet.GetType().Name;
             registeredToolSets[toolSetName] = toolSet;
-            LoggingService.LogInfo($"ToolSet {toolSetName} registered with {toolSet.GetAvailableTools().Count} tools");
+            LoggingService.LogInfo($"ToolSet {toolSetName} registered.");
         }
         
         public void UnregisterToolSet(string toolSetName)

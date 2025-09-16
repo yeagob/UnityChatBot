@@ -8,10 +8,14 @@
         public abstract class MapElement : MonoBehaviour
         {
             [Header("Map Element Configuration")]
-            [SerializeField] protected int elementId;
-            [SerializeField] protected MapElementType elementType;
-            [SerializeField] protected int visionDistance = 3;
-            [SerializeField] protected int currentGridIndex ;
+            [SerializeField] 
+            protected int elementId;
+            [SerializeField] 
+            protected MapElementType elementType;
+            [SerializeField] 
+            protected int visionDistance = 3;
+            [SerializeField] 
+            protected int currentGridIndex ;
             
             protected  GridCell currentGridCell;
             
@@ -20,9 +24,12 @@
             protected Sprite defaultSprite;
             
             [Header("Context Data")]
-            [SerializeField] protected MapElementContext context;
+            [SerializeField]
+            protected MapElementContext context;
             
-            protected MapSystem mapSystem;
+            [SerializeField]
+            protected MapSystem _mapSystem;
+            
             protected bool isInitialized = false;
             
             public int Id => elementId;
@@ -91,9 +98,9 @@
             
             public virtual void UpdateWorldPosition()
             {
-                if (mapSystem != null)
+                if (_mapSystem != null)
                 {
-                    Vector3 worldPosition = mapSystem.GetWorldPositionFromGridCell(currentGridCell);
+                    Vector3 worldPosition = _mapSystem.GetWorldPositionFromGridCell(currentGridCell);
                     transform.position = worldPosition;
                 }
             }
@@ -121,12 +128,12 @@
             
             public virtual float GetDistanceToElement(MapElement otherElement)
             {
-                if (otherElement == null || mapSystem == null)
+                if (otherElement == null || _mapSystem == null)
                 {
                     return float.MaxValue;
                 }
                 
-                return mapSystem.GetDistanceBetweenElements(this, otherElement);
+                return _mapSystem.GetDistanceBetweenElements(this, otherElement);
             }
             
             public virtual bool CanSeeElement(MapElement otherElement)
@@ -146,9 +153,9 @@
             
             protected virtual void OnDestroy()
             {
-                if (mapSystem != null)
+                if (_mapSystem != null)
                 {
-                    mapSystem.UnregisterElement(this);
+                    _mapSystem.UnregisterElement(this);
                 }
             }
             
@@ -164,7 +171,7 @@
             
             protected virtual void DrawVisionRadius()
             {
-                if (mapSystem == null)
+                if (_mapSystem == null)
                 {
                     return;
                 }

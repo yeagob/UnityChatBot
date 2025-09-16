@@ -83,6 +83,17 @@ namespace Grid
             return GridResult<GridCell>.Failure();
         }
 
+        public GridCell GetGridCell(int row, int column)
+        {
+            Vector3 worldPoint = GetGetCellCenterWorldPosition(row, column);
+            return new GridCell(row, column, worldPoint); 
+        }
+        
+        public Vector3 GetGetCellCenterWorldPosition(int row, int column)
+        {
+            return GetCellCenterWorldPosition(new GridCell(row, column));
+        }
+        
         public Vector3 GetCellCenterWorldPosition(GridCell cell)
         {
             if (!_gridConfig.IsValidGridCell(cell))
@@ -97,15 +108,7 @@ namespace Grid
             return transform.TransformPoint(localPosition);
         }
 
-        public Vector3 GetCellCenterWorldPosition(int row, int column)
-        {
-            float worldX = _gridConfig.offsetLeft + (column * _gridConfig.cellWidth) + (_gridConfig.cellWidth * 0.5f);
-            float worldY = -(_gridConfig.offsetTop + (row * _gridConfig.cellHeight) + (_gridConfig.cellHeight * 0.5f));
-            Vector3 localPosition = new Vector3(worldX, worldY, 0f);
-            Vector3 center = transform.TransformPoint(localPosition);
-            return GetCellCenterWorldPosition(new GridCell(row, column, center));
-        }
-
+        //TODO: Mover esta a CellGrid, deberían conocer su tamaño...
         public Vector3[] GetCellMultiplePositions(GridCell cell, int objectCount)
         {
             if (!_gridConfig.IsValidGridCell(cell) || objectCount < 1 || objectCount > GridSystemConfiguration.MAX_OBJECTS_PER_CELL)

@@ -90,23 +90,37 @@ namespace MapSystem.Elements
             return false;
         }
         
+        public bool TryMoveTo(int row, int col)
+        {
+            Debug.Log($"Trying to move to row {row}, col {col}");
+
+            GridCell targetCell = _mapSystem.GetGridCell(row, col);
+            return TryMoveToCell(targetCell);
+        }
+        
         public bool TryMoveToCell(GridCell targetCell)
         {
-            if (!canMove || isMoving || mapSystem == null)
+            if (!canMove || isMoving || _mapSystem == null)
             {
                 return false;
             }
             
-            if (!mapSystem.IsNavigationViable(this, targetCell))
+            Debug.Log("Trying to move to cell");
+            if (!_mapSystem.IsNavigationViable(this, targetCell))
             {
                 context.AddInteraction($"Failed to move to {targetCell} - not traversable");
                 return false;
             }
             
             GridCell currentCell = CurrentGridCell;
-            mapSystem.MoveElement(this, targetCell);
+            _mapSystem.MoveElement(this, targetCell);
+            
+            Debug.Log("Moving to cell");
             
             UpdateFacingDirection(currentCell, targetCell);
+            
+            Debug.Log("Moved to cell");
+
             context.AddInteraction($"Moved from {currentCell} to {targetCell}");
             
             return true;
@@ -134,12 +148,12 @@ namespace MapSystem.Elements
         
         public VisionResult LookInDirection(ViewDirection direction)
         {
-            if (mapSystem == null)
+            if (_mapSystem == null)
             {
                 return VisionResult.Empty(direction, CurrentGridCell, visionDistance);
             }
             
-            return mapSystem.GetElementsInDirection(CurrentGridCell, direction, visionDistance);
+            return _mapSystem.GetElementsInDirection(CurrentGridCell, direction, visionDistance);
         }
         
         public VisionResult LookForward()
@@ -149,7 +163,7 @@ namespace MapSystem.Elements
         
         public VisionResult ScanSurroundings()
         {
-            return mapSystem.GetElementsInVisionRange(this);
+            return _mapSystem.GetElementsInVisionRange(this);
         }
         
         public void SetMovementSpeed(float newSpeed)
@@ -241,5 +255,7 @@ namespace MapSystem.Elements
                 default: return Vector3.up;
             }
         }
+
+   
     }
 }

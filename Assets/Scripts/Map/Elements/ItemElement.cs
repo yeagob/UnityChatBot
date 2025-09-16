@@ -55,9 +55,9 @@ namespace MapSystem.Elements
         {
             context.AddInteraction($"Collected by {collector.name}");
             
-            if (mapSystem != null)
+            if (_mapSystem != null)
             {
-                mapSystem.UnregisterElement(this);
+                _mapSystem.UnregisterElement(this);
             }
             
             gameObject.SetActive(false);

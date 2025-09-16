@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ChatSystem.Configuration.ScriptableObjects;
+using ChatSystem.Models.LLM;
 using UnityEngine;
 using ChatSystem.Services.Orchestrators.Interfaces;
 using ChatSystem.Services.Context.Interfaces;
@@ -13,6 +14,7 @@ using ChatSystem.Services.Logging;
 using ChatSystem.Services.Tools;
 using ChatSystem.Services.Persistence;
 using ChatSystem.Services.Persistence.Interfaces;
+using ChatSystem.Services.Tools.Interfaces;
 using MapSystem;
 using MapSystem.Elements;
 using MapSystem.Models.Map;
@@ -21,27 +23,31 @@ namespace ChatSystem.Characters
 {
     public class CharacterAgent : MonoBehaviour
     {
-        [Header("Agent Configuration")]
-        [SerializeField] private AgentConfig[] agentConfigurations;
+        [SerializeField]
+        private AgentConfig[] agentConfigurations;
 
         [SerializeField]
-        private MapSystem.MapSystem mapSystem;
+        private CharacterElement characterElement;
         
         [SerializeField]
-        private CharacterElement characterElement;
+        private MapSystem.MapSystem _mapSystem;
+
+        [SerializeField]
+        private string _initialMessage;
         
         private IChatOrchestrator chatOrchestrator;
         private ILLMOrchestrator llmOrchestrator;
         private IContextManager contextManager;
         private IAgentExecutor agentExecutor;
         private IPersistenceService persistenceService;
-      //  private IToolSet userToolSet;
-        
-        private void Start()
+        private IToolSet characterToolSet;
+
+        private async void Start()
         {
             InitializeAgent();
+            await ExecuteInitialAgentCall();
         }
-        
+
         private void InitializeAgent()
         {
             CreateCoreServices();
@@ -49,33 +55,42 @@ namespace ChatSystem.Characters
             CreateServices();
             ConfigureServices();
             LoggingService.Initialize(LogLevel.Debug);
-           ExecuteInitialAgentCall();
         }
         
+        
+        private async Task  ExecuteInitialAgentCall()
+        {
+            if (agentConfigurations is { Length: > 0 })
+            {
+                AgentConfig firstAgent = agentConfigurations[0];
+                firstAgent.contextPrompts.Add(CreatePromptMap(_mapSystem.GetAllCellsWithElements()));
+                LLMResponse response = await chatOrchestrator.ProcessUserMessageAsync(characterElement.Id.ToString(), _initialMessage);
+                
+                //Si nos hemos movido o girado, actualizamos con una nueva llamada de visión. 
+            }
+        }
+
         private void CreateCoreServices()
         {
             contextManager = new ContextManager();
             agentExecutor = new AgentExecutor();
             persistenceService = new PersistenceService();
         }
-        
+
         private void CreateToolSets()
         {
-            // userToolSet = new UserToolSet();
-            // travelToolSet = new TravelToolSet();
-            //
-            // agentExecutor.RegisterToolSet(userToolSet);
-            // agentExecutor.RegisterToolSet(travelToolSet);
+            characterToolSet = new CharacterToolSet(this);
+            agentExecutor.RegisterToolSet(characterToolSet);
         }
-        
+
         private void CreateServices()
         {
             llmOrchestrator = new LLMOrchestrator(agentExecutor);
             chatOrchestrator = new ChatOrchestrator();
-            
+
             RegisterAgentConfigurations();
         }
-        
+
         private void RegisterAgentConfigurations()
         {
             if (agentConfigurations != null && agentConfigurations.Length > 0)
@@ -89,7 +104,7 @@ namespace ChatSystem.Characters
                 }
             }
         }
-        
+
         private void ConfigureServices()
         {
             if (chatOrchestrator is ChatOrchestrator chatOrchestratorImpl)
@@ -99,126 +114,124 @@ namespace ChatSystem.Characters
                 chatOrchestratorImpl.SetPersistenceService(persistenceService);
             }
         }
-        
-        
-        private void ExecuteInitialAgentCall()
+
+        [System.Serializable]
+        public struct MapDataJson
         {
-            if (agentConfigurations != null && agentConfigurations.Length > 0)
+            public MapCellJson[] cells;
+            public MapMetadata metadata;
+        }
+
+        [System.Serializable]
+        public struct MapCellJson
+        {
+            public int row;
+            public int col;
+            public MapElementJson[] elements;
+        }
+
+        [System.Serializable]
+        public struct MapElementJson
+        {
+            public int id;
+            public string type;
+            public string name;
+        }
+
+        [System.Serializable]
+        public struct MapMetadata
+        {
+            public int totalCells;
+            public int traversableCells;
+            public int elementsCount;
+            public DateTime generatedAt;
+        }
+
+        private PromptConfig CreatePromptMap(MapCell[] mapElementsCells)
+        {
+            List<MapCellJson> cellsJson = new List<MapCellJson>();
+            int traversableCount = 0;
+            int totalElements = 0;
+
+            foreach (MapCell cell in mapElementsCells)
             {
-                AgentConfig firstAgent = agentConfigurations[0];
-                firstAgent.contextPrompts.Add(CreatePromptMap(mapSystem.GetAllCellsWithElements()));
-                chatOrchestrator.ProcessUserMessageAsync(characterElement.Id.ToString(), "Actúa con libertad");
+                List<MapElementJson> elementsJson = new List<MapElementJson>();
+
+                foreach (MapElement element in cell.elements)
+                {
+                    elementsJson.Add(new MapElementJson
+                    {
+                        id = element.Id,
+                        type = element.ElementType.ToString(),
+                        name = element.name,
+                    });
+                }
+
+                cellsJson.Add(new MapCellJson
+                {
+                    row = cell.gridCell.row,
+                    col = cell.gridCell.column,
+                    elements = elementsJson.ToArray()
+                });
+
+                if (cell.isTraversable) traversableCount++;
+                totalElements += cell.elements.Count;
             }
-        }
 
-        
-[System.Serializable]
-public struct MapDataJson
-{
-    public MapCellJson[] cells;
-    public MapMetadata metadata;
-}
-
-[System.Serializable]
-public struct MapCellJson
-{
-    public int row;
-    public int col;
-    public MapElementJson[] elements;
-}
-
-[System.Serializable]
-public struct MapElementJson
-{
-    public int id;
-    public string type;
-    public string name;
-}
-
-[System.Serializable]
-public struct MapMetadata
-{
-    public int totalCells;
-    public int traversableCells;
-    public int elementsCount;
-    public DateTime generatedAt;
-}
-
-private PromptConfig CreatePromptMap(MapCell[] mapElementsCells)
-{
-    List<MapCellJson> cellsJson = new List<MapCellJson>();
-    int traversableCount = 0;
-    int totalElements = 0;
-    
-    foreach (MapCell cell in mapElementsCells)
-    {
-        List<MapElementJson> elementsJson = new List<MapElementJson>();
-        
-        foreach (MapElement element in cell.elements)
-        {
-            elementsJson.Add(new MapElementJson
+            MapDataJson mapData = new MapDataJson
             {
-                id = element.Id,
-                type = element.ElementType.ToString(),
-                name = element.name,
-            });
+                cells = cellsJson.ToArray(),
+                metadata = new MapMetadata
+                {
+                    totalCells = mapElementsCells.Length,
+                    traversableCells = traversableCount,
+                    elementsCount = totalElements,
+                    generatedAt = DateTime.UtcNow
+                }
+            };
+
+            string jsonContent = JsonUtility.ToJson(mapData, true);
+
+            PromptConfig promptConfig = ScriptableObject.CreateInstance<PromptConfig>();
+            promptConfig.promptId = "map-system-data";
+            promptConfig.promptName = "Estado Actual del Mapa";
+            promptConfig.category = "Sistema del Mapa";
+            promptConfig.description = "Estado actual del mapa con todas las celdas y elementos";
+            promptConfig.enabled = true;
+            promptConfig.priority = 10;
+            promptConfig.version = "1.0";
+
+            promptConfig.content = $@"DATOS DEL SISTEMA DEL MAPA
+
+            El mapa está representado como una cuadrícula de celdas, donde cada celda puede contener múltiples elementos.
+
+            ESTRUCTURA DEL MAPA:
+            - Cada celda tiene coordenadas de fila/columna y una posición mundial
+            - Las celdas pueden ser transitables o estar bloqueadas
+            - Los elementos en las celdas tienen tipos: Item, Character, u Obstacle
+            - Cada elemento tiene un ID para referencia
+
+            REGLAS DE TRÁNSITO:
+            - isTraversable: false significa que no se puede entrar en la celda
+            - traversalCost: valores más altos indican un movimiento más difícil
+            - Los elementos marcados canBeTraversed: false bloquean el movimiento
+
+            DATOS ACTUALES DEL MAPA:
+            {jsonContent}
+
+            Usa estos datos del mapa para entender las relaciones espaciales, planificar movimientos e interactuar con los elementos por sus IDs.";
+
+            return promptConfig;
         }
-        
-        cellsJson.Add(new MapCellJson
+
+        public void Talk(string message)
         {
-            row = cell.gridCell.row,
-            col = cell.gridCell.column,
-            elements = elementsJson.ToArray()
-        });
-        
-        if (cell.isTraversable) traversableCount++;
-        totalElements += cell.elements.Count;
-    }
-    
-    MapDataJson mapData = new MapDataJson
-    {
-        cells = cellsJson.ToArray(),
-        metadata = new MapMetadata
-        {
-            totalCells = mapElementsCells.Length,
-            traversableCells = traversableCount,
-            elementsCount = totalElements,
-            generatedAt = DateTime.UtcNow
+            Debug.LogError("NO SE HA IMPLEMENTADO EL SISTEMA DE MENSAGES: " + message);
         }
-    };
-    
-    string jsonContent = JsonUtility.ToJson(mapData, true);
-    
-    PromptConfig promptConfig = ScriptableObject.CreateInstance<PromptConfig>();
-    promptConfig.promptId = "map-system-data";
-    promptConfig.promptName = "Current Map State";
-    promptConfig.category = "Map System";
-    promptConfig.description = "Current state of the map with all cells and elements";
-    promptConfig.enabled = true;
-    promptConfig.priority = 10;
-    promptConfig.version = "1.0";
-    
-    promptConfig.content = $@"MAP SYSTEM DATA
 
-You have access to the current map state. The map is represented as a grid of cells, where each cell can contain multiple elements.
-
-MAP STRUCTURE:
-- Each cell has row/col coordinates and a world position
-- Cells can be traversable or blocked
-- Elements in cells have types: Item, Character, or Obstacle
-- Each element has an ID for reference
-
-TRAVERSAL RULES:
-- isTraversable: false means the cell cannot be entered
-- traversalCost: higher values indicate harder movement
-- Elements marked canBeTraversed: false block movement
-
-CURRENT MAP DATA:
-{jsonContent}
-
-Use this map data to understand spatial relationships, plan movements, and interact with elements by their IDs.";
-    
-    return promptConfig;
-}
+        public bool Teleport(int row, int col)
+        {
+            return characterElement.TryMoveTo(row, col);
+        }
     }
 }
