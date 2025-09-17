@@ -20,7 +20,6 @@ namespace ChatSystem.Services.Tools
         {
             _characterAgent = characterAgent;
         }
-        
 
         public async Task<ToolResponse> ExecuteToolAsync(ToolCall toolCall)
         {
@@ -77,10 +76,13 @@ namespace ChatSystem.Services.Tools
 
                 if (_characterAgent.Teleport(row, col))
                 {
+                    UniversalLogUI.Instance.Log($"{_characterAgent.name} Move to {row}, {col}");
                     return CreateSuccessResponse(toolCall.id, $"Tu posición ahora es: {row},{col}");
                 }
                 else
                 {
+                    UniversalLogUI.Instance.Log($"{_characterAgent.name} ERROR Move to {row}, {col}");
+
                     return CreateErrorResponse(toolCall.id, $"No puedes moverte a: {row}, {col}");
                 }
             }
@@ -101,6 +103,8 @@ namespace ChatSystem.Services.Tools
 
                 _characterAgent.Talk(message);
                 
+                UniversalLogUI.Instance.Log($"{_characterAgent.name} Talk");
+
                 return CreateSuccessResponse(toolCall.id, $"You said: {message}");
             }
             catch (Exception ex)

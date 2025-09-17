@@ -68,7 +68,7 @@ namespace ChatSystem.Services.Orchestrators
                     }
                 }
                 
-                LoggingService.LogDebug($"[LLMOrchestrator] Agent responses: {agentResponses.Count}");  
+//                LoggingService.LogDebug($"[LLMOrchestrator] Agent responses: {agentResponses.Count}");  
                 
                 return MergeAgentResponses(agentResponses);
             }

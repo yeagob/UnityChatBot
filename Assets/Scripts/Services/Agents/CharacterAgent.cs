@@ -18,6 +18,7 @@ using ChatSystem.Services.Tools.Interfaces;
 using MapSystem;
 using MapSystem.Elements;
 using MapSystem.Models.Map;
+using TMPro;
 
 namespace ChatSystem.Characters
 {
@@ -35,6 +36,14 @@ namespace ChatSystem.Characters
         [SerializeField]
         private string _initialMessage;
         
+                
+        [SerializeField] 
+        private TextMeshProUGUI _dialogText ;
+        
+        [SerializeField] 
+        private GameObject _dialogObject;
+
+        
         private IChatOrchestrator chatOrchestrator;
         private ILLMOrchestrator llmOrchestrator;
         private IContextManager contextManager;
@@ -42,13 +51,7 @@ namespace ChatSystem.Characters
         private IPersistenceService persistenceService;
         private IToolSet characterToolSet;
 
-        private async void Start()
-        {
-            InitializeAgent();
-            await ExecuteInitialAgentCall();
-        }
-
-        private void InitializeAgent()
+        public void InitializeAgent()
         {
             CreateCoreServices();
             CreateToolSets();
@@ -56,20 +59,21 @@ namespace ChatSystem.Characters
             ConfigureServices();
             LoggingService.Initialize(LogLevel.Debug);
         }
-        
-        
-        private async Task  ExecuteInitialAgentCall()
+
+        public async Task<LLMResponse>  ExecuteInitialAgentCall()
         {
+            LLMResponse response = null;
+            
             if (agentConfigurations is { Length: > 0 })
             {
                 AgentConfig firstAgent = agentConfigurations[0];
                 firstAgent.contextPrompts.Add(CreatePromptMap(_mapSystem.GetAllCellsWithElements()));
-                LLMResponse response = await chatOrchestrator.ProcessUserMessageAsync(characterElement.Id.ToString(), _initialMessage);
-                
-                //Si nos hemos movido o girado, actualizamos con una nueva llamada de visión. 
+                response = await chatOrchestrator.ProcessUserMessageAsync(characterElement.Id.ToString(), _initialMessage);
             }
+            
+            return response;
         }
-
+        
         private void CreateCoreServices()
         {
             contextManager = new ContextManager();
@@ -226,12 +230,15 @@ namespace ChatSystem.Characters
 
         public void Talk(string message)
         {
-            Debug.LogError("NO SE HA IMPLEMENTADO EL SISTEMA DE MENSAGES: " + message);
+            _dialogObject.SetActive(true);
+            _dialogText.text = message;
         }
 
         public bool Teleport(int row, int col)
         {
             return characterElement.TryMoveTo(row, col);
         }
+
+
     }
 }

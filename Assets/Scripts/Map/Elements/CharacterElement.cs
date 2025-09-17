@@ -19,7 +19,7 @@ namespace MapSystem.Elements
         [SerializeField] private int healthPoints = 100;
         [SerializeField] private int maxHealthPoints = 100;
         [SerializeField] private int experiencePoints = 0;
-        
+
         public float MovementSpeed => movementSpeed;
         public bool CanMove => canMove;
         public bool IsPlayerControlled => isPlayerControlled;
