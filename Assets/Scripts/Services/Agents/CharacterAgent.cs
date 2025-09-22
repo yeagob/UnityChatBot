@@ -24,19 +24,24 @@ namespace ChatSystem.Characters
 {
     public class CharacterAgent : MonoBehaviour
     {
+        [Header("Misión en la vida")]
+        [SerializeField]
+        private string _initialMessage;
+        
+        [Header("Agente")]
         [SerializeField]
         private AgentConfig[] agentConfigurations;
 
+        [Header("Game Refs")]
         [SerializeField]
         private CharacterElement characterElement;
         
         [SerializeField]
         private MapSystem.MapSystem _mapSystem;
 
-        [SerializeField]
-        private string _initialMessage;
-        
-                
+        public Sprite AvatarImage;
+
+        [Header("Dialog System")]
         [SerializeField] 
         private TextMeshProUGUI _dialogText ;
         
@@ -53,6 +58,7 @@ namespace ChatSystem.Characters
 
         public void InitializeAgent()
         {
+            HideDialog();
             CreateCoreServices();
             CreateToolSets();
             CreateServices();
@@ -232,6 +238,11 @@ namespace ChatSystem.Characters
         {
             _dialogObject.SetActive(true);
             _dialogText.text = message;
+        }
+
+        private void HideDialog()
+        {
+            _dialogObject.SetActive(false);
         }
 
         public bool Teleport(int row, int col)

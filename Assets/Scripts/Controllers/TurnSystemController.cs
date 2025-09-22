@@ -2,11 +2,15 @@ using System.Collections.Generic;
 using ChatSystem.Characters;
 using ChatSystem.Models.LLM;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class TurnSystemController : MonoBehaviour
 {
     [SerializeField]
     private List<CharacterAgent> _agents = new List<CharacterAgent>();
+
+    [SerializeField]
+    private Image _turnPanelImage;
     
     int _currentAgentIndex = 0;
     int _currentTurn = 0;
@@ -27,6 +31,7 @@ public class TurnSystemController : MonoBehaviour
                 UniversalLogUI.Instance.Log($"\nCurrent turn: {_currentTurn}");
             }
             
+            _turnPanelImage.sprite = _agents[_currentAgentIndex].AvatarImage;
             LLMResponse response = await _agents[_currentAgentIndex].ExecuteInitialAgentCall();
             _currentAgentIndex = (_currentAgentIndex+1) % _agents.Count;  
         }
