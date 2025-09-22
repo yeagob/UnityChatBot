@@ -31,7 +31,9 @@
             protected MapSystem _mapSystem;
             
             protected bool isInitialized = false;
-            
+
+            public Vector2 GridPosition => GetGridPosition();
+
             public int Id => elementId;
             
             public MapElementType ElementType => elementType;
@@ -94,6 +96,11 @@
                     
                     context.AddInteraction($"Moved from {previousCell} to {currentGridCell}");
                 }
+            }
+            
+            public Vector2 GetGridPosition()
+            {
+                return new (currentGridCell.row, currentGridCell.column);
             }
             
             public virtual void UpdateWorldPosition()

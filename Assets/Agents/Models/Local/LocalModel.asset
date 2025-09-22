@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f39ca0673d533645be39d99e7636e96, type: 3}
   m_Name: LocalModel
   m_EditorClassIdentifier: 
-  modelName: mradermacher/Mistral-Nemo-Instruct-2407-DPO-S1K-Merged-GGUF
+  modelName: DevQuasar/NousResearch.DeepHermes-ToolCalling-Specialist-Atropos-GGUF
   provider: 0
   modelVersion: 0.1
   temperature: 0.41

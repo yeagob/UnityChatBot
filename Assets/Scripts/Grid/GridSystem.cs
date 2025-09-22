@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using Grid.Models.Grid;
 using Grid.Configuration;
+using MapSystem.Models.Map;
 
 namespace Grid
 {
@@ -169,6 +170,18 @@ namespace Grid
     
             return new GridCell(row, column, center);
         }
+        
+
+        public int GetDistance(GridCell finalCell, GridCell originCell)
+        {
+            Vector3 posCellOrigin = GetCellCenterWorldPosition(originCell);
+            Vector3 posCellCenter = GetCellCenterWorldPosition(finalCell);
+            
+            float distance = Vector3.Distance(posCellOrigin, posCellCenter) / _gridConfig.gridWidth;
+            
+            return Mathf.RoundToInt(distance);
+            
         }
+    }
         
 }

@@ -149,8 +149,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _agents:
-  - {fileID: 1974394610}
   - {fileID: 1657247703}
+  - {fileID: 1974394610}
   _turnPanelImage: {fileID: 998998132}
 --- !u!4 &94741122
 Transform:
@@ -407,7 +407,7 @@ MonoBehaviour:
   elementId: 3
   elementType: 0
   visionDistance: 3
-  currentGridIndex: 0
+  currentGridIndex: 19
   context:
     elementId: ceb0ef47-8d33-469c-8a82-00655f4c5468
     displayName: 
@@ -587,7 +587,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 2045105062}
+  m_Father: {fileID: 751119946}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &397848211
 SpriteRenderer:
@@ -659,7 +659,7 @@ MonoBehaviour:
   elementId: 4
   elementType: 0
   visionDistance: 3
-  currentGridIndex: 0
+  currentGridIndex: 19
   context:
     elementId: b43df65e-8c7c-4efe-b13b-bd02d2790d14
     displayName: 
@@ -921,6 +921,7 @@ Transform:
   m_Children:
   - {fileID: 1974394607}
   - {fileID: 1657247700}
+  - {fileID: 397848210}
   - {fileID: 2045105062}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2721,11 +2722,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2652386092144676622, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.87
+      value: -1.97
       objectReference: {fileID: 0}
     - target: {fileID: 2652386092144676622, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.55
+      value: 0.28
       objectReference: {fileID: 0}
     - target: {fileID: 2652386092144676622, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: m_LocalPosition.z
@@ -2796,6 +2797,10 @@ PrefabInstance:
       value: Actua con libertad
       objectReference: {fileID: 0}
     - target: {fileID: 7950579116545635753, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
+      propertyPath: _characterElement
+      value: 
+      objectReference: {fileID: 1657247704}
+    - target: {fileID: 7950579116545635753, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: agentConfigurations.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -2817,7 +2822,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8337982968093562386, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: currentGridIndex
-      value: 21
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 8337982968093562386, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: context.elementId
@@ -2859,6 +2864,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a2b9b4d036e2a914e96a35190e93cb8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1657247704 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8337982968093562386, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
+  m_PrefabInstance: {fileID: 1657247699}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6fb002fe918a4cd4a90c1de30381d0d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1690604070
@@ -3437,6 +3453,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2b9b4d036e2a914e96a35190e93cb8b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1974394612 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8337982968093562386, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
+  m_PrefabInstance: {fileID: 5217580765229444832}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6fb002fe918a4cd4a90c1de30381d0d5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1997154154
 GameObject:
   m_ObjectHideFlags: 0
@@ -3691,7 +3718,6 @@ Transform:
   m_Children:
   - {fileID: 1181154671}
   - {fileID: 136318051}
-  - {fileID: 397848210}
   - {fileID: 1546412558}
   - {fileID: 827320545}
   m_Father: {fileID: 751119946}
@@ -3831,11 +3857,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2652386092144676622, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.71
+      value: 2.06
       objectReference: {fileID: 0}
     - target: {fileID: 2652386092144676622, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.8
+      value: 0.29
       objectReference: {fileID: 0}
     - target: {fileID: 2652386092144676622, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: m_LocalPosition.z
@@ -3874,6 +3900,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 128288997}
     - target: {fileID: 6904481695173183088, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
+      propertyPath: m_FlipX
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6904481695173183088, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: -2322300061363258381, guid: 85394ddedfd8b6c4e97930dee16e476a, type: 3}
@@ -3898,6 +3928,10 @@ PrefabInstance:
       value: Actua con libertad
       objectReference: {fileID: 0}
     - target: {fileID: 7950579116545635753, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
+      propertyPath: _characterElement
+      value: 
+      objectReference: {fileID: 1974394612}
+    - target: {fileID: 7950579116545635753, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: agentConfigurations.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -3911,7 +3945,7 @@ PrefabInstance:
       objectReference: {fileID: 751119948}
     - target: {fileID: 8337982968093562386, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: currentGridIndex
-      value: 22
+      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: 8337982968093562386, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: context.elementId

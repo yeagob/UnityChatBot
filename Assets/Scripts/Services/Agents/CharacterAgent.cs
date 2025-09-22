@@ -17,11 +17,18 @@ using ChatSystem.Services.Persistence.Interfaces;
 using ChatSystem.Services.Tools.Interfaces;
 using MapSystem;
 using MapSystem.Elements;
+using MapSystem.Enums;
 using MapSystem.Models.Map;
 using TMPro;
 
 namespace ChatSystem.Characters
 {
+    public enum ConextType
+    {
+        Vision,
+        Conversation
+    }
+    
     public class CharacterAgent : MonoBehaviour
     {
         [Header("Misión en la vida")]
@@ -34,7 +41,7 @@ namespace ChatSystem.Characters
 
         [Header("Game Refs")]
         [SerializeField]
-        private CharacterElement characterElement;
+        private CharacterElement _characterElement;
         
         [SerializeField]
         private MapSystem.MapSystem _mapSystem;
@@ -55,6 +62,8 @@ namespace ChatSystem.Characters
         private IAgentExecutor agentExecutor;
         private IPersistenceService persistenceService;
         private IToolSet characterToolSet;
+        
+        private Dictionary<ConextType, PromptConfig> _contextPrompt = new Dictionary<ConextType, PromptConfig>(); 
 
         public void InitializeAgent()
         {
@@ -66,15 +75,27 @@ namespace ChatSystem.Characters
             LoggingService.Initialize(LogLevel.Debug);
         }
 
-        public async Task<LLMResponse>  ExecuteInitialAgentCall()
+        public async Task<LLMResponse>  ExecuteAgentCall()
         {
             LLMResponse response = null;
             
             if (agentConfigurations is { Length: > 0 })
             {
                 AgentConfig firstAgent = agentConfigurations[0];
-                firstAgent.contextPrompts.Add(CreatePromptMap(_mapSystem.GetAllCellsWithElements()));
-                response = await chatOrchestrator.ProcessUserMessageAsync(characterElement.Id.ToString(), _initialMessage);
+                MapCell[] map = _mapSystem.GetAllCellsWithElements();
+                PromptConfig visionPromptConfig = CreatePromptMap(map);
+                
+                firstAgent.contextPrompts.Add(visionPromptConfig);
+                
+                response = await chatOrchestrator.ProcessUserMessageAsync(_characterElement.Id.ToString(), _initialMessage);
+
+                //Clar all promtps context
+                int count = firstAgent.contextPrompts.Count;
+                for (int i = count-1; i > 1; i--)
+                {
+                    firstAgent.contextPrompts.RemoveAt(i);    
+                }
+                
             }
             
             return response;
@@ -135,9 +156,9 @@ namespace ChatSystem.Characters
         [System.Serializable]
         public struct MapCellJson
         {
-            public int row;
-            public int col;
-            public MapElementJson[] elements;
+            public int r;
+            public int c;
+            public MapElementJson[] e;
         }
 
         [System.Serializable]
@@ -177,14 +198,25 @@ namespace ChatSystem.Characters
                     });
                 }
 
+                //Sistema de Vision
+                if (_characterElement.FacingDirection == ViewDirection.Left && cell.gridCell.column > _characterElement.GetGridPosition().y ||
+                    _characterElement.FacingDirection == ViewDirection.Right && cell.gridCell.column < _characterElement.GetGridPosition().y )
+                {
+                    continue;
+                }
+                
                 cellsJson.Add(new MapCellJson
                 {
-                    row = cell.gridCell.row,
-                    col = cell.gridCell.column,
-                    elements = elementsJson.ToArray()
+                    r = cell.gridCell.row,
+                    c = cell.gridCell.column,
+                    e = elementsJson.ToArray()
                 });
+                    
 
-                if (cell.isTraversable) traversableCount++;
+                if (cell.isTraversable)
+                {
+                    traversableCount++;
+                }
                 totalElements += cell.elements.Count;
             }
 
@@ -213,18 +245,14 @@ namespace ChatSystem.Characters
 
             promptConfig.content = $@"DATOS DEL SISTEMA DEL MAPA
 
-            El mapa está representado como una cuadrícula de celdas, donde cada celda puede contener múltiples elementos.
+            El mapa está representado como una cuadrícula de celdas, donde cada celda puede contener uno o más elementos.
+
+            Se trata de un tablero de: {_mapSystem.GridSystem.GetGridConfiguration().gridWidth}x{_mapSystem.GridSystem.GetGridConfiguration().gridHeight}
 
             ESTRUCTURA DEL MAPA:
-            - Cada celda tiene coordenadas de fila/columna y una posición mundial
-            - Las celdas pueden ser transitables o estar bloqueadas
+            - Cada celda tiene coordenadas de fila/columna            
             - Los elementos en las celdas tienen tipos: Item, Character, u Obstacle
-            - Cada elemento tiene un ID para referencia
-
-            REGLAS DE TRÁNSITO:
-            - isTraversable: false significa que no se puede entrar en la celda
-            - traversalCost: valores más altos indican un movimiento más difícil
-            - Los elementos marcados canBeTraversed: false bloquean el movimiento
+            - Cada elemento tiene un ID para referencia         
 
             DATOS ACTUALES DEL MAPA:
             {jsonContent}
@@ -238,6 +266,27 @@ namespace ChatSystem.Characters
         {
             _dialogObject.SetActive(true);
             _dialogText.text = message;
+            List<CharacterElement> nearCharacterElements = _mapSystem.GetAllCharactesAtDistance(2, _characterElement.CurrentGridCell);
+            foreach (CharacterElement nearCharacterElement in nearCharacterElements)
+            {
+                nearCharacterElement.GetComponent<CharacterAgent>().Listen(message, agentConfigurations[0].name);
+            }
+        }
+
+        private void Listen(string message, string remit)
+        {
+            PromptConfig promptConversations = ScriptableObject.CreateInstance<PromptConfig>();
+            promptConversations.promptId = "map-system-data";
+            promptConversations.promptName = "Conversaciones";
+            promptConversations.category = "";
+            promptConversations.description = "Conversaciones acumuladas en el turno actual";
+            promptConversations.enabled = true;
+            promptConversations.priority = 10;
+            promptConversations.version = "1.0";
+
+            promptConversations.content += $@" {remit} Ha dicho: {message}";
+
+            agentConfigurations[0].contextPrompts.Add(promptConversations);
         }
 
         private void HideDialog()
@@ -247,9 +296,14 @@ namespace ChatSystem.Characters
 
         public bool Teleport(int row, int col)
         {
-            return characterElement.TryMoveTo(row, col);
+            return _characterElement.TryMoveTo(row, col);
         }
 
 
+        public string Flip()
+        {
+            _characterElement.Flip();
+            return CreatePromptMap(_mapSystem.GetAllCellsWithElements()).content;
+        }
     }
 }

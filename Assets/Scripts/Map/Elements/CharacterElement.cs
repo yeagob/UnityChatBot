@@ -256,6 +256,23 @@ namespace MapSystem.Elements
             }
         }
 
-   
+        public void Flip()
+        {
+            if (facingDirection == ViewDirection.Right)
+            {
+                facingDirection = ViewDirection.Left;
+            }
+            else
+            {
+                facingDirection = ViewDirection.Right;
+            }
+            
+            elementSprite.flipX = facingDirection == ViewDirection.Right;
+        }
+
+        public void Listen(string message)
+        {
+            
+        }
     }
 }

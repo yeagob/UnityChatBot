@@ -153,14 +153,14 @@ namespace ChatSystem.Services.LLM
 
         private static object BuildRealtimeParameters(ToolConfiguration tool)
         {
-            if (tool.inputSchema?.properties == null || tool.inputSchema.properties.Count == 0)
+            if (tool._inputSchema?.properties == null || tool._inputSchema.properties.Count == 0)
             {
                 return new { type = "object", properties = new { }, required = new string[0] };
             }
 
             Dictionary<string, object> properties = new Dictionary<string, object>();
             
-            foreach (var property in tool.inputSchema.properties)
+            foreach (var property in tool._inputSchema.properties)
             {
                 properties[property.Key] = new
                 {
@@ -174,7 +174,7 @@ namespace ChatSystem.Services.LLM
             {
                 type = "object",
                 properties = properties,
-                required = tool.inputSchema.required ?? new List<string>()
+                required = tool._inputSchema.required ?? new List<string>()
             };
         }
 

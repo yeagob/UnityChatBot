@@ -32,7 +32,7 @@ public class TurnSystemController : MonoBehaviour
             }
             
             _turnPanelImage.sprite = _agents[_currentAgentIndex].AvatarImage;
-            LLMResponse response = await _agents[_currentAgentIndex].ExecuteInitialAgentCall();
+            LLMResponse response = await _agents[_currentAgentIndex].ExecuteAgentCall();
             _currentAgentIndex = (_currentAgentIndex+1) % _agents.Count;  
         }
     }

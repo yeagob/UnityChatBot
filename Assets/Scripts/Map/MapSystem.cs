@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Grid;
 using UnityEngine;
 using Grid.Models.Grid;
+using MapSystem.Elements;
 using MapSystem.Models.Map;
 using MapSystem.Enums;
 using UnityEngine.Serialization;
@@ -310,6 +311,27 @@ namespace MapSystem
             }
             
             return result.ToArray();
+        }
+
+        public List <CharacterElement>  GetAllCharactesAtDistance(int cellDistance, GridCell originCell)
+        {
+            List <CharacterElement> result = new List<CharacterElement>();
+            
+            foreach (MapCell cell in GetAllMapCells())
+            {
+                if (cell.HasElements() && GridSystem.GetDistance(cell.gridCell, originCell) < cellDistance)
+                {
+                    foreach (MapElement mapElement in cell.elements)
+                    {
+                        if(mapElement is CharacterElement characterElement && mapElement.CurrentGridCell != originCell)
+                        {
+                            result.Add(characterElement);
+                        }
+                    }
+                }
+            }
+            
+            return result;
         }
     }
 }

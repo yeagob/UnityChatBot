@@ -36,6 +36,7 @@ namespace ChatSystem.Services.Tools
                 {
                     "move" => await ExecuteAgentMoveAsync(toolCall),
                     "talk" => await ExecuteAgentTalkAsync(toolCall),
+                    "flip" => await ExecuteAgentFlipAsync(toolCall),
                     _ => CreateErrorResponse(toolCall.id, $"Unknown tool: {toolCall.name}")
                 };
                 
@@ -105,7 +106,27 @@ namespace ChatSystem.Services.Tools
                 
                 UniversalLogUI.Instance.Log($"{_characterAgent.name} Talk");
 
-                return CreateSuccessResponse(toolCall.id, $"You said: {message}");
+                return CreateSuccessResponse(toolCall.id, $"Has dicho: {message}");
+            }
+            catch (Exception ex)
+            {
+                return CreateErrorResponse(toolCall.id, $"Ha habido un problema con esta tool: {ex.Message}");
+            }
+        }
+        
+        private async Task<ToolResponse> ExecuteAgentFlipAsync(ToolCall toolCall)
+        {
+            await Task.Delay(10);
+            
+            try
+            {
+                Dictionary<string, object> args = toolCall.arguments;
+
+                string visionPrompt = _characterAgent.Flip();
+                
+                UniversalLogUI.Instance.Log($"{_characterAgent.name} Flip");
+
+                return CreateSuccessResponse(toolCall.id, $"Ahora puedes ver: {visionPrompt}");
             }
             catch (Exception ex)
             {
@@ -127,7 +148,7 @@ namespace ChatSystem.Services.Tools
         {
             return toolName switch
             {
-                "attack" or "move" or "talk" => true,
+                "attack" or "move" or "talk" or "flip" => true,
                 _ => false
             };
         }
