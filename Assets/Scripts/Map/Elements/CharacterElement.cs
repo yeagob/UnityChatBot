@@ -256,7 +256,7 @@ namespace MapSystem.Elements
             }
         }
 
-        public void Flip()
+        public ViewDirection Flip()
         {
             if (facingDirection == ViewDirection.Right)
             {
@@ -268,6 +268,8 @@ namespace MapSystem.Elements
             }
             
             elementSprite.flipX = facingDirection == ViewDirection.Right;
+            
+            return facingDirection;
         }
 
         public void Listen(string message)

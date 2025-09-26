@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ChatSystem.Configuration.ScriptableObjects;
 using ChatSystem.Models.LLM;
+using ChatSystem.Models.Tools;
 using UnityEngine;
 using ChatSystem.Services.Orchestrators.Interfaces;
 using ChatSystem.Services.Context.Interfaces;
@@ -29,11 +30,14 @@ namespace ChatSystem.Characters
         Conversation
     }
     
-    public class CharacterAgent : MonoBehaviour
+    public class CharacterAgent : TurnCharacter
     {
         [Header("Misión en la vida")]
         [SerializeField]
         private string _initialMessage;
+        
+        [SerializeField]
+        private int _actionPoints;
         
         [Header("Agente")]
         [SerializeField]
@@ -45,8 +49,9 @@ namespace ChatSystem.Characters
         
         [SerializeField]
         private MapSystem.MapSystem _mapSystem;
-
-        public Sprite AvatarImage;
+        
+        [field:SerializeField]
+        public Sprite AvatarImage { get; set; }
 
         [Header("Dialog System")]
         [SerializeField] 
@@ -65,7 +70,7 @@ namespace ChatSystem.Characters
         
         private Dictionary<ConextType, PromptConfig> _contextPrompt = new Dictionary<ConextType, PromptConfig>(); 
 
-        public void InitializeAgent()
+        public override void Initialize()
         {
             HideDialog();
             CreateCoreServices();
@@ -75,30 +80,41 @@ namespace ChatSystem.Characters
             LoggingService.Initialize(LogLevel.Debug);
         }
 
-        public async Task<LLMResponse>  ExecuteAgentCall()
+        public override async Task ExecuteTurn()
         {
-            LLMResponse response = null;
+            int missingPoints = _actionPoints;
             
-            if (agentConfigurations is { Length: > 0 })
-            {
-                AgentConfig firstAgent = agentConfigurations[0];
-                MapCell[] map = _mapSystem.GetAllCellsWithElements();
-                PromptConfig visionPromptConfig = CreatePromptMap(map);
-                
-                firstAgent.contextPrompts.Add(visionPromptConfig);
-                
-                response = await chatOrchestrator.ProcessUserMessageAsync(_characterElement.Id.ToString(), _initialMessage);
+            HideDialog();
+            
+            AgentConfig firstAgent = agentConfigurations[0];
+            
+            MapCell[] map = _mapSystem.GetAllCellsWithElements();
 
-                //Clar all promtps context
-                int count = firstAgent.contextPrompts.Count;
-                for (int i = count-1; i > 1; i--)
+            do
+            {
+                PromptConfig visionPromptConfig = CreateVisionPromptMap(map);
+                firstAgent.contextPrompts.Add(visionPromptConfig);
+                LLMResponse response = await chatOrchestrator.ProcessUserMessageAsync(_characterElement.Id.ToString(), _initialMessage);
+                
+                foreach (ToolResponse responseToolResponse in response.toolResponses)
                 {
-                    firstAgent.contextPrompts.RemoveAt(i);    
+                    if (responseToolResponse.success)
+                    {
+                        missingPoints--;
+                    }
                 }
                 
-            }
+                firstAgent.contextPrompts.Remove(visionPromptConfig);
+                
+            }while (missingPoints > 0);
             
-            return response;
+
+            //Clar all promtps context
+            int count = firstAgent.contextPrompts.Count;
+            for (int i = count-1; i > 0; i--)
+            {
+                firstAgent.contextPrompts.RemoveAt(i);    
+            }
         }
         
         private void CreateCoreServices()
@@ -178,7 +194,7 @@ namespace ChatSystem.Characters
             public DateTime generatedAt;
         }
 
-        private PromptConfig CreatePromptMap(MapCell[] mapElementsCells)
+        private PromptConfig CreateVisionPromptMap(MapCell[] mapElementsCells)
         {
             List<MapCellJson> cellsJson = new List<MapCellJson>();
             int traversableCount = 0;
@@ -269,7 +285,7 @@ namespace ChatSystem.Characters
             List<CharacterElement> nearCharacterElements = _mapSystem.GetAllCharactesAtDistance(2, _characterElement.CurrentGridCell);
             foreach (CharacterElement nearCharacterElement in nearCharacterElements)
             {
-                nearCharacterElement.GetComponent<CharacterAgent>().Listen(message, agentConfigurations[0].name);
+                nearCharacterElement.GetComponent<CharacterAgent>().Listen(message, agentConfigurations[0].agentName);
             }
         }
 
@@ -299,11 +315,9 @@ namespace ChatSystem.Characters
             return _characterElement.TryMoveTo(row, col);
         }
 
-
-        public string Flip()
+        public ViewDirection Flip()
         {
-            _characterElement.Flip();
-            return CreatePromptMap(_mapSystem.GetAllCellsWithElements()).content;
+            return _characterElement.Flip();
         }
     }
 }

@@ -7,7 +7,7 @@ using UnityEngine.UI;
 public class TurnSystemController : MonoBehaviour
 {
     [SerializeField]
-    private List<CharacterAgent> _agents = new List<CharacterAgent>();
+    private List<ITurnCharacter> _agents = new List<ITurnCharacter>();
 
     [SerializeField]
     private Image _turnPanelImage;
@@ -17,9 +17,9 @@ public class TurnSystemController : MonoBehaviour
     
     private async void Start()
     {
-        foreach (CharacterAgent agent in _agents)
+        foreach (ITurnCharacter agent in _agents)
         {
-            agent.InitializeAgent();
+            agent.Initialize();
         }
 
         //INSENSATOS!!! NO HAGAIS ESTO JAMAS!!!
@@ -32,7 +32,7 @@ public class TurnSystemController : MonoBehaviour
             }
             
             _turnPanelImage.sprite = _agents[_currentAgentIndex].AvatarImage;
-            LLMResponse response = await _agents[_currentAgentIndex].ExecuteAgentCall();
+             _agents[_currentAgentIndex].ExecuteTurn();
             _currentAgentIndex = (_currentAgentIndex+1) % _agents.Count;  
         }
     }

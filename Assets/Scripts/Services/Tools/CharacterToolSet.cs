@@ -5,6 +5,7 @@ using ChatSystem.Characters;
 using ChatSystem.Models.Tools;
 using ChatSystem.Services.Logging;
 using ChatSystem.Services.Tools.Interfaces;
+using MapSystem.Enums;
 
 namespace ChatSystem.Services.Tools
 {
@@ -122,11 +123,11 @@ namespace ChatSystem.Services.Tools
             {
                 Dictionary<string, object> args = toolCall.arguments;
 
-                string visionPrompt = _characterAgent.Flip();
+                ViewDirection direction = _characterAgent.Flip();
                 
                 UniversalLogUI.Instance.Log($"{_characterAgent.name} Flip");
 
-                return CreateSuccessResponse(toolCall.id, $"Ahora puedes ver: {visionPrompt}");
+                return CreateSuccessResponse(toolCall.id, $"Ahora estás mirando hacia " + direction);
             }
             catch (Exception ex)
             {
