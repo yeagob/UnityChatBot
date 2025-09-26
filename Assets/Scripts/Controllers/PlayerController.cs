@@ -1,8 +1,15 @@
 using System.Threading.Tasks;
+using MapSystem.Elements;
 using UnityEngine;
 
 public class PlayerController : TurnCharacter
 {
+    [SerializeField]
+    private CharacterElement _characterElement;
+    
+    [SerializeField]
+    private MapSystem.MapSystem _mapSystem;
+    
     [SerializeField]
     private int _actionPoints = 3;
 
