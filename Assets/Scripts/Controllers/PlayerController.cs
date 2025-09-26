@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Grid;
+using Grid.Models.Grid;
 using MapSystem.Elements;
 using UnityEngine;
 
@@ -52,8 +54,8 @@ public class PlayerController : TurnCharacter
             return;
         }
 
-        GridSystem.Models.GridCell currentCell = _characterElement.CurrentGridCell;
-        GridSystem.Models.GridCell targetCell = CalculateTargetMoveCell(currentCell);
+        GridCell currentCell = _characterElement.CurrentGridCell;
+        GridCell targetCell = CalculateTargetMoveCell(currentCell);
 
         bool moved = _characterElement.TryMoveTo(targetCell.row, targetCell.column);
 
@@ -140,7 +142,7 @@ public class PlayerController : TurnCharacter
         _actionMenu.SetActive(show);
     }
 
-    private GridSystem.Models.GridCell CalculateTargetMoveCell(GridSystem.Models.GridCell currentCell)
+    private GridCell CalculateTargetMoveCell(GridCell currentCell)
     {
         MapSystem.Enums.ViewDirection facingDirection = _characterElement.FacingDirection;
         
@@ -156,7 +158,7 @@ public class PlayerController : TurnCharacter
             targetColumn--;
         }
 
-        return new GridSystem.Models.GridCell
+        return new GridCell
         {
             row = targetRow,
             column = targetColumn
@@ -165,7 +167,7 @@ public class PlayerController : TurnCharacter
 
     private void BroadcastMessageToNearbyCharacters(string message)
     {
-        GridSystem.Models.GridCell currentCell = _characterElement.CurrentGridCell;
+        GridCell currentCell = _characterElement.CurrentGridCell;
         List<CharacterElement> nearbyCharacters = _mapSystem.GetAllCharactesAtDistance(2, currentCell);
 
         foreach (CharacterElement character in nearbyCharacters)
@@ -182,10 +184,5 @@ public class PlayerController : TurnCharacter
     private void NotifyCharacterOfMessage(CharacterElement character, string message)
     {
         ChatSystem.Characters.CharacterAgent agent = character.GetComponent<ChatSystem.Characters.CharacterAgent>();
-
-        if (agent != null)
-        {
-            Debug.Log($"Player message received by {character.name}");
-        }
     }
 }
