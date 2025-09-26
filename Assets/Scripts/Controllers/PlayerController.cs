@@ -1,8 +1,11 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ChatSystem.Configuration.ScriptableObjects;
 using Grid;
 using Grid.Models.Grid;
 using MapSystem.Elements;
+using PlayerSystem.Configuration;
+using PlayerSystem.Enums;
 using UnityEngine;
 
 public class PlayerController : TurnCharacter
@@ -14,6 +17,12 @@ public class PlayerController : TurnCharacter
     [SerializeField]
     private MapSystem.MapSystem _mapSystem;
 
+    [SerializeField]
+    private GridSystem _gridSystem;
+
+    [SerializeField]
+    private Camera _mainCamera;
+
     [Header("Turn Configuration")]
     [SerializeField]
     private int _actionPoints = 3;
@@ -24,11 +33,18 @@ public class PlayerController : TurnCharacter
     
     private bool _myTurn;
     private int _currentActionPoints;
+    private PlayerActionState _currentActionState;
 
     public override void Initialize()
     {
         ShowActions(false);
         _myTurn = false;
+        _currentActionState = PlayerActionState.None;
+
+        if (_mainCamera == null)
+        {
+            _mainCamera = Camera.main;
+        }
     }
 
     public override async Task ExecuteTurn()
@@ -45,6 +61,27 @@ public class PlayerController : TurnCharacter
         
         _myTurn = false;
         ShowActions(false);
+        _currentActionState = PlayerActionState.None;
+    }
+
+    private void Update()
+    {
+        if (!_myTurn)
+        {
+            return;
+        }
+
+        if (_currentActionState == PlayerActionState.None)
+        {
+            return;
+        }
+
+        if (!Input.GetMouseButtonDown(0))
+        {
+            return;
+        }
+
+        ProcessMouseClick();
     }
 
     public void ExecuteMoveAction()
@@ -54,20 +91,8 @@ public class PlayerController : TurnCharacter
             return;
         }
 
-        GridCell currentCell = _characterElement.CurrentGridCell;
-        GridCell targetCell = CalculateTargetMoveCell(currentCell);
-
-        bool moved = _characterElement.TryMoveTo(targetCell.row, targetCell.column);
-
-        if (moved)
-        {
-            ConsumeActionPoint();
-            Debug.Log($"Player moved to ({targetCell.row}, {targetCell.column})");
-        }
-        else
-        {
-            Debug.LogWarning("Movement failed: invalid target cell");
-        }
+        _currentActionState = PlayerActionState.WaitingForMoveTarget;
+        Debug.Log("Click on map to select movement destination");
     }
 
     public void ExecuteTalkAction(string message)
@@ -95,8 +120,7 @@ public class PlayerController : TurnCharacter
             return;
         }
 
-        ConsumeActionPoint();
-        Debug.Log("Give action executed - implementation pending");
+        Debug.Log("Give action - not implemented yet");
     }
 
     public void ExecuteHitAction()
@@ -106,13 +130,140 @@ public class PlayerController : TurnCharacter
             return;
         }
 
-        ConsumeActionPoint();
-        Debug.Log("Hit action executed - implementation pending");
+        _currentActionState = PlayerActionState.WaitingForAttackTarget;
+        Debug.Log("Click on a character to attack");
     }
 
     public int GetCurrentActionPoints()
     {
         return _currentActionPoints;
+    }
+
+    private void ProcessMouseClick()
+    {
+        Vector3 mousePosition = Input.mousePosition;
+
+        if (_currentActionState == PlayerActionState.WaitingForMoveTarget)
+        {
+            ProcessMovementClick(mousePosition);
+        }
+        else if (_currentActionState == PlayerActionState.WaitingForAttackTarget)
+        {
+            ProcessAttackClick(mousePosition);
+        }
+    }
+
+    private void ProcessMovementClick(Vector3 mousePosition)
+    {
+        GridResult<GridCell> result = _gridSystem.ScreenPointToGridCell(mousePosition);
+
+        if (!result.success)
+        {
+            Debug.LogWarning("Invalid click position");
+            _currentActionState = PlayerActionState.None;
+            return;
+        }
+
+        GridCell targetCell = result.value;
+        bool moved = _characterElement.TryMoveTo(targetCell.row, targetCell.column);
+
+        if (moved)
+        {
+            ConsumeActionPoint();
+            Debug.Log($"Player moved to ({targetCell.row}, {targetCell.column})");
+        }
+        else
+        {
+            Debug.LogWarning("Movement failed: invalid target cell");
+        }
+
+        _currentActionState = PlayerActionState.None;
+    }
+
+    private void ProcessAttackClick(Vector3 mousePosition)
+    {
+        Ray ray = _mainCamera.ScreenPointToRay(mousePosition);
+        RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction);
+
+        if (hit.collider == null)
+        {
+            Debug.LogWarning("No target found");
+            _currentActionState = PlayerActionState.None;
+            return;
+        }
+
+        CharacterElement targetCharacter = hit.collider.GetComponent<CharacterElement>();
+
+        if (targetCharacter == null)
+        {
+            Debug.LogWarning("Clicked object is not a character");
+            _currentActionState = PlayerActionState.None;
+            return;
+        }
+
+        if (targetCharacter == _characterElement)
+        {
+            Debug.LogWarning("Cannot attack yourself");
+            _currentActionState = PlayerActionState.None;
+            return;
+        }
+
+        if (!IsTargetInRange(targetCharacter))
+        {
+            Debug.LogWarning("Target is out of attack range");
+            _currentActionState = PlayerActionState.None;
+            return;
+        }
+
+        ExecuteAttack(targetCharacter);
+        _currentActionState = PlayerActionState.None;
+    }
+
+    private void ExecuteAttack(CharacterElement target)
+    {
+        int damage = PlayerActionConfiguration.AttackDamage;
+        
+        target.ModifyHealth(-damage);
+        
+        NotifyCharacterOfAttack(target, damage);
+        ConsumeActionPoint();
+        
+        Debug.Log($"Player attacked {target.name} for {damage} damage");
+    }
+
+    private bool IsTargetInRange(CharacterElement target)
+    {
+        GridCell currentCell = _characterElement.CurrentGridCell;
+        GridCell targetCell = target.CurrentGridCell;
+
+        int distance = _mapSystem.GetGridDistanceBetweenElements(_characterElement, target);
+        return distance <= PlayerActionConfiguration.AttackRange;
+    }
+
+    private void NotifyCharacterOfAttack(CharacterElement target, int damage)
+    {
+        ChatSystem.Characters.CharacterAgent agent = target.GetComponent<ChatSystem.Characters.CharacterAgent>();
+
+        if (agent == null)
+        {
+            return;
+        }
+
+        int currentHealth = target.HealthPoints;
+        string attackerName = _characterElement.name;
+
+        PromptConfig attackPrompt = ScriptableObject.CreateInstance<PromptConfig>();
+        attackPrompt.promptId = "combat-damage-received";
+        attackPrompt.promptName = "Combat";
+        attackPrompt.category = "";
+        attackPrompt.description = "Damage received in combat";
+        attackPrompt.enabled = true;
+        attackPrompt.priority = 10;
+        attackPrompt.version = "1.0";
+
+        attackPrompt.content = $"{attackerName} has attacked you for {damage} damage. Your current health: {currentHealth}";
+
+        agent.AddContextPrompt(attackPrompt);
     }
 
     private bool CanExecuteAction()
@@ -142,33 +293,13 @@ public class PlayerController : TurnCharacter
         _actionMenu.SetActive(show);
     }
 
-    private GridCell CalculateTargetMoveCell(GridCell currentCell)
-    {
-        MapSystem.Enums.ViewDirection facingDirection = _characterElement.FacingDirection;
-        
-        int targetRow = currentCell.row;
-        int targetColumn = currentCell.column;
-
-        if (facingDirection == MapSystem.Enums.ViewDirection.Right)
-        {
-            targetColumn++;
-        }
-        else
-        {
-            targetColumn--;
-        }
-
-        return new GridCell
-        {
-            row = targetRow,
-            column = targetColumn
-        };
-    }
-
     private void BroadcastMessageToNearbyCharacters(string message)
     {
         GridCell currentCell = _characterElement.CurrentGridCell;
-        List<CharacterElement> nearbyCharacters = _mapSystem.GetAllCharactesAtDistance(2, currentCell);
+        List<CharacterElement> nearbyCharacters = _mapSystem.GetAllCharactesAtDistance(
+            PlayerActionConfiguration.TalkRange, 
+            currentCell
+        );
 
         foreach (CharacterElement character in nearbyCharacters)
         {
@@ -184,5 +315,25 @@ public class PlayerController : TurnCharacter
     private void NotifyCharacterOfMessage(CharacterElement character, string message)
     {
         ChatSystem.Characters.CharacterAgent agent = character.GetComponent<ChatSystem.Characters.CharacterAgent>();
+
+        if (agent == null)
+        {
+            return;
+        }
+
+        string senderName = _characterElement.name;
+
+        PromptConfig conversationPrompt = ScriptableObject.CreateInstance<PromptConfig>();
+        conversationPrompt.promptId = "conversation-message";
+        conversationPrompt.promptName = "Conversaciones";
+        conversationPrompt.category = "";
+        conversationPrompt.description = "Conversaciones acumuladas en el turno actual";
+        conversationPrompt.enabled = true;
+        conversationPrompt.priority = 10;
+        conversationPrompt.version = "1.0";
+
+        conversationPrompt.content = $"{senderName} ha dicho: {message}";
+
+        agent.AddContextPrompt(conversationPrompt);
     }
 }
