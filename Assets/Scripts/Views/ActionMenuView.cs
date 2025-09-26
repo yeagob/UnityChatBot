@@ -1,7 +1,21 @@
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ActionMenuView : MonoBehaviour
 {
+    [SerializeField]
+    private GameObject _inputTextGO;
+
+    [SerializeField]
+    private TextMeshProUGUI _actionPonintsText;
+    
+    [SerializeField]
+    private TMP_InputField _inputField;
+    
+    [SerializeField]
+    private Button _sendButton;
+    
     [SerializeField]
     private PlayerController playerController;
 
@@ -14,7 +28,7 @@ public class ActionMenuView : MonoBehaviour
         }
 
         ExecuteMoveAction();
-        playerController.ActionPointUsed();
+        _actionPonintsText.text = "Action Points: " + playerController.ActionPointUsed();
     }
 
     public void OnTalkButtonClicked()
@@ -26,7 +40,7 @@ public class ActionMenuView : MonoBehaviour
         }
 
         ExecuteTalkAction();
-        playerController.ActionPointUsed();
+        _actionPonintsText.text = "Action Points: " + playerController.ActionPointUsed();
     }
 
     public void OnGiveButtonClicked()
@@ -38,7 +52,8 @@ public class ActionMenuView : MonoBehaviour
         }
 
         ExecuteGiveAction();
-        playerController.ActionPointUsed();
+        _actionPonintsText.text = "Action Points: " + playerController.ActionPointUsed();
+
     }
 
     public void OnHitButtonClicked()
@@ -50,7 +65,8 @@ public class ActionMenuView : MonoBehaviour
         }
 
         ExecuteHitAction();
-        playerController.ActionPointUsed();
+        _actionPonintsText.text = "Action Points: " + playerController.ActionPointUsed();
+
     }
 
     private void ExecuteMoveAction()

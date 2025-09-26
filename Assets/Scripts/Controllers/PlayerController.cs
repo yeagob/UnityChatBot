@@ -42,8 +42,8 @@ public class PlayerController : TurnCharacter
         _actionMenu.SetActive(show);
     }
 
-    public void ActionPointUsed()
+    public int ActionPointUsed()
     {
-        _currentActionPoints--;
+        return --_currentActionPoints;
     }
 }
