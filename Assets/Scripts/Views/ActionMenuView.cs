@@ -4,88 +4,208 @@ using UnityEngine.UI;
 
 public class ActionMenuView : MonoBehaviour
 {
+    [Header("UI References")]
     [SerializeField]
     private GameObject _inputTextGO;
 
     [SerializeField]
-    private TextMeshProUGUI _actionPonintsText;
+    private TextMeshProUGUI _actionPointsText;
     
     [SerializeField]
     private TMP_InputField _inputField;
     
     [SerializeField]
     private Button _sendButton;
-    
+
     [SerializeField]
-    private PlayerController playerController;
+    private Button _moveButton;
 
-    public void OnMoveButtonClicked()
+    [SerializeField]
+    private Button _talkButton;
+
+    [SerializeField]
+    private Button _giveButton;
+
+    [SerializeField]
+    private Button _hitButton;
+
+    [Header("Controller")]
+    [SerializeField]
+    private PlayerController _playerController;
+
+    private void Start()
     {
-        if (playerController == null)
+        SetupButtonListeners();
+        HideInputField();
+    }
+
+    private void SetupButtonListeners()
+    {
+        if (_moveButton != null)
         {
-            Debug.LogError("PlayerController reference is missing");
+            _moveButton.onClick.AddListener(OnMoveButtonClicked);
+        }
+
+        if (_talkButton != null)
+        {
+            _talkButton.onClick.AddListener(OnTalkButtonClicked);
+        }
+
+        if (_giveButton != null)
+        {
+            _giveButton.onClick.AddListener(OnGiveButtonClicked);
+        }
+
+        if (_hitButton != null)
+        {
+            _hitButton.onClick.AddListener(OnHitButtonClicked);
+        }
+
+        if (_sendButton != null)
+        {
+            _sendButton.onClick.AddListener(OnSendButtonClicked);
+        }
+    }
+
+    private void OnMoveButtonClicked()
+    {
+        if (!ValidateController())
+        {
             return;
         }
 
-        ExecuteMoveAction();
-        _actionPonintsText.text = "Action Points: " + playerController.ActionPointUsed();
+        _playerController.ExecuteMoveAction();
+        UpdateActionPointsDisplay();
     }
 
-    public void OnTalkButtonClicked()
+    private void OnTalkButtonClicked()
     {
-        if (playerController == null)
+        if (!ValidateController())
         {
-            Debug.LogError("PlayerController reference is missing");
             return;
         }
 
-        ExecuteTalkAction();
-        _actionPonintsText.text = "Action Points: " + playerController.ActionPointUsed();
+        ShowInputField();
     }
 
-    public void OnGiveButtonClicked()
+    private void OnGiveButtonClicked()
     {
-        if (playerController == null)
+        if (!ValidateController())
         {
-            Debug.LogError("PlayerController reference is missing");
             return;
         }
 
-        ExecuteGiveAction();
-        _actionPonintsText.text = "Action Points: " + playerController.ActionPointUsed();
-
+        _playerController.ExecuteGiveAction();
+        UpdateActionPointsDisplay();
     }
 
-    public void OnHitButtonClicked()
+    private void OnHitButtonClicked()
     {
-        if (playerController == null)
+        if (!ValidateController())
         {
-            Debug.LogError("PlayerController reference is missing");
             return;
         }
 
-        ExecuteHitAction();
-        _actionPonintsText.text = "Action Points: " + playerController.ActionPointUsed();
-
+        _playerController.ExecuteHitAction();
+        UpdateActionPointsDisplay();
     }
 
-    private void ExecuteMoveAction()
+    private void OnSendButtonClicked()
     {
-        Debug.Log("Move action executed");
+        if (!ValidateController())
+        {
+            return;
+        }
+
+        string message = _inputField.text;
+
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            Debug.LogWarning("Cannot send empty message");
+            return;
+        }
+
+        _playerController.ExecuteTalkAction(message);
+        UpdateActionPointsDisplay();
+        ClearAndHideInput();
     }
 
-    private void ExecuteTalkAction()
+    private bool ValidateController()
     {
-        Debug.Log("Talk action executed");
+        if (_playerController == null)
+        {
+            Debug.LogError("PlayerController reference is missing");
+            return false;
+        }
+
+        return true;
     }
 
-    private void ExecuteGiveAction()
+    private void UpdateActionPointsDisplay()
     {
-        Debug.Log("Give action executed");
+        if (_actionPointsText != null && _playerController != null)
+        {
+            int remainingPoints = _playerController.GetCurrentActionPoints();
+            _actionPointsText.text = $"Action Points: {remainingPoints}";
+        }
     }
 
-    private void ExecuteHitAction()
+    private void ShowInputField()
     {
-        Debug.Log("Hit action executed");
+        if (_inputTextGO != null)
+        {
+            _inputTextGO.SetActive(true);
+        }
+    }
+
+    private void HideInputField()
+    {
+        if (_inputTextGO != null)
+        {
+            _inputTextGO.SetActive(false);
+        }
+    }
+
+    private void ClearAndHideInput()
+    {
+        if (_inputField != null)
+        {
+            _inputField.text = string.Empty;
+        }
+
+        HideInputField();
+    }
+
+    private void OnDestroy()
+    {
+        RemoveButtonListeners();
+    }
+
+    private void RemoveButtonListeners()
+    {
+        if (_moveButton != null)
+        {
+            _moveButton.onClick.RemoveListener(OnMoveButtonClicked);
+        }
+
+        if (_talkButton != null)
+        {
+            _talkButton.onClick.RemoveListener(OnTalkButtonClicked);
+        }
+
+        if (_giveButton != null)
+        {
+            _giveButton.onClick.RemoveListener(OnGiveButtonClicked);
+        }
+
+        if (_hitButton != null)
+        {
+            _hitButton.onClick.RemoveListener(OnHitButtonClicked);
+        }
+
+        if (_sendButton != null)
+        {
+            _sendButton.onClick.RemoveListener(OnSendButtonClicked);
+        }
     }
 }
