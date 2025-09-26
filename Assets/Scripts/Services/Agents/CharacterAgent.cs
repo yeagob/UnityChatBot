@@ -109,7 +109,6 @@ namespace ChatSystem.Characters
             }while (missingPoints > 0);
             
 
-            //Clar all promtps context
             int count = firstAgent.contextPrompts.Count;
             for (int i = count-1; i > 0; i--)
             {
@@ -214,7 +213,6 @@ namespace ChatSystem.Characters
                     });
                 }
 
-                //Sistema de Vision
                 if (_characterElement.FacingDirection == ViewDirection.Left && cell.gridCell.column > _characterElement.GetGridPosition().y ||
                     _characterElement.FacingDirection == ViewDirection.Right && cell.gridCell.column < _characterElement.GetGridPosition().y )
                 {
@@ -303,6 +301,14 @@ namespace ChatSystem.Characters
             promptConversations.content += $@" {remit} Ha dicho: {message}";
 
             agentConfigurations[0].contextPrompts.Add(promptConversations);
+        }
+
+        public void AddContextPrompt(PromptConfig promptConfig)
+        {
+            if (agentConfigurations != null && agentConfigurations.Length > 0)
+            {
+                agentConfigurations[0].contextPrompts.Add(promptConfig);
+            }
         }
 
         private void HideDialog()
