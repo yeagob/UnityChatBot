@@ -74,8 +74,8 @@ public class ActionMenuView : MonoBehaviour
             return;
         }
 
+        HideInputField();
         _playerController.ExecuteMoveAction();
-        UpdateActionPointsDisplay();
     }
 
     private void OnTalkButtonClicked()
@@ -95,6 +95,7 @@ public class ActionMenuView : MonoBehaviour
             return;
         }
 
+        HideInputField();
         _playerController.ExecuteGiveAction();
         UpdateActionPointsDisplay();
     }
@@ -106,8 +107,8 @@ public class ActionMenuView : MonoBehaviour
             return;
         }
 
+        HideInputField();
         _playerController.ExecuteHitAction();
-        UpdateActionPointsDisplay();
     }
 
     private void OnSendButtonClicked()
@@ -130,6 +131,15 @@ public class ActionMenuView : MonoBehaviour
         ClearAndHideInput();
     }
 
+    public void UpdateActionPointsDisplay()
+    {
+        if (_actionPointsText != null && _playerController != null)
+        {
+            int remainingPoints = _playerController.GetCurrentActionPoints();
+            _actionPointsText.text = $"Action Points: {remainingPoints}";
+        }
+    }
+
     private bool ValidateController()
     {
         if (_playerController == null)
@@ -139,15 +149,6 @@ public class ActionMenuView : MonoBehaviour
         }
 
         return true;
-    }
-
-    private void UpdateActionPointsDisplay()
-    {
-        if (_actionPointsText != null && _playerController != null)
-        {
-            int remainingPoints = _playerController.GetCurrentActionPoints();
-            _actionPointsText.text = $"Action Points: {remainingPoints}";
-        }
     }
 
     private void ShowInputField()
