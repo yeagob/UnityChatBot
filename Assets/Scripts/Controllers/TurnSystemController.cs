@@ -33,7 +33,10 @@ public class TurnSystemController : MonoBehaviour
             } 
             
             _turnPanelImage.sprite = _characters[_currentAgentIndex].AvatarImage;
+            
+            //Ejecucion del turno de los agentes LLM
              await _characters[_currentAgentIndex].ExecuteTurn();
+             
             _currentAgentIndex = (_currentAgentIndex+1) % _characters.Count;  
         }
     }

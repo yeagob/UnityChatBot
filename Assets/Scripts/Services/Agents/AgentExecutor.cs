@@ -57,6 +57,7 @@ namespace ChatSystem.Services.Agents
                     List<ToolResponse> toolResponses = await ExecuteToolCallsAsync(
                         llmResponse.toolCalls, agentConfig.maxToolCalls, debugContext);
                     
+                    //Esto llega vacío si no sería redundante
                     foreach (ToolResponse toolResponse in toolResponses)
                     {
                         context.AddToolMessage(toolResponse.content, toolResponse.toolCallId);

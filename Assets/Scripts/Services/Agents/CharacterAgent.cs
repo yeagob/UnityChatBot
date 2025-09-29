@@ -92,6 +92,8 @@ namespace ChatSystem.Characters
 
             do
             {
+                UniversalLogUI.Instance.Log($"\nAction Points: {missingPoints}");
+
                 PromptConfig visionPromptConfig = CreateVisionPromptMap(map);
                 firstAgent.contextPrompts.Add(visionPromptConfig);
                 LLMResponse response = await chatOrchestrator.ProcessUserMessageAsync(_characterElement.Id.ToString(), _initialMessage);

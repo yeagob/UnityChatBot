@@ -61,6 +61,7 @@ namespace ChatSystem.Services.Orchestrators
                     {
                         agentResponses.Add(response);
                         
+                        //Si response.toolResponses no llegara vacío, esto sería redundante
                         if (response.toolCalls != null && response.toolCalls.Count > 0)
                         {
                             context.AddAssistantMessage(response.content);

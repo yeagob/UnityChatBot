@@ -97,7 +97,7 @@ public class ActionMenuView : MonoBehaviour
 
         HideInputField();
         _playerController.ExecuteGiveAction();
-        UpdateActionPointsDisplay();
+        UpdateActionPoints();
     }
 
     private void OnHitButtonClicked()
@@ -127,11 +127,11 @@ public class ActionMenuView : MonoBehaviour
         }
 
         _playerController.ExecuteTalkAction(message);
-        UpdateActionPointsDisplay();
+        UpdateActionPoints();
         ClearAndHideInput();
     }
 
-    public void UpdateActionPointsDisplay()
+    public void UpdateActionPoints()
     {
         if (_actionPointsText != null && _playerController != null)
         {

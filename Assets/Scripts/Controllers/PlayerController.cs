@@ -8,6 +8,7 @@ using MapSystem.Elements;
 using PlayerSystem.Configuration;
 using PlayerSystem.Enums;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerController : TurnCharacter
@@ -34,7 +35,7 @@ public class PlayerController : TurnCharacter
 
     [Header("UI References")]
     [SerializeField]
-    private GameObject _actionMenu;
+    private ActionMenuView _actionMenu;
     
     [SerializeField] 
     private TextMeshProUGUI _dialogText ;
@@ -304,11 +305,12 @@ public class PlayerController : TurnCharacter
     private void ConsumeActionPoint()
     {
          _currentActionPoints--;
+         _actionMenu.UpdateActionPoints();
     }
 
     private void ShowActions(bool show)
     {
-        _actionMenu.SetActive(show);
+        _actionMenu.gameObject.SetActive(show);
     }
 
     private void BroadcastMessageToNearbyCharacters(string message)
