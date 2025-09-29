@@ -8,17 +8,13 @@ namespace MapSystem.Elements
     {
         [Header("Item Properties")]
         [SerializeField] private bool isCollectable = true;
-        [SerializeField] private bool isStackable = false;
-        [SerializeField] private int stackSize = 1;
-        [SerializeField] private float itemValue = 1.0f;
+        [SerializeField] private int pickupRange = 1;
         
         [Header("Item Type")]
         [SerializeField] private ItemType itemType = ItemType.Apple;
         
         public bool IsCollectable => isCollectable;
-        public bool IsStackable => isStackable;
-        public int StackSize => stackSize;
-        public float ItemValue => itemValue;
+        public int PickupRange => pickupRange;
         public ItemType ItemType => itemType;
         
         protected override void InitializeMapElement()
@@ -33,9 +29,7 @@ namespace MapSystem.Elements
             base.CreateDefaultContext();
             
             context.SetProperty("isCollectable", isCollectable);
-            context.SetProperty("isStackable", isStackable);
-            context.SetProperty("stackSize", stackSize);
-            context.SetProperty("itemValue", itemValue);
+            context.SetProperty("pickupRange", pickupRange);
             context.SetProperty("itemType", itemType.ToString());
             
             context.AddInteraction("Item created and initialized");
@@ -81,32 +75,18 @@ namespace MapSystem.Elements
             context.AddInteraction($"Collectable status changed to {isCollectable}");
         }
         
-        public void SetStackable(bool stackable)
-        {
-            isStackable = stackable;
-            context.SetProperty("isStackable", isStackable);
-            context.AddInteraction($"Stackable status changed to {isStackable}");
-        }
-        
-        public void SetStackSize(int newStackSize)
-        {
-            stackSize = Mathf.Max(1, newStackSize);
-            context.SetProperty("stackSize", stackSize);
-            context.AddInteraction($"Stack size changed to {stackSize}");
-        }
-        
-        public void SetItemValue(float newValue)
-        {
-            itemValue = Mathf.Max(0.0f, newValue);
-            context.SetProperty("itemValue", itemValue);
-            context.AddInteraction($"Item value changed to {itemValue}");
-        }
-        
         public void SetItemType(ItemType newItemType)
         {
             itemType = newItemType;
             context.SetProperty("itemType", itemType.ToString());
             context.AddInteraction($"Item type changed to {itemType}");
+        }
+        
+        public void SetPickupRange(int newPickupRange)
+        {
+            pickupRange = Mathf.Max(1, newPickupRange);
+            context.SetProperty("pickupRange", pickupRange);
+            context.AddInteraction($"Pickup range changed to {pickupRange}");
         }
         
         protected override void DrawVisionRadius()
