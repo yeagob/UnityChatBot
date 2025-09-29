@@ -19,6 +19,8 @@ using MapSystem;
 using MapSystem.Elements;
 using MapSystem.Enums;
 using MapSystem.Models.Map;
+using InventorySystem.Services.Tools;
+using InventorySystem.Components;
 using TMPro;
 
 namespace ChatSystem.Characters
@@ -66,12 +68,15 @@ namespace ChatSystem.Characters
         private IAgentExecutor agentExecutor;
         private IPersistenceService persistenceService;
         private IToolSet characterToolSet;
+        private IToolSet inventoryToolSet;
+        private InventoryComponent inventoryComponent;
         
         private Dictionary<ConextType, PromptConfig> _contextPrompt = new Dictionary<ConextType, PromptConfig>(); 
 
         public override void Initialize()
         {
             HideDialog();
+            inventoryComponent = GetComponent<InventoryComponent>();
             CreateCoreServices();
             CreateToolSets();
             CreateServices();
@@ -91,15 +96,26 @@ namespace ChatSystem.Characters
 
             do
             {
-                UniversalLogUI.Instance.Log($"\nAction Points: {missingPoints}");
+                UniversalLogUI.Instance.Log($"\\nAction Points: {missingPoints}");
 
                 PromptConfig visionPromptConfig = CreateVisionPromptMap(map);
                 firstAgent.contextPrompts.Add(visionPromptConfig);
+                
+                if (inventoryComponent != null)
+                {
+                    PromptConfig inventoryPromptConfig = CreateInventoryPromptConfig();
+                    firstAgent.contextPrompts.Add(inventoryPromptConfig);
+                }
+                
                 LLMResponse response = await chatOrchestrator.ProcessUserMessageAsync(_characterElement.Id.ToString(), _initialMessage);
 
                 missingPoints --;
                 
                 firstAgent.contextPrompts.Remove(visionPromptConfig);
+                if (inventoryComponent != null)
+                {
+                    firstAgent.contextPrompts.RemoveAll(p => p.promptId == "inventory-status");
+                }
                 HideDialog();
                 
             }while (missingPoints > 0);
@@ -123,6 +139,12 @@ namespace ChatSystem.Characters
         {
             characterToolSet = new CharacterToolSet(this);
             agentExecutor.RegisterToolSet(characterToolSet);
+            
+            if (_mapSystem != null)
+            {
+                inventoryToolSet = new InventoryToolSet(this, _mapSystem);
+                agentExecutor.RegisterToolSet(inventoryToolSet);
+            }
         }
 
         private void CreateServices()
@@ -162,6 +184,7 @@ namespace ChatSystem.Characters
         {
             public MapCellJson[] cells;
             public MapMetadata metadata;
+            public string currentInventory;
         }
 
         [System.Serializable]
@@ -230,6 +253,8 @@ namespace ChatSystem.Characters
                 totalElements += cell.elements.Count;
             }
 
+            string currentInventoryDesc = inventoryComponent != null ? inventoryComponent.GetInventoryDescription() : "No inventory available";
+
             MapDataJson mapData = new MapDataJson
             {
                 cells = cellsJson.ToArray(),
@@ -239,7 +264,8 @@ namespace ChatSystem.Characters
                     traversableCells = traversableCount,
                     elementsCount = totalElements,
                     generatedAt = DateTime.UtcNow
-                }
+                },
+                currentInventory = currentInventoryDesc
             };
 
             string jsonContent = JsonUtility.ToJson(mapData, true);
@@ -264,12 +290,50 @@ namespace ChatSystem.Characters
             - Los elementos en las celdas tienen tipos: Item, Character, u Obstacle
             - Cada elemento tiene un ID para referencia         
 
+            INVENTARIO ACTUAL:
+            {currentInventoryDesc}
+
+            HERRAMIENTAS DE INVENTARIO DISPONIBLES:
+            - pickup_item(itemId): Recoger un objeto del mapa por su ID
+            - drop_item(itemType, quantity): Soltar un objeto del inventario 
+            - give_item(targetCharacterId, itemType, quantity): Dar un objeto a otro personaje
+
+            TIPOS DE OBJETOS:
+            - Key: Llaves (máximo 1 por stack)
+            - Money: Dinero (máximo 999 por stack)  
+            - Apple: Manzanas (máximo 10 por stack)
+
             DATOS ACTUALES DEL MAPA:
             {jsonContent}
 
             Usa estos datos del mapa para entender las relaciones espaciales, planificar movimientos e interactuar con los elementos por sus IDs.";
 
             return promptConfig;
+        }
+
+        private PromptConfig CreateInventoryPromptConfig()
+        {
+            PromptConfig inventoryPrompt = ScriptableObject.CreateInstance<PromptConfig>();
+            inventoryPrompt.promptId = "inventory-status";
+            inventoryPrompt.promptName = "Estado del Inventario";
+            inventoryPrompt.category = "Inventario";
+            inventoryPrompt.description = "Estado actual del inventario del personaje";
+            inventoryPrompt.enabled = true;
+            inventoryPrompt.priority = 15;
+            inventoryPrompt.version = "1.0";
+
+            string inventoryDesc = inventoryComponent != null ? inventoryComponent.GetInventoryDescription() : "No inventory available";
+            
+            inventoryPrompt.content = $@"INVENTARIO ACTUAL: {inventoryDesc}
+
+            CAPACIDAD: {(inventoryComponent != null ? inventoryComponent.CurrentItemCount : 0)}/{(inventoryComponent != null ? inventoryComponent.MaxInventorySize : 0)} slots utilizados
+
+            Recuerda usar las herramientas de inventario cuando sea apropiado:
+            - pickup_item para recoger objetos cercanos
+            - drop_item para soltar objetos no necesarios
+            - give_item para compartir objetos con otros personajes";
+
+            return inventoryPrompt;
         }
 
         public void Talk(string message)
@@ -314,12 +378,22 @@ namespace ChatSystem.Characters
 
         public bool Teleport(int row, int col)
         {
-            return _characterElement.TryMoveTo(row, col);
+            bool moved = _characterElement.TryMoveTo(row, col);
+            if (moved && inventoryComponent != null)
+            {
+                _characterElement.UpdateInventoryContext();
+            }
+            return moved;
         }
 
         public ViewDirection Flip()
         {
             return _characterElement.Flip();
+        }
+
+        public CharacterElement GetCharacterElement()
+        {
+            return _characterElement;
         }
     }
 }
