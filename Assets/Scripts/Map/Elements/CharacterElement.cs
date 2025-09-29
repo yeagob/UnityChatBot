@@ -136,10 +136,7 @@ namespace MapSystem.Elements
 
             context.AddInteraction($"Moved from {currentCell} to {targetCell}");
             
-            if (inventoryComponent != null)
-            {
-                context.SetProperty("inventoryDescription", inventoryComponent.GetInventoryDescription());
-            }
+            UpdateInventoryContext();
             
             return true;
         }
@@ -252,7 +249,6 @@ namespace MapSystem.Elements
             if (inventoryComponent != null)
             {
                 context.SetProperty("inventoryDescription", inventoryComponent.GetInventoryDescription());
-                context.AddInteraction($"Inventory updated: {inventoryComponent.GetInventoryDescription()}");
             }
         }
         
