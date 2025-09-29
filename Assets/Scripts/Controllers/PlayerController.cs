@@ -1,15 +1,20 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ChatSystem.Characters;
 using ChatSystem.Configuration.ScriptableObjects;
 using Grid;
 using Grid.Models.Grid;
 using MapSystem.Elements;
 using PlayerSystem.Configuration;
 using PlayerSystem.Enums;
+using TMPro;
 using UnityEngine;
 
 public class PlayerController : TurnCharacter
 {
+    [SerializeField]
+    private string _myName = "Santiago";
+    
     [Header("Game References")]
     [SerializeField]
     private CharacterElement _characterElement;
@@ -31,6 +36,12 @@ public class PlayerController : TurnCharacter
     [SerializeField]
     private GameObject _actionMenu;
     
+    [SerializeField] 
+    private TextMeshProUGUI _dialogText ;
+        
+    [SerializeField] 
+    private GameObject _dialogObject;
+    
     private bool _myTurn;
     private int _currentActionPoints;
     private PlayerActionState _currentActionState;
@@ -38,6 +49,8 @@ public class PlayerController : TurnCharacter
     public override void Initialize()
     {
         ShowActions(false);
+        HideDialog();
+        
         _myTurn = false;
         _currentActionState = PlayerActionState.None;
 
@@ -53,6 +66,7 @@ public class PlayerController : TurnCharacter
         
         _myTurn = true;
         ShowActions(true);
+        HideDialog();
 
         while (_currentActionPoints > 0 && _myTurn)
         {
@@ -110,9 +124,20 @@ public class PlayerController : TurnCharacter
 
         BroadcastMessageToNearbyCharacters(message);
         ConsumeActionPoint();
-        Debug.Log($"Player said: {message}");
+        _dialogText.text = message;
+        ShowDialog();
     }
 
+    private void ShowDialog()
+    {
+        _dialogObject.SetActive(true);
+    }
+
+    private void HideDialog()
+    {
+        _dialogObject.SetActive(false);
+    }
+    
     public void ExecuteGiveAction()
     {
         if (!CanExecuteAction())
@@ -156,13 +181,6 @@ public class PlayerController : TurnCharacter
     private void ProcessMovementClick(Vector3 mousePosition)
     {
         GridResult<GridCell> result = _gridSystem.ScreenPointToGridCell(mousePosition);
-
-        if (!result.success)
-        {
-            Debug.LogWarning("Invalid click position");
-            _currentActionState = PlayerActionState.None;
-            return;
-        }
 
         GridCell targetCell = result.value;
         bool moved = _characterElement.TryMoveTo(targetCell.row, targetCell.column);
@@ -285,7 +303,7 @@ public class PlayerController : TurnCharacter
 
     private void ConsumeActionPoint()
     {
-        _currentActionPoints--;
+         _currentActionPoints--;
     }
 
     private void ShowActions(bool show)
@@ -314,14 +332,14 @@ public class PlayerController : TurnCharacter
 
     private void NotifyCharacterOfMessage(CharacterElement character, string message)
     {
-        ChatSystem.Characters.CharacterAgent agent = character.GetComponent<ChatSystem.Characters.CharacterAgent>();
+        CharacterAgent agent = character.GetComponent<CharacterAgent>();
 
         if (agent == null)
         {
             return;
         }
 
-        string senderName = _characterElement.name;
+        string senderName = _myName;
 
         PromptConfig conversationPrompt = ScriptableObject.CreateInstance<PromptConfig>();
         conversationPrompt.promptId = "conversation-message";

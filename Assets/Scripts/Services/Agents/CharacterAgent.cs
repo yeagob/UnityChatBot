@@ -95,16 +95,11 @@ namespace ChatSystem.Characters
                 PromptConfig visionPromptConfig = CreateVisionPromptMap(map);
                 firstAgent.contextPrompts.Add(visionPromptConfig);
                 LLMResponse response = await chatOrchestrator.ProcessUserMessageAsync(_characterElement.Id.ToString(), _initialMessage);
-                
-                foreach (ToolResponse responseToolResponse in response.toolResponses)
-                {
-                    if (responseToolResponse.success)
-                    {
-                        missingPoints--;
-                    }
-                }
+
+                missingPoints --;
                 
                 firstAgent.contextPrompts.Remove(visionPromptConfig);
+                HideDialog();
                 
             }while (missingPoints > 0);
             

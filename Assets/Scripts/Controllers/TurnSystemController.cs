@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using ChatSystem.Characters;
-using ChatSystem.Models.LLM;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class TurnSystemController : MonoBehaviour
 {
+    [FormerlySerializedAs("_agents")]
     [SerializeField]
-    private List<ITurnCharacter> _agents = new List<ITurnCharacter>();
+    private List<TurnCharacter> _characters = new List<TurnCharacter>();
 
     [SerializeField]
     private Image _turnPanelImage;
@@ -17,9 +18,9 @@ public class TurnSystemController : MonoBehaviour
     
     private async void Start()
     {
-        foreach (ITurnCharacter agent in _agents)
+        foreach (TurnCharacter character in _characters)
         {
-            agent.Initialize();
+            character.Initialize();
         }
 
         //INSENSATOS!!! NO HAGAIS ESTO JAMAS!!!
@@ -29,11 +30,11 @@ public class TurnSystemController : MonoBehaviour
             {
                 _currentTurn++;
                 UniversalLogUI.Instance.Log($"\nCurrent turn: {_currentTurn}");
-            }
+            } 
             
-            _turnPanelImage.sprite = _agents[_currentAgentIndex].AvatarImage;
-             _agents[_currentAgentIndex].ExecuteTurn();
-            _currentAgentIndex = (_currentAgentIndex+1) % _agents.Count;  
+            _turnPanelImage.sprite = _characters[_currentAgentIndex].AvatarImage;
+             await _characters[_currentAgentIndex].ExecuteTurn();
+            _currentAgentIndex = (_currentAgentIndex+1) % _characters.Count;  
         }
     }
 

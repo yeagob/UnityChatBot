@@ -96,14 +96,14 @@ namespace ChatSystem.Services.Tools
         
         private async Task<ToolResponse> ExecuteAgentTalkAsync(ToolCall toolCall)
         {
-            await Task.Delay(10);
-            
             try
             {
                 Dictionary<string, object> args = toolCall.arguments;
                 string message = args["message"].ToString();
 
                 _characterAgent.Talk(message);
+                
+                await Task.Delay(3000);
                 
                 UniversalLogUI.Instance.Log($"{_characterAgent.name} Talk");
 
