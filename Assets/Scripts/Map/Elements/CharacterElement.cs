@@ -4,6 +4,7 @@ using MapSystem.Enums;
 using MapSystem.Models.Vision;
 using MapSystem.Vision;
 using MapSystem.Navigation;
+using InventorySystem.Components;
 
 namespace MapSystem.Elements
 {
@@ -29,12 +30,19 @@ namespace MapSystem.Elements
         public int ExperiencePoints => experiencePoints;
         
         private bool isMoving = false;
+        private InventoryComponent inventoryComponent;
         
         protected override void InitializeMapElement()
         {
             elementType = MapElementType.Character;
             visionDistance = 5;
             base.InitializeMapElement();
+            
+            inventoryComponent = GetComponent<InventoryComponent>();
+            if (inventoryComponent == null)
+            {
+                inventoryComponent = gameObject.AddComponent<InventoryComponent>();
+            }
         }
         
         protected override void CreateDefaultContext()
@@ -48,6 +56,11 @@ namespace MapSystem.Elements
             context.SetProperty("healthPoints", healthPoints);
             context.SetProperty("maxHealthPoints", maxHealthPoints);
             context.SetProperty("experiencePoints", experiencePoints);
+            
+            if (inventoryComponent != null)
+            {
+                context.SetProperty("inventoryDescription", inventoryComponent.GetInventoryDescription());
+            }
             
             context.AddInteraction("Character created and initialized");
         }
@@ -122,6 +135,11 @@ namespace MapSystem.Elements
             Debug.Log("Moved to cell");
 
             context.AddInteraction($"Moved from {currentCell} to {targetCell}");
+            
+            if (inventoryComponent != null)
+            {
+                context.SetProperty("inventoryDescription", inventoryComponent.GetInventoryDescription());
+            }
             
             return true;
         }
@@ -227,6 +245,15 @@ namespace MapSystem.Elements
             experiencePoints += experience;
             context.SetProperty("experiencePoints", experiencePoints);
             context.AddInteraction($"Gained {experience} experience (total: {experiencePoints})");
+        }
+        
+        public void UpdateInventoryContext()
+        {
+            if (inventoryComponent != null)
+            {
+                context.SetProperty("inventoryDescription", inventoryComponent.GetInventoryDescription());
+                context.AddInteraction($"Inventory updated: {inventoryComponent.GetInventoryDescription()}");
+            }
         }
         
         protected override void DrawVisionRadius()
