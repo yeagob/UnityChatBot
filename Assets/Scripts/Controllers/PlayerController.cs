@@ -7,7 +7,9 @@ using Grid;
 using Grid.Models.Grid;
 using InventorySystem.Components;
 using InventorySystem.Enums;
+using MapSystem;
 using MapSystem.Elements;
+using MapSystem.Models.Map;
 using PlayerSystem.Configuration;
 using PlayerSystem.Enums;
 using TMPro;
@@ -230,7 +232,7 @@ public class PlayerController : TurnCharacter
             return;
         }
 
-        bool added = _inventoryComponent.AddItem(itemElement.ElementId.ToString(), itemType);
+        bool added = _inventoryComponent.AddItem(itemElement.Id.ToString(), itemType);
 
         if (!added)
         {
@@ -289,7 +291,7 @@ public class PlayerController : TurnCharacter
     private List<ItemType> GetAvailableItemsInCell(GridCell cell)
     {
         List<ItemType> availableItems = new List<ItemType>();
-        MapSystem.Models.MapCell mapCell = _mapSystem.GetMapCell(cell);
+        MapCell mapCell = _mapSystem.GetMapCell(cell);
 
         if (mapCell == null)
         {
@@ -340,7 +342,7 @@ public class PlayerController : TurnCharacter
 
     private ItemElement FindItemInCell(GridCell cell, ItemType itemType)
     {
-        MapSystem.Models.MapCell mapCell = _mapSystem.GetMapCell(cell);
+        MapCell mapCell = _mapSystem.GetMapCell(cell);
 
         if (mapCell == null)
         {
@@ -385,7 +387,7 @@ public class PlayerController : TurnCharacter
         }
 
         itemElement.SetItemType(itemType);
-        _mapSystem.RegisterElement(itemElement, cell);
+        _mapSystem.RegisterElement(itemElement as MapElement);
     }
 
     private void ProcessMouseClick()
@@ -489,13 +491,6 @@ public class PlayerController : TurnCharacter
         if (targetCharacter == _characterElement)
         {
             Debug.LogWarning("Cannot give item to yourself");
-            _currentActionState = PlayerActionState.None;
-            return;
-        }
-
-        if (!IsTargetInRange(targetCharacter, PlayerActionConfiguration.GiveRange))
-        {
-            Debug.LogWarning("Target is out of range");
             _currentActionState = PlayerActionState.None;
             return;
         }
