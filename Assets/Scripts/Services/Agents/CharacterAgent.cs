@@ -295,13 +295,13 @@ namespace ChatSystem.Characters
 
             HERRAMIENTAS DE INVENTARIO DISPONIBLES:
             - pickup_item(itemId): Recoger un objeto del mapa por su ID
-            - drop_item(itemType, quantity): Soltar un objeto del inventario 
-            - give_item(targetCharacterId, itemType, quantity): Dar un objeto a otro personaje
+            - drop_item(itemType): Soltar un objeto del inventario 
+            - give_item(targetCharacterId, itemType): Dar un objeto a otro personaje
 
             TIPOS DE OBJETOS:
-            - Key: Llaves (máximo 1 por stack)
-            - Money: Dinero (máximo 999 por stack)  
-            - Apple: Manzanas (máximo 10 por stack)
+            - Key: Llaves (solo 1 por slot)
+            - Money: Dinero (solo 1 por slot)  
+            - Apple: Manzanas (solo 1 por slot)
 
             DATOS ACTUALES DEL MAPA:
             {jsonContent}
@@ -326,7 +326,10 @@ namespace ChatSystem.Characters
             
             inventoryPrompt.content = $@"INVENTARIO ACTUAL: {inventoryDesc}
 
-            CAPACIDAD: {(inventoryComponent != null ? inventoryComponent.CurrentItemCount : 0)}/{(inventoryComponent != null ? inventoryComponent.MaxInventorySize : 0)} slots utilizados
+            Tienes 3 slots (uno por cada tipo de objeto):
+            - Key slot: {(inventoryComponent.HasItem(InventorySystem.Enums.ItemType.Key) ? "Ocupado" : "Libre")}
+            - Money slot: {(inventoryComponent.HasItem(InventorySystem.Enums.ItemType.Money) ? "Ocupado" : "Libre")}
+            - Apple slot: {(inventoryComponent.HasItem(InventorySystem.Enums.ItemType.Apple) ? "Ocupado" : "Libre")}
 
             Recuerda usar las herramientas de inventario cuando sea apropiado:
             - pickup_item para recoger objetos cercanos
