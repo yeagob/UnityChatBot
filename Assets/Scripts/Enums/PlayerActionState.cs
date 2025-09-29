@@ -4,6 +4,7 @@ namespace PlayerSystem.Enums
     {
         None,
         WaitingForMoveTarget,
-        WaitingForAttackTarget
+        WaitingForAttackTarget,
+        WaitingForGiveTarget
     }
 }
