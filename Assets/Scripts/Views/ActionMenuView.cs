@@ -28,6 +28,12 @@ public class ActionMenuView : MonoBehaviour
 
     [SerializeField]
     private Button _hitButton;
+    
+    [SerializeField]
+    private Button _takeButton;
+
+    [SerializeField]
+    private Button _releaseButton;
 
     [Header("Controller")]
     [SerializeField]

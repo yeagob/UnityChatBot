@@ -8,13 +8,16 @@ using MapSystem.Elements;
 using PlayerSystem.Configuration;
 using PlayerSystem.Enums;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerController : TurnCharacter
 {
     [SerializeField]
     private string _myName = "Santiago";
+    
+    [Header("Turn Configuration")]
+    [SerializeField]
+    private int _actionPoints = 3;
     
     [Header("Game References")]
     [SerializeField]
@@ -28,10 +31,6 @@ public class PlayerController : TurnCharacter
 
     [SerializeField]
     private Camera _mainCamera;
-
-    [Header("Turn Configuration")]
-    [SerializeField]
-    private int _actionPoints = 3;
 
     [Header("UI References")]
     [SerializeField]

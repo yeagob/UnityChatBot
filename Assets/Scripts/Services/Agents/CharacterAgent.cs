@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ChatSystem.Configuration.ScriptableObjects;
 using ChatSystem.Models.LLM;
-using ChatSystem.Models.Tools;
 using UnityEngine;
 using ChatSystem.Services.Orchestrators.Interfaces;
 using ChatSystem.Services.Context.Interfaces;
