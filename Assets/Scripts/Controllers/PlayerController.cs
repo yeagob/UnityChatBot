@@ -1,9 +1,12 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using ChatSystem.Characters;
 using ChatSystem.Configuration.ScriptableObjects;
 using Grid;
 using Grid.Models.Grid;
+using InventorySystem.Components;
+using InventorySystem.Enums;
 using MapSystem.Elements;
 using PlayerSystem.Configuration;
 using PlayerSystem.Enums;
@@ -37,7 +40,7 @@ public class PlayerController : TurnCharacter
     private ActionMenuView _actionMenu;
     
     [SerializeField] 
-    private TextMeshProUGUI _dialogText ;
+    private TextMeshProUGUI _dialogText;
         
     [SerializeField] 
     private GameObject _dialogObject;
@@ -45,6 +48,8 @@ public class PlayerController : TurnCharacter
     private bool _myTurn;
     private int _currentActionPoints;
     private PlayerActionState _currentActionState;
+    private ItemType _selectedItemTypeForGive;
+    private InventoryComponent _inventoryComponent;
 
     public override void Initialize()
     {
@@ -57,6 +62,13 @@ public class PlayerController : TurnCharacter
         if (_mainCamera == null)
         {
             _mainCamera = Camera.main;
+        }
+
+        _inventoryComponent = _characterElement.GetComponent<InventoryComponent>();
+
+        if (_inventoryComponent == null)
+        {
+            Debug.LogError("InventoryComponent not found on CharacterElement");
         }
     }
 
@@ -128,16 +140,43 @@ public class PlayerController : TurnCharacter
         ShowDialog();
     }
 
-    private void ShowDialog()
+    public void ExecutePickupAction()
     {
-        _dialogObject.SetActive(true);
+        if (!CanExecuteAction())
+        {
+            return;
+        }
+
+        GridCell currentCell = _characterElement.CurrentGridCell;
+        List<ItemType> availableItems = GetAvailableItemsInCell(currentCell);
+
+        if (availableItems.Count == 0)
+        {
+            Debug.LogWarning("No items available to pickup in this cell");
+            return;
+        }
+
+        _actionMenu.ShowItemsPanel(ItemPanelMode.Pickup, availableItems, OnPickupItemSelected);
     }
 
-    private void HideDialog()
+    public void ExecuteDropAction()
     {
-        _dialogObject.SetActive(false);
+        if (!CanExecuteAction())
+        {
+            return;
+        }
+
+        List<ItemType> inventoryItems = GetInventoryItems();
+
+        if (inventoryItems.Count == 0)
+        {
+            Debug.LogWarning("No items in inventory to drop");
+            return;
+        }
+
+        _actionMenu.ShowItemsPanel(ItemPanelMode.Drop, inventoryItems, OnDropItemSelected);
     }
-    
+
     public void ExecuteGiveAction()
     {
         if (!CanExecuteAction())
@@ -145,7 +184,15 @@ public class PlayerController : TurnCharacter
             return;
         }
 
-        Debug.Log("Give action - not implemented yet");
+        List<ItemType> inventoryItems = GetInventoryItems();
+
+        if (inventoryItems.Count == 0)
+        {
+            Debug.LogWarning("No items in inventory to give");
+            return;
+        }
+
+        _actionMenu.ShowItemsPanel(ItemPanelMode.Give, inventoryItems, OnGiveItemSelected);
     }
 
     public void ExecuteHitAction()
@@ -164,6 +211,183 @@ public class PlayerController : TurnCharacter
         return _currentActionPoints;
     }
 
+    private void OnPickupItemSelected(ItemType itemType)
+    {
+        _actionMenu.HideItemsPanel();
+
+        if (_inventoryComponent.HasItem(itemType))
+        {
+            Debug.LogWarning($"Cannot pickup {itemType}: already have one in inventory");
+            return;
+        }
+
+        GridCell currentCell = _characterElement.CurrentGridCell;
+        ItemElement itemElement = FindItemInCell(currentCell, itemType);
+
+        if (itemElement == null)
+        {
+            Debug.LogWarning($"Item {itemType} not found in current cell");
+            return;
+        }
+
+        bool added = _inventoryComponent.AddItem(itemElement.ElementId.ToString(), itemType);
+
+        if (!added)
+        {
+            Debug.LogWarning($"Failed to add {itemType} to inventory");
+            return;
+        }
+
+        itemElement.gameObject.SetActive(false);
+        _mapSystem.UnregisterElement(itemElement);
+
+        ConsumeActionPoint();
+        Debug.Log($"Picked up {itemType}");
+    }
+
+    private void OnDropItemSelected(ItemType itemType)
+    {
+        _actionMenu.HideItemsPanel();
+
+        if (!_inventoryComponent.HasItem(itemType))
+        {
+            Debug.LogWarning($"Cannot drop {itemType}: not in inventory");
+            return;
+        }
+
+        InventorySystem.Models.InventoryItem item = _inventoryComponent.GetItem(itemType);
+        bool removed = _inventoryComponent.RemoveItem(itemType);
+
+        if (!removed)
+        {
+            Debug.LogWarning($"Failed to remove {itemType} from inventory");
+            return;
+        }
+
+        GridCell currentCell = _characterElement.CurrentGridCell;
+        CreateItemInCell(currentCell, item.itemId, itemType);
+
+        ConsumeActionPoint();
+        Debug.Log($"Dropped {itemType}");
+    }
+
+    private void OnGiveItemSelected(ItemType itemType)
+    {
+        _actionMenu.HideItemsPanel();
+
+        if (!_inventoryComponent.HasItem(itemType))
+        {
+            Debug.LogWarning($"Cannot give {itemType}: not in inventory");
+            return;
+        }
+
+        _selectedItemTypeForGive = itemType;
+        _currentActionState = PlayerActionState.WaitingForGiveTarget;
+        Debug.Log($"Click on a character to give {itemType}");
+    }
+
+    private List<ItemType> GetAvailableItemsInCell(GridCell cell)
+    {
+        List<ItemType> availableItems = new List<ItemType>();
+        MapSystem.Models.MapCell mapCell = _mapSystem.GetMapCell(cell);
+
+        if (mapCell == null)
+        {
+            return availableItems;
+        }
+
+        MapElement[] elements = mapCell.GetElementsByType(MapSystem.Enums.MapElementType.Item);
+
+        foreach (MapElement element in elements)
+        {
+            ItemElement itemElement = element as ItemElement;
+
+            if (itemElement == null)
+            {
+                continue;
+            }
+
+            if (!_inventoryComponent.HasItem(itemElement.ItemType))
+            {
+                availableItems.Add(itemElement.ItemType);
+            }
+        }
+
+        return availableItems;
+    }
+
+    private List<ItemType> GetInventoryItems()
+    {
+        List<ItemType> items = new List<ItemType>();
+
+        if (_inventoryComponent.HasItem(ItemType.Key))
+        {
+            items.Add(ItemType.Key);
+        }
+
+        if (_inventoryComponent.HasItem(ItemType.Money))
+        {
+            items.Add(ItemType.Money);
+        }
+
+        if (_inventoryComponent.HasItem(ItemType.Apple))
+        {
+            items.Add(ItemType.Apple);
+        }
+
+        return items;
+    }
+
+    private ItemElement FindItemInCell(GridCell cell, ItemType itemType)
+    {
+        MapSystem.Models.MapCell mapCell = _mapSystem.GetMapCell(cell);
+
+        if (mapCell == null)
+        {
+            return null;
+        }
+
+        MapElement[] elements = mapCell.GetElementsByType(MapSystem.Enums.MapElementType.Item);
+
+        foreach (MapElement element in elements)
+        {
+            ItemElement itemElement = element as ItemElement;
+
+            if (itemElement != null && itemElement.ItemType == itemType)
+            {
+                return itemElement;
+            }
+        }
+
+        return null;
+    }
+
+    private void CreateItemInCell(GridCell cell, string itemId, ItemType itemType)
+    {
+        GameObject itemPrefab = Resources.Load<GameObject>("Prefabs/ItemElement");
+
+        if (itemPrefab == null)
+        {
+            Debug.LogError("ItemElement prefab not found in Resources/Prefabs");
+            return;
+        }
+
+        Vector3 cellWorldPosition = _gridSystem.GetCellCenterWorldPosition(cell);
+        GameObject itemObject = Instantiate(itemPrefab, cellWorldPosition, Quaternion.identity);
+        
+        ItemElement itemElement = itemObject.GetComponent<ItemElement>();
+
+        if (itemElement == null)
+        {
+            Destroy(itemObject);
+            Debug.LogError("ItemElement component not found on instantiated prefab");
+            return;
+        }
+
+        itemElement.SetItemType(itemType);
+        _mapSystem.RegisterElement(itemElement, cell);
+    }
+
     private void ProcessMouseClick()
     {
         Vector3 mousePosition = Input.mousePosition;
@@ -175,6 +399,10 @@ public class PlayerController : TurnCharacter
         else if (_currentActionState == PlayerActionState.WaitingForAttackTarget)
         {
             ProcessAttackClick(mousePosition);
+        }
+        else if (_currentActionState == PlayerActionState.WaitingForGiveTarget)
+        {
+            ProcessGiveTargetClick(mousePosition);
         }
     }
 
@@ -226,7 +454,7 @@ public class PlayerController : TurnCharacter
             return;
         }
 
-        if (!IsTargetInRange(targetCharacter))
+        if (!IsTargetInRange(targetCharacter, PlayerActionConfiguration.AttackRange))
         {
             Debug.LogWarning("Target is out of attack range");
             _currentActionState = PlayerActionState.None;
@@ -234,6 +462,45 @@ public class PlayerController : TurnCharacter
         }
 
         ExecuteAttack(targetCharacter);
+        _currentActionState = PlayerActionState.None;
+    }
+
+    private void ProcessGiveTargetClick(Vector3 mousePosition)
+    {
+        Ray ray = _mainCamera.ScreenPointToRay(mousePosition);
+        RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction);
+
+        if (hit.collider == null)
+        {
+            Debug.LogWarning("No target found");
+            _currentActionState = PlayerActionState.None;
+            return;
+        }
+
+        CharacterElement targetCharacter = hit.collider.GetComponent<CharacterElement>();
+
+        if (targetCharacter == null)
+        {
+            Debug.LogWarning("Clicked object is not a character");
+            _currentActionState = PlayerActionState.None;
+            return;
+        }
+
+        if (targetCharacter == _characterElement)
+        {
+            Debug.LogWarning("Cannot give item to yourself");
+            _currentActionState = PlayerActionState.None;
+            return;
+        }
+
+        if (!IsTargetInRange(targetCharacter, PlayerActionConfiguration.GiveRange))
+        {
+            Debug.LogWarning("Target is out of range");
+            _currentActionState = PlayerActionState.None;
+            return;
+        }
+
+        ExecuteGiveItem(targetCharacter);
         _currentActionState = PlayerActionState.None;
     }
 
@@ -249,18 +516,56 @@ public class PlayerController : TurnCharacter
         Debug.Log($"Player attacked {target.name} for {damage} damage");
     }
 
-    private bool IsTargetInRange(CharacterElement target)
+    private void ExecuteGiveItem(CharacterElement target)
+    {
+        InventoryComponent targetInventory = target.GetComponent<InventoryComponent>();
+
+        if (targetInventory == null)
+        {
+            Debug.LogWarning("Target character has no inventory");
+            return;
+        }
+
+        if (targetInventory.HasItem(_selectedItemTypeForGive))
+        {
+            Debug.LogWarning($"Target already has {_selectedItemTypeForGive} in inventory");
+            return;
+        }
+
+        InventorySystem.Models.InventoryItem item = _inventoryComponent.GetItem(_selectedItemTypeForGive);
+        bool removed = _inventoryComponent.RemoveItem(_selectedItemTypeForGive);
+
+        if (!removed)
+        {
+            Debug.LogWarning($"Failed to remove {_selectedItemTypeForGive} from inventory");
+            return;
+        }
+
+        bool added = targetInventory.AddItem(item.itemId, _selectedItemTypeForGive);
+
+        if (!added)
+        {
+            _inventoryComponent.AddItem(item.itemId, _selectedItemTypeForGive);
+            Debug.LogWarning($"Failed to add {_selectedItemTypeForGive} to target inventory - rolled back");
+            return;
+        }
+
+        ConsumeActionPoint();
+        Debug.Log($"Gave {_selectedItemTypeForGive} to {target.name}");
+    }
+
+    private bool IsTargetInRange(CharacterElement target, int range)
     {
         GridCell currentCell = _characterElement.CurrentGridCell;
         GridCell targetCell = target.CurrentGridCell;
 
         int distance = _mapSystem.GetGridDistanceBetweenElements(_characterElement, target);
-        return distance <= PlayerActionConfiguration.AttackRange;
+        return distance <= range;
     }
 
     private void NotifyCharacterOfAttack(CharacterElement target, int damage)
     {
-        ChatSystem.Characters.CharacterAgent agent = target.GetComponent<ChatSystem.Characters.CharacterAgent>();
+        CharacterAgent agent = target.GetComponent<CharacterAgent>();
 
         if (agent == null)
         {
@@ -310,6 +615,16 @@ public class PlayerController : TurnCharacter
     private void ShowActions(bool show)
     {
         _actionMenu.gameObject.SetActive(show);
+    }
+
+    private void ShowDialog()
+    {
+        _dialogObject.SetActive(true);
+    }
+
+    private void HideDialog()
+    {
+        _dialogObject.SetActive(false);
     }
 
     private void BroadcastMessageToNearbyCharacters(string message)
