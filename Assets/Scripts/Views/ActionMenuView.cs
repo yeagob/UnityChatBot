@@ -35,6 +35,9 @@ public class ActionMenuView : MonoBehaviour
     [SerializeField]
     private Button _releaseButton;
 
+    [SerializeField]
+    private ItemsPanelView _itemsPanel;
+
     [Header("Controller")]
     [SerializeField]
     private PlayerController _playerController;
@@ -65,6 +68,16 @@ public class ActionMenuView : MonoBehaviour
         if (_hitButton != null)
         {
             _hitButton.onClick.AddListener(OnHitButtonClicked);
+        }
+
+        if (_takeButton != null)
+        {
+            _takeButton.onClick.AddListener(OnTakeButtonClicked);
+        }
+
+        if (_releaseButton != null)
+        {
+            _releaseButton.onClick.AddListener(OnReleaseButtonClicked);
         }
 
         if (_sendButton != null)
@@ -103,7 +116,6 @@ public class ActionMenuView : MonoBehaviour
 
         HideInputField();
         _playerController.ExecuteGiveAction();
-        UpdateActionPoints();
     }
 
     private void OnHitButtonClicked()
@@ -115,6 +127,28 @@ public class ActionMenuView : MonoBehaviour
 
         HideInputField();
         _playerController.ExecuteHitAction();
+    }
+
+    private void OnTakeButtonClicked()
+    {
+        if (!ValidateController())
+        {
+            return;
+        }
+
+        HideInputField();
+        _playerController.ExecutePickupAction();
+    }
+
+    private void OnReleaseButtonClicked()
+    {
+        if (!ValidateController())
+        {
+            return;
+        }
+
+        HideInputField();
+        _playerController.ExecuteDropAction();
     }
 
     private void OnSendButtonClicked()
@@ -135,6 +169,22 @@ public class ActionMenuView : MonoBehaviour
         _playerController.ExecuteTalkAction(message);
         UpdateActionPoints();
         ClearAndHideInput();
+    }
+
+    public void ShowItemsPanel(InventorySystem.Enums.ItemPanelMode mode, System.Collections.Generic.List<InventorySystem.Enums.ItemType> availableItems, System.Action<InventorySystem.Enums.ItemType> onItemSelected)
+    {
+        if (_itemsPanel != null)
+        {
+            _itemsPanel.ShowPanel(mode, availableItems, onItemSelected);
+        }
+    }
+
+    public void HideItemsPanel()
+    {
+        if (_itemsPanel != null)
+        {
+            _itemsPanel.Hide();
+        }
     }
 
     public void UpdateActionPoints()
@@ -208,6 +258,16 @@ public class ActionMenuView : MonoBehaviour
         if (_hitButton != null)
         {
             _hitButton.onClick.RemoveListener(OnHitButtonClicked);
+        }
+
+        if (_takeButton != null)
+        {
+            _takeButton.onClick.RemoveListener(OnTakeButtonClicked);
+        }
+
+        if (_releaseButton != null)
+        {
+            _releaseButton.onClick.RemoveListener(OnReleaseButtonClicked);
         }
 
         if (_sendButton != null)
