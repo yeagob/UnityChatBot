@@ -1,5 +1,6 @@
 using UnityEngine;
 using MapSystem.Enums;
+using InventorySystem.Enums;
 
 namespace MapSystem.Elements
 {
@@ -11,10 +12,14 @@ namespace MapSystem.Elements
         [SerializeField] private int stackSize = 1;
         [SerializeField] private float itemValue = 1.0f;
         
+        [Header("Item Type")]
+        [SerializeField] private ItemType itemType = ItemType.Apple;
+        
         public bool IsCollectable => isCollectable;
         public bool IsStackable => isStackable;
         public int StackSize => stackSize;
         public float ItemValue => itemValue;
+        public ItemType ItemType => itemType;
         
         protected override void InitializeMapElement()
         {
@@ -31,6 +36,7 @@ namespace MapSystem.Elements
             context.SetProperty("isStackable", isStackable);
             context.SetProperty("stackSize", stackSize);
             context.SetProperty("itemValue", itemValue);
+            context.SetProperty("itemType", itemType.ToString());
             
             context.AddInteraction("Item created and initialized");
         }
@@ -96,14 +102,37 @@ namespace MapSystem.Elements
             context.AddInteraction($"Item value changed to {itemValue}");
         }
         
+        public void SetItemType(ItemType newItemType)
+        {
+            itemType = newItemType;
+            context.SetProperty("itemType", itemType.ToString());
+            context.AddInteraction($"Item type changed to {itemType}");
+        }
+        
         protected override void DrawVisionRadius()
         {
             base.DrawVisionRadius();
             
             if (isCollectable)
             {
-                Gizmos.color = Color.green;
+                Color itemColor = GetItemTypeColor();
+                Gizmos.color = itemColor;
                 Gizmos.DrawWireCube(transform.position, Vector3.one * 0.8f);
+            }
+        }
+        
+        private Color GetItemTypeColor()
+        {
+            switch (itemType)
+            {
+                case ItemType.Key:
+                    return Color.yellow;
+                case ItemType.Money:
+                    return Color.green;
+                case ItemType.Apple:
+                    return Color.red;
+                default:
+                    return Color.white;
             }
         }
     }
