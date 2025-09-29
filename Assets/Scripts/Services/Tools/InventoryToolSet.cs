@@ -7,7 +7,6 @@ using ChatSystem.Services.Logging;
 using ChatSystem.Services.Tools.Interfaces;
 using ChatSystem.Enums;
 using InventorySystem.Components;
-using InventorySystem.Configuration;
 using InventorySystem.Enums;
 using MapSystem.Enums;
 using MapSystem.Elements;
@@ -100,26 +99,26 @@ namespace InventorySystem.Services.Tools
                     return CreateErrorResponse(toolCall.id, $"Item with id {itemId} not found");
                 }
 
-                float distance = _mapSystem.GetDistanceBetweenElements(_characterAgent.GetCharacterElement(), targetElement);
-                if (distance > InventoryConfiguration.PickupRange)
-                {
-                    return CreateErrorResponse(toolCall.id, $"Item {itemId} is out of pickup range");
-                }
-
                 ItemElement itemElement = targetElement as ItemElement;
                 if (itemElement == null || !itemElement.IsCollectable)
                 {
                     return CreateErrorResponse(toolCall.id, $"Item {itemId} is not collectable");
                 }
 
-                ItemType itemType = itemElement.ItemType;
-                
-                if (!_inventoryComponent.CanAddItem(itemType, 1))
+                float distance = _mapSystem.GetDistanceBetweenElements(_characterAgent.GetCharacterElement(), targetElement);
+                if (distance > itemElement.PickupRange)
                 {
-                    return CreateErrorResponse(toolCall.id, $"Cannot add {itemType} to inventory (full or stack limit reached)");
+                    return CreateErrorResponse(toolCall.id, $"Item {itemId} is out of pickup range");
                 }
 
-                bool added = _inventoryComponent.AddItem(itemId, itemType, 1, itemElement.ItemValue);
+                ItemType itemType = itemElement.ItemType;
+                
+                if (_inventoryComponent.HasItem(itemType))
+                {
+                    return CreateErrorResponse(toolCall.id, $"Already have {itemType} in inventory");
+                }
+
+                bool added = _inventoryComponent.AddItem(itemId, itemType);
                 
                 if (added)
                 {
@@ -156,25 +155,16 @@ namespace InventorySystem.Services.Tools
                     return CreateErrorResponse(toolCall.id, $"Invalid item type: {itemTypeString}");
                 }
 
-                int quantity = 1;
-                if (args.ContainsKey("quantity"))
+                if (!_inventoryComponent.HasItem(itemType))
                 {
-                    if (int.TryParse(args["quantity"].ToString(), out int parsedQuantity))
-                    {
-                        quantity = parsedQuantity;
-                    }
+                    return CreateErrorResponse(toolCall.id, $"No {itemType} in inventory");
                 }
 
-                if (!_inventoryComponent.HasItem(itemType, quantity))
-                {
-                    return CreateErrorResponse(toolCall.id, $"Not enough {itemType} in inventory (have: {_inventoryComponent.GetItemCount(itemType)}, need: {quantity})");
-                }
-
-                bool removed = _inventoryComponent.RemoveItem(itemType, quantity);
+                bool removed = _inventoryComponent.RemoveItem(itemType);
                 
                 if (removed)
                 {
-                    return CreateSuccessResponse(toolCall.id, $"Successfully dropped {quantity} {itemType} from inventory");
+                    return CreateSuccessResponse(toolCall.id, $"Successfully dropped {itemType} from inventory");
                 }
 
                 return CreateErrorResponse(toolCall.id, $"Failed to remove {itemType} from inventory");
@@ -205,15 +195,6 @@ namespace InventorySystem.Services.Tools
                     return CreateErrorResponse(toolCall.id, $"Invalid item type: {itemTypeString}");
                 }
 
-                int quantity = 1;
-                if (args.ContainsKey("quantity"))
-                {
-                    if (int.TryParse(args["quantity"].ToString(), out int parsedQuantity))
-                    {
-                        quantity = parsedQuantity;
-                    }
-                }
-
                 MapElement targetElement = _mapSystem.GetElementById(targetCharacterId);
                 if (targetElement == null || targetElement.ElementType != MapElementType.Character)
                 {
@@ -229,33 +210,33 @@ namespace InventorySystem.Services.Tools
                 }
 
                 float distance = _mapSystem.GetDistanceBetweenElements(_characterAgent.GetCharacterElement(), targetCharacter);
-                if (distance > InventoryConfiguration.GiveRange)
+                if (distance > 1)
                 {
                     return CreateErrorResponse(toolCall.id, $"Target character is out of range (distance: {distance:F1})");
                 }
 
-                if (!_inventoryComponent.HasItem(itemType, quantity))
+                if (!_inventoryComponent.HasItem(itemType))
                 {
-                    return CreateErrorResponse(toolCall.id, $"Not enough {itemType} in inventory (have: {_inventoryComponent.GetItemCount(itemType)}, need: {quantity})");
+                    return CreateErrorResponse(toolCall.id, $"No {itemType} in inventory");
                 }
 
-                if (!targetInventory.CanAddItem(itemType, quantity))
+                if (targetInventory.HasItem(itemType))
                 {
-                    return CreateErrorResponse(toolCall.id, $"Target character cannot receive {itemType} (inventory full or stack limit)");
+                    return CreateErrorResponse(toolCall.id, $"Target character already has {itemType}");
                 }
 
                 Models.InventoryItem item = _inventoryComponent.GetItem(itemType);
-                bool removed = _inventoryComponent.RemoveItem(itemType, quantity);
-                bool added = targetInventory.AddItem(item.itemId, itemType, quantity, item.itemValue);
+                bool removed = _inventoryComponent.RemoveItem(itemType);
+                bool added = targetInventory.AddItem(item.itemId, itemType);
                 
                 if (removed && added)
                 {
-                    return CreateSuccessResponse(toolCall.id, $"Successfully gave {quantity} {itemType} to {targetCharacter.name}");
+                    return CreateSuccessResponse(toolCall.id, $"Successfully gave {itemType} to {targetCharacter.name}");
                 }
 
                 if (removed && !added)
                 {
-                    _inventoryComponent.AddItem(item.itemId, itemType, quantity, item.itemValue);
+                    _inventoryComponent.AddItem(item.itemId, itemType);
                 }
 
                 return CreateErrorResponse(toolCall.id, $"Failed to transfer {itemType} to target character");
