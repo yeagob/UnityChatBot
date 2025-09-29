@@ -45,26 +45,6 @@ namespace MapSystem.Elements
             }
         }
         
-        protected override void CreateDefaultContext()
-        {
-            base.CreateDefaultContext();
-            
-            context.SetProperty("movementSpeed", movementSpeed);
-            context.SetProperty("canMove", canMove);
-            context.SetProperty("isPlayerControlled", isPlayerControlled);
-            context.SetProperty("facingDirection", facingDirection);
-            context.SetProperty("healthPoints", healthPoints);
-            context.SetProperty("maxHealthPoints", maxHealthPoints);
-            context.SetProperty("experiencePoints", experiencePoints);
-            
-            if (inventoryComponent != null)
-            {
-                context.SetProperty("inventoryDescription", inventoryComponent.GetInventoryDescription());
-            }
-            
-            context.AddInteraction("Character created and initialized");
-        }
-        
         public override void OnElementInteraction(MapElement interactor)
         {
             if (interactor == null)
@@ -143,7 +123,6 @@ namespace MapSystem.Elements
         
         private void UpdateFacingDirection(GridCell fromCell, GridCell toCell)
         {
-            int rowDelta = toCell.row - fromCell.row;
             int columnDelta = toCell.column - fromCell.column;
             
             if (columnDelta != 0)

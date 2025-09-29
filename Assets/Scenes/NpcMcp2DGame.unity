@@ -149,9 +149,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _characters:
-  - {fileID: 1974394610}
-  - {fileID: 1657247703}
   - {fileID: 6984647213550770965}
+  - {fileID: 1657247703}
+  - {fileID: 1974394610}
   _turnPanelImage: {fileID: 998998132}
 --- !u!4 &94741122
 Transform:
@@ -539,9 +539,8 @@ MonoBehaviour:
     interactionHistory: []
   _mapSystem: {fileID: 0}
   isCollectable: 1
-  isStackable: 0
-  stackSize: 1
-  itemValue: 1
+  pickupRange: 1
+  itemType: 2
 --- !u!1 &156320388
 GameObject:
   m_ObjectHideFlags: 0
@@ -896,9 +895,8 @@ MonoBehaviour:
     interactionHistory: []
   _mapSystem: {fileID: 0}
   isCollectable: 1
-  isStackable: 0
-  stackSize: 1
-  itemValue: 1
+  pickupRange: 1
+  itemType: 2
 --- !u!1 &472589559
 GameObject:
   m_ObjectHideFlags: 0
@@ -1705,9 +1703,8 @@ MonoBehaviour:
     interactionHistory: []
   _mapSystem: {fileID: 0}
   isCollectable: 1
-  isStackable: 0
-  stackSize: 1
-  itemValue: 1
+  pickupRange: 1
+  itemType: 2
 --- !u!1 &855443410
 GameObject:
   m_ObjectHideFlags: 0
@@ -2833,9 +2830,8 @@ MonoBehaviour:
     interactionHistory: []
   _mapSystem: {fileID: 0}
   isCollectable: 1
-  isStackable: 0
-  stackSize: 1
-  itemValue: 1
+  pickupRange: 1
+  itemType: 2
 --- !u!1 &1205596412
 GameObject:
   m_ObjectHideFlags: 0
@@ -3453,9 +3449,8 @@ MonoBehaviour:
     interactionHistory: []
   _mapSystem: {fileID: 0}
   isCollectable: 1
-  isStackable: 0
-  stackSize: 1
-  itemValue: 1
+  pickupRange: 1
+  itemType: 2
 --- !u!1 &1599130993
 GameObject:
   m_ObjectHideFlags: 0
@@ -5512,6 +5507,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4005723094363439624}
+  - component: {fileID: 6984647213550770966}
   - component: {fileID: 6984647213550770965}
   - component: {fileID: 6984647213550770964}
   - component: {fileID: 5515116731830946678}
@@ -5857,6 +5853,10 @@ PrefabInstance:
     - target: {fileID: 538936845631433979, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: m_Name
       value: PabloNPCCharacter
+      objectReference: {fileID: 0}
+    - target: {fileID: 538936845631433979, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2652386092144676622, guid: 98bf9ccdc18e9a14db5f12c8983577ca, type: 3}
       propertyPath: m_LocalPosition.x
@@ -6434,6 +6434,27 @@ MonoBehaviour:
   _actionMenu: {fileID: 504801052}
   _dialogText: {fileID: 2296389602446500221}
   _dialogObject: {fileID: 8305665613557165304}
+--- !u!114 &6984647213550770966
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1450920783762153981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba57856d1587aa44c84d97cc58a30722, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  keySlot:
+    itemId: 
+    itemType: 0
+  moneySlot:
+    itemId: 
+    itemType: 0
+  appleSlot:
+    itemId: 
+    itemType: 0
 --- !u!222 &7027254036632758957
 CanvasRenderer:
   m_ObjectHideFlags: 0

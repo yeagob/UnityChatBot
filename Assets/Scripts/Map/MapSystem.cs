@@ -20,7 +20,7 @@ namespace MapSystem
         [SerializeField] private bool _debugMode = false;
         
         private MapCell[] _mapCells;
-        private Dictionary<string, MapElement> _registeredElements = new Dictionary<string, MapElement>();
+        private Dictionary<string, MapElement> _registeredElements ;
         
         public GridSystem GridSystem => _gridSystem;
         public bool IsInitialized => _initialized;
@@ -28,20 +28,16 @@ namespace MapSystem
         
         private void InitializeMapSystem()
         {
-            
             if (!_initialized)
             {
+                _registeredElements = new Dictionary<string, MapElement>();
                 _gridSystem.Initialize();
-                CreateMapCells();
+                CreateMapCells(); 
                 RegisterElements();
                 _initialized = true;
             }
-            
-            _registeredElements = new Dictionary<string, MapElement>();
         }
         
-
-
         private void RegisterElements()
         {
             foreach (Transform child in transform)
@@ -261,7 +257,7 @@ namespace MapSystem
             
             return filteredElements.ToArray();
         }
-        
+          
         public MapElement GetElementById(string elementId)
         {
             _registeredElements.TryGetValue(elementId, out MapElement element);

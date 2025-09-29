@@ -8,6 +8,7 @@ using ChatSystem.Services.Tools.Interfaces;
 using ChatSystem.Enums;
 using InventorySystem.Components;
 using InventorySystem.Enums;
+using MapSystem;
 using MapSystem.Enums;
 using MapSystem.Elements;
 
@@ -31,7 +32,7 @@ namespace InventorySystem.Services.Tools
             
             if (_inventoryComponent == null)
             {
-                LoggingService.Error($"InventoryComponent not found on {_characterAgent.name}");
+                LoggingService.LogError($"InventoryComponent not found on {_characterAgent.name}");
             }
         }
 
@@ -92,7 +93,7 @@ namespace InventorySystem.Services.Tools
 
                 Dictionary<string, object> args = toolCall.arguments;
                 string itemId = args["itemId"].ToString();
-                
+                 
                 MapElement targetElement = _mapSystem.GetElementById(itemId);
                 if (targetElement == null || targetElement.ElementType != MapElementType.Item)
                 {
@@ -125,13 +126,19 @@ namespace InventorySystem.Services.Tools
                     _mapSystem.UnregisterElement(targetElement);
                     targetElement.gameObject.SetActive(false);
                     
+                    UniversalLogUI.Instance.Log($"{_characterAgent.name} Coge  {itemType} (id: {itemId})");
+
                     return CreateSuccessResponse(toolCall.id, $"Successfully picked up {itemType} (id: {itemId})");
                 }
 
+                UniversalLogUI.Instance.Log($"{_characterAgent.name} Fallo al coger  {itemType} (id: {itemId})");
+                
                 return CreateErrorResponse(toolCall.id, $"Failed to add {itemType} to inventory");
             }
             catch (Exception ex)
             {
+             
+                UniversalLogUI.Instance.Log($"{_characterAgent.name} ERROR al coger ");
                 return CreateErrorResponse(toolCall.id, $"Ha habido un problema con esta tool: {ex.Message}");
             }
         }

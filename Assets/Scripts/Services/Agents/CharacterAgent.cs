@@ -97,10 +97,12 @@ namespace ChatSystem.Characters
             do
             {
                 UniversalLogUI.Instance.Log($"\\nAction Points: {missingPoints}");
-
+                
+                //Vision prompt
                 PromptConfig visionPromptConfig = CreateVisionPromptMap(map);
                 firstAgent.contextPrompts.Add(visionPromptConfig);
                 
+                //Inventory prompt
                 if (inventoryComponent != null)
                 {
                     PromptConfig inventoryPromptConfig = CreateInventoryPromptConfig();
@@ -322,19 +324,13 @@ namespace ChatSystem.Characters
             inventoryPrompt.priority = 15;
             inventoryPrompt.version = "1.0";
 
-            string inventoryDesc = inventoryComponent != null ? inventoryComponent.GetInventoryDescription() : "No inventory available";
-            
-            inventoryPrompt.content = $@"INVENTARIO ACTUAL: {inventoryDesc}
+            inventoryPrompt.content = $@"INVENTARIO ACTUAL:
 
             Tienes 3 slots (uno por cada tipo de objeto):
             - Key slot: {(inventoryComponent.HasItem(InventorySystem.Enums.ItemType.Key) ? "Ocupado" : "Libre")}
             - Money slot: {(inventoryComponent.HasItem(InventorySystem.Enums.ItemType.Money) ? "Ocupado" : "Libre")}
             - Apple slot: {(inventoryComponent.HasItem(InventorySystem.Enums.ItemType.Apple) ? "Ocupado" : "Libre")}
-
-            Recuerda usar las herramientas de inventario cuando sea apropiado:
-            - pickup_item para recoger objetos cercanos
-            - drop_item para soltar objetos no necesarios
-            - give_item para compartir objetos con otros personajes";
+            ";
 
             return inventoryPrompt;
         }
@@ -346,7 +342,10 @@ namespace ChatSystem.Characters
             List<CharacterElement> nearCharacterElements = _mapSystem.GetAllCharactesAtDistance(2, _characterElement.CurrentGridCell);
             foreach (CharacterElement nearCharacterElement in nearCharacterElements)
             {
-                nearCharacterElement.GetComponent<CharacterAgent>().Listen(message, agentConfigurations[0].agentName);
+                if (nearCharacterElement.GetComponent<CharacterAgent>() != null)
+                {
+                    nearCharacterElement.GetComponent<CharacterAgent>().Listen(message, agentConfigurations[0].agentName);
+                }
             }
         }
 
