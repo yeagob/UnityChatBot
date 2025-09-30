@@ -6,6 +6,7 @@ using ChatSystem.Models.Tools;
 public class ToolSchema
 {
     public string type;
+    public string description;
     public Dictionary<string, ParameterSchema> properties;
     public List<string> required;
 }

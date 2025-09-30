@@ -10,6 +10,8 @@ using ChatSystem.Models.Tools;
 using ChatSystem.Models.LLM.OpenAI;
 using ChatSystem.Services.Logging;
 using ChatSystem.Enums;
+using ChatSystem.Configuration.Voice;
+using ChatSystem.Models.Communication;
 
 namespace ChatSystem.Services.LLM
 {
@@ -43,6 +45,159 @@ namespace ChatSystem.Services.LLM
             {
                 LoggingService.LogError($"[OpenAIService] OpenAI API Exception: {ex.Message}");
                 return CreateErrorResponse(request.model, ex.Message);
+            }
+        }
+
+        public static WebSocketEvent CreateRealtimeSessionUpdate(VoiceAgentConfig agentConfig, List<ToolConfiguration> tools)
+        {
+            return new WebSocketEvent
+            {
+                type = "session.update",
+                eventId = Guid.NewGuid().ToString(),
+                data = BuildRealtimeSessionData(agentConfig, tools),
+                timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+            };
+        }
+
+        public static WebSocketEvent CreateRealtimeToolResponse(string toolCallId, string result)
+        {
+            return new WebSocketEvent
+            {
+                type = "conversation.item.create",
+                eventId = Guid.NewGuid().ToString(),
+                data = new
+                {
+                    item = new
+                    {
+                        type = "function_call_output",
+                        call_id = toolCallId,
+                        output = result
+                    }
+                },
+                timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+            };
+        }
+
+        public static WebSocketEvent CreateRealtimeTextMessage(string message)
+        {
+            return new WebSocketEvent
+            {
+                type = "conversation.item.create",
+                eventId = Guid.NewGuid().ToString(),
+                data = new
+                {
+                    item = new
+                    {
+                        type = "message",
+                        role = "user",
+                        content = new[] { new { type = "input_text", text = message } }
+                    }
+                },
+                timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+            };
+        }
+
+        public static WebSocketEvent CreateRealtimeAudioEvent(byte[] audioData)
+        {
+            string base64Audio = Convert.ToBase64String(audioData);
+            return new WebSocketEvent
+            {
+                type = "input_audio_buffer.append",
+                eventId = Guid.NewGuid().ToString(),
+                data = new { audio = base64Audio },
+                timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+            };
+        }
+
+        private static object BuildRealtimeSessionData(VoiceAgentConfig agentConfig, List<ToolConfiguration> tools)
+        {
+            return new
+            {
+                session = new
+                {
+                    model = agentConfig.Model,
+                    voice = agentConfig.Voice,
+                    instructions = GetSystemPromptFromConfig(agentConfig),
+                    turn_detection = agentConfig.EnableTurnDetection ? 
+                        new { type = "server_vad", threshold = 0.5, prefix_padding_ms = 300, silence_duration_ms = 200 } : null,
+                    tools = BuildRealtimeToolsArray(tools),
+                    tool_choice = "auto",
+                    temperature = agentConfig.modelConfig?.temperature ?? 1.0f,
+                    max_response_output_tokens = agentConfig.maxResponseTokens,
+                    input_audio_format = ConvertToOpenAIFormat(agentConfig.VoiceSettings.inputFormat),
+                    output_audio_format = ConvertToOpenAIFormat(agentConfig.VoiceSettings.outputFormat)
+                }
+            };
+        }
+
+        private static object[] BuildRealtimeToolsArray(List<ToolConfiguration> tools)
+        {
+            if (tools == null || tools.Count == 0)
+                return new object[0];
+
+            List<object> realtimeTools = new List<object>();
+            
+            foreach (ToolConfiguration tool in tools)
+            {
+                realtimeTools.Add(new
+                {
+                    type = "function",
+                    name = tool.toolId,
+                    description = tool.description,
+                    parameters = BuildRealtimeParameters(tool)
+                });
+            }
+
+            return realtimeTools.ToArray();
+        }
+
+        private static object BuildRealtimeParameters(ToolConfiguration tool)
+        {
+            if (tool._inputSchema?.properties == null || tool._inputSchema.properties.Count == 0)
+            {
+                return new { type = "object", properties = new { }, required = new string[0] };
+            }
+
+            Dictionary<string, object> properties = new Dictionary<string, object>();
+            
+            foreach (var property in tool._inputSchema.properties)
+            {
+                properties[property.Key] = new
+                {
+                    type = property.Value.type,
+                    description = property.Value.description,
+                    @enum = property.Value
+                };
+            }
+
+            return new
+            {
+                type = "object",
+                properties = properties,
+                required = tool._inputSchema.required ?? new List<string>()
+            };
+        }
+
+        private static string GetSystemPromptFromConfig(VoiceAgentConfig agentConfig)
+        {
+            return agentConfig?.systemPrompt?.content ?? 
+                   "You are a helpful voice assistant with tool capabilities.";
+        }
+
+        private static string ConvertToOpenAIFormat(ChatSystem.Enums.AudioFormat format)
+        {
+            switch (format)
+            {
+                case ChatSystem.Enums.AudioFormat.PCM16:
+                    return "pcm16";
+                case ChatSystem.Enums.AudioFormat.PCM24:
+                    return "pcm24";
+                case ChatSystem.Enums.AudioFormat.G711_ULAW:
+                    return "g711_ulaw";
+                case ChatSystem.Enums.AudioFormat.G711_ALAW:
+                    return "g711_alaw";
+                default:
+                    return "pcm16";
             }
         }
         

@@ -53,7 +53,7 @@ namespace ChatSystem.Services.Orchestrators
             
             response.context = context;
             
-            LoggingService.LogDebug($"[ChatOrchestrator] Response Content: {response.content}");
+//            LoggingService.LogDebug($"[ChatOrchestrator] Response Content: {response.content}");
             
             return response;
         }

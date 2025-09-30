@@ -33,14 +33,14 @@ namespace ChatSystem.Bootstrap
         [Header("Debug")]
         [SerializeField] private bool createDebugObjects = true;
         
-        private IChatController chatController;
-        private IChatOrchestrator chatOrchestrator;
-        private ILLMOrchestrator llmOrchestrator;
-        private IContextManager contextManager;
-        private IAgentExecutor agentExecutor;
-        private IPersistenceService persistenceService;
-        private IToolSet userToolSet;
-        private IToolSet travelToolSet;
+        protected IChatController chatController;
+        protected IChatOrchestrator chatOrchestrator;
+        protected ILLMOrchestrator llmOrchestrator;
+        protected IContextManager contextManager;
+        protected IAgentExecutor agentExecutor;
+        protected IPersistenceService persistenceService;
+        protected IToolSet userToolSet;
+        protected IToolSet travelToolSet;
         
         private void Start()
         {
@@ -80,15 +80,15 @@ namespace ChatSystem.Bootstrap
             agentExecutor.RegisterToolSet(travelToolSet);
         }
         
-        private void CreateServices()
+        protected virtual void CreateServices()
         {
             llmOrchestrator = new LLMOrchestrator(agentExecutor);
             chatOrchestrator = new ChatOrchestrator();
-            
+
             RegisterAgentConfigurations();
         }
-        
-        private void RegisterAgentConfigurations()
+
+        protected virtual void RegisterAgentConfigurations()
         {
             if (agentConfigurations != null && agentConfigurations.Length > 0)
             {
@@ -102,12 +102,12 @@ namespace ChatSystem.Bootstrap
             }
         }
         
-        private void CreateControllers()
+        protected virtual void CreateControllers()
         {
             chatController = new ChatController(defaultConversationId);
         }
-        
-        private void ConfigureServices()
+
+        protected virtual void ConfigureServices()
         {
             if (chatOrchestrator is ChatOrchestrator chatOrchestratorImpl)
             {
@@ -122,7 +122,7 @@ namespace ChatSystem.Bootstrap
             }
         }
         
-        private void ConnectComponents()
+        protected virtual void ConnectComponents()
         {
             ConnectViewToController();
         }
@@ -139,7 +139,7 @@ namespace ChatSystem.Bootstrap
             }
         }
         
-        private void CreateDebugObjectsIfEnabled()
+        protected virtual void CreateDebugObjectsIfEnabled()
         {
             if (!createDebugObjects) return;
             

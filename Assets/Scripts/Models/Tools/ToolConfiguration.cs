@@ -4,6 +4,7 @@ using System.Text;
 using ChatSystem.Configuration.ScriptableObjects;
 using ChatSystem.Enums;
 using ChatSystem.Models.Tools.MCP;
+using UnityEngine.Serialization;
 
 namespace ChatSystem.Models.Tools
 {
@@ -12,8 +13,9 @@ namespace ChatSystem.Models.Tools
     {
         public string toolId;
         public string toolName;
+        public string description;
         public ToolType toolType;
-        public ToolSchema inputSchema;
+        public ToolSchema _inputSchema;
         public ToolAnnotations annotations;
         public bool enabled;
         public bool requiresAuthentication;
@@ -36,6 +38,7 @@ namespace ChatSystem.Models.Tools
             
             toolId = config.toolId;
             toolName = config.toolName;
+            description = config.function.description;
             toolType = config.toolType;
             annotations = config.annotations;
             enabled = config.enabled;
@@ -47,9 +50,10 @@ namespace ChatSystem.Models.Tools
             
             if (config.function != null && config.function.parameters != null)
             {
-                inputSchema = new ToolSchema
+                _inputSchema = new ToolSchema
                 {
                     type = config.function.parameters.type,
+                    description = config.function.description,
                     properties = ConvertToParameterSchemas(config.function.parameters.properties),
                     required = config.function.parameters.required
                 };
@@ -64,24 +68,23 @@ namespace ChatSystem.Models.Tools
             sb.Append("\"function\":{");
             sb.Append($"\"name\":\"{toolName}\",");
             
-            string description = GetToolDescription();
             sb.Append($"\"description\":\"{EscapeJsonString(description)}\",");
             
             sb.Append("\"parameters\":{");
             sb.Append("\"type\":\"object\"");
             
-            if (inputSchema?.properties != null && inputSchema.properties.Count > 0)
+            if (_inputSchema?.properties != null && _inputSchema.properties.Count > 0)
             {
                 sb.Append(",\"properties\":{");
                 bool first = true;
-                foreach (var prop in inputSchema.properties)
+                foreach (var prop in _inputSchema.properties)
                 {
                     if (!first) sb.Append(",");
                     sb.Append($"\"{prop.Key}\":{{");
                     sb.Append($"\"type\":\"{prop.Value.type}\"");
                     if (!string.IsNullOrEmpty(prop.Value.description))
                     {
-                        sb.Append($",\"description\":\"{EscapeJsonString(prop.Value.description)}\"");
+                        sb.Append($",\"description\":\"{EscapeJsonString(_inputSchema.description)}\"");
                     }
                     if (prop.Value.enumValues != null && prop.Value.enumValues.Count > 0)
                     {
@@ -103,13 +106,13 @@ namespace ChatSystem.Models.Tools
                 sb.Append(",\"properties\":{}");
             }
             
-            if (inputSchema?.required != null && inputSchema.required.Count > 0)
+            if (_inputSchema?.required != null && _inputSchema.required.Count > 0)
             {
                 sb.Append(",\"required\":[");
-                for (int i = 0; i < inputSchema.required.Count; i++)
+                for (int i = 0; i < _inputSchema.required.Count; i++)
                 {
                     if (i > 0) sb.Append(",");
-                    sb.Append($"\"{inputSchema.required[i]}\"");
+                    sb.Append($"\"{_inputSchema.required[i]}\"");
                 }
                 sb.Append("]");
             }
@@ -126,20 +129,13 @@ namespace ChatSystem.Models.Tools
             return ToOpenAIFormat();
         }
         
-        private string GetToolDescription()
-        {
-            if (annotations != null && !string.IsNullOrEmpty(annotations.title))
-            {
-                return annotations.title;
-            }
-            
-            return $"{toolName} function";
-        }
-        
         private Dictionary<string, ParameterSchema> ConvertToParameterSchemas(
             List<SerializableProperty> properties)
         {
-            if (properties == null) return new Dictionary<string, ParameterSchema>();
+            if (properties == null)
+            {
+                return new Dictionary<string, ParameterSchema>();
+            }
             
             Dictionary<string, ParameterSchema> result = new Dictionary<string, ParameterSchema>();
             

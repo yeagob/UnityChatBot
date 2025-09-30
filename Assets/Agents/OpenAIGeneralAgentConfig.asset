@@ -16,15 +16,17 @@ MonoBehaviour:
   agentName: General Answer
   description: Base Model Responses
   providerConfig: {fileID: 11400000, guid: aa8ef07821d96dd469f4dfa6e7b49c3b, type: 2}
-  modelConfig: {fileID: 11400000, guid: e32e072598c4e694ea426df2fb2bcb4c, type: 2}
-  systemPrompt: {fileID: 11400000, guid: 88c4ff789ee2a8e4abde51e0753cf1d6, type: 2}
+  modelConfig: {fileID: 11400000, guid: 325d33e038b4ce542b0d0754c504141f, type: 2}
+  systemPrompt: {fileID: 11400000, guid: 6cc9b6d545a84654aa71195ec91bc15e, type: 2}
   contextPrompts: []
   availableTools:
-  - {fileID: 11400000, guid: bda898df686a38a42a90ce9457cef786, type: 2}
+  - {fileID: 11400000, guid: 5a84c1a1e67bd7a4a98329711821192d, type: 2}
+  - {fileID: 11400000, guid: f6c8fff3cb5e18540aa1874a523bd225, type: 2}
+  - {fileID: 11400000, guid: 24f9d0d0791ebe9448bd8dce1aa784f2, type: 2}
   debugTools: 1
   canExecuteTools: 1
   maxToolCalls: 5
-  maxResponseTokens: 2048
+  maxResponseTokens: 500
   streamResponses: 0
   maxRetries: 3
   timeoutMs: 10000
