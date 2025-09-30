@@ -149,9 +149,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _characters:
-  - {fileID: 6984647213550770965}
   - {fileID: 1657247703}
   - {fileID: 1974394610}
+  - {fileID: 6984647213550770965}
   _turnPanelImage: {fileID: 998998132}
 --- !u!4 &94741122
 Transform:
