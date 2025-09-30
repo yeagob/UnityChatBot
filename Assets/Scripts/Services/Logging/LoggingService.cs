@@ -73,7 +73,6 @@ namespace ChatSystem.Services.Logging
             LogInfo($"[TOOL_RESPONSE:{toolName}] Response: {response}");
         }
         
-        
         public static bool IsLogLevelEnabled(LogLevel level)
         {
             if (!isInitialized)

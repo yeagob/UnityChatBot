@@ -10,7 +10,6 @@ namespace ChatSystem.Services.Tools.Interfaces
     {
         string ToolSetId { get; }
         ToolType ToolSetType { get; }
-        List<ToolConfiguration> GetAvailableTools();
         Task<ToolResponse> ExecuteToolAsync(ToolCall toolCall);
         Task<ToolResponse> ExecuteToolAsync(ToolCall toolCall, ToolDebugContext debugContext);
         Task<bool> ValidateToolCallAsync(ToolCall toolCall);

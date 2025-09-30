@@ -57,6 +57,7 @@ namespace ChatSystem.Services.Agents
                     List<ToolResponse> toolResponses = await ExecuteToolCallsAsync(
                         llmResponse.toolCalls, agentConfig.maxToolCalls, debugContext);
                     
+                    //Esto llega vacío si no sería redundante
                     foreach (ToolResponse toolResponse in toolResponses)
                     {
                         context.AddToolMessage(toolResponse.content, toolResponse.toolCallId);
@@ -105,7 +106,7 @@ namespace ChatSystem.Services.Agents
             
             string toolSetName = toolSet.GetType().Name;
             registeredToolSets[toolSetName] = toolSet;
-            LoggingService.LogInfo($"ToolSet {toolSetName} registered with {toolSet.GetAvailableTools().Count} tools");
+            LoggingService.LogInfo($"ToolSet {toolSetName} registered.");
         }
         
         public void UnregisterToolSet(string toolSetName)

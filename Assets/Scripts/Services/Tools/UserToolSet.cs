@@ -177,7 +177,7 @@ namespace ChatSystem.Services.Tools
                 toolId = "update_user_tag",
                 toolName = "update_user_tag",
                 toolType = ToolType.UserManagement,
-                inputSchema = new ToolSchema
+                _inputSchema = new ToolSchema
                 {
                     type = "object",
                     properties = new Dictionary<string, ParameterSchema>
@@ -205,7 +205,7 @@ namespace ChatSystem.Services.Tools
                 toolId = "update_user_name",
                 toolName = "update_user_name",
                 toolType = ToolType.UserManagement,
-                inputSchema = new ToolSchema
+                _inputSchema = new ToolSchema
                 {
                     type = "object",
                     properties = new Dictionary<string, ParameterSchema>
@@ -233,7 +233,7 @@ namespace ChatSystem.Services.Tools
                 toolId = "add_user_comment",
                 toolName = "add_user_comment",
                 toolType = ToolType.UserManagement,
-                inputSchema = new ToolSchema
+                _inputSchema = new ToolSchema
                 {
                     type = "object",
                     properties = new Dictionary<string, ParameterSchema>

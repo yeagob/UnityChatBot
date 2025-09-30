@@ -218,7 +218,7 @@ namespace ChatSystem.Services.Tools
                 toolId = "search_travels_by_country",
                 toolName = "search_travels_by_country",
                 toolType = ToolType.TravelSearch,
-                inputSchema = new ToolSchema
+                _inputSchema = new ToolSchema
                 {
                     type = "object",
                     properties = new Dictionary<string, ParameterSchema>
@@ -245,7 +245,7 @@ namespace ChatSystem.Services.Tools
                 toolId = "search_travels_advanced",
                 toolName = "search_travels_advanced",
                 toolType = ToolType.TravelSearch,
-                inputSchema = new ToolSchema
+                _inputSchema = new ToolSchema
                 {
                     type = "object",
                     properties = new Dictionary<string, ParameterSchema>
@@ -274,7 +274,7 @@ namespace ChatSystem.Services.Tools
                 toolId = "get_travel_details",
                 toolName = "get_travel_details",
                 toolType = ToolType.TravelDetails,
-                inputSchema = new ToolSchema
+                _inputSchema = new ToolSchema
                 {
                     type = "object",
                     properties = new Dictionary<string, ParameterSchema>
